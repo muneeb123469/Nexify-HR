@@ -4,6 +4,8 @@ import { useJobs } from '../../context/JobContext';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
+import EditJobModal from './EditJobModal';
+import DeleteJobModal from './DeleteJobModal';
 
 const Container = styled.div`
   padding: 2rem;
@@ -137,6 +139,8 @@ const JobDetails = () => {
   const { jobs, loading, error, updateJob, deleteJob } = useJobs();
   const { user, hasRole, isAuthenticated } = useAuth();
   const [job, setJob] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     const foundJob = jobs.find(j => j._id === id);
@@ -167,15 +171,7 @@ const JobDetails = () => {
       return;
     }
 
-    if (window.confirm('Are you sure you want to delete this job?')) {
-      try {
-        await deleteJob(id);
-        navigate('/jobs');
-      } catch (error) {
-        console.error('Error deleting job:', error);
-        alert('Failed to delete job');
-      }
-    }
+    setIsDeleteModalOpen(true);
   };
 
   const handleApply = () => {
@@ -198,7 +194,37 @@ const JobDetails = () => {
       return;
     }
 
-    navigate(`/jobs/${id}/edit`);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleSaveJob = async (jobData) => {
+    try {
+      const updatedJob = await updateJob(id, jobData);
+      setJob(updatedJob);
+      alert('Job updated successfully!');
+    } catch (error) {
+      console.error('Error updating job:', error);
+      throw error; // Re-throw to let modal handle the error
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteJob(id);
+      alert('Job deleted successfully!');
+      navigate('/hr/job-postings'); // Navigate back to job postings dashboard
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job. Please try again.');
+    }
   };
 
   if (loading) return <Container>Loading...</Container>;
@@ -284,6 +310,22 @@ const JobDetails = () => {
           )}
         </ButtonGroup>
       </Card>
+      {isEditModalOpen && (
+        <EditJobModal
+          isOpen={isEditModalOpen}
+          job={job}
+          onClose={handleCloseEditModal}
+          onSave={handleSaveJob}
+        />
+      )}
+      {isDeleteModalOpen && (
+        <DeleteJobModal
+          isOpen={isDeleteModalOpen}
+          job={job}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </Container>
   );
 };

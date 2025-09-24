@@ -1,16 +1,16 @@
 // server/Routes/applicationRoutes.js
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const { parseResume } = require('../services/cvParser');
 const upload = require('../middleware/upload'); // Enhanced upload middleware
 const { validateApplicationRequest } = require('../utils/validation');
-// const { auth } = require('../middleware/auth'); // If you need authentication
+const { auth } = require('../middleware/auth'); // Authentication middleware
 
 // NEW: for writing the sidecar JSON next to the uploaded file
-const fs = require('fs');
-const path = require('path');
 
 // NEW: helper to write a JSON file beside the uploaded resume
 async function writeParseJson(file, payload, requestId = 'no_reqid') {
@@ -27,6 +27,87 @@ async function writeParseJson(file, payload, requestId = 'no_reqid') {
     );
   }
 }
+
+// -----------------------
+// NEW: Fetch user's applications (for applicant dashboard)
+// -----------------------
+router.get('/user', auth, async (req, res) => {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log(`[${requestId}] Fetching applications for user: ${req.user.email}`);
+
+  try {
+    // Fetch only the authenticated user's applications, populated with job details
+    const applications = await Application.find({ email: req.user.email })
+      .populate('job', 'title company department location salary') // Populate relevant job fields
+      .sort({ createdAt: -1 }) // Most recent first
+      .lean(); // Optimize for JSON response
+
+    console.log(`[${requestId}] Found ${applications.length} applications for ${req.user.email}`);
+
+    res.json(applications);
+  } catch (error) {
+    console.error(`[${requestId}] Error fetching user applications:`, error);
+    res.status(500).json({ 
+      message: 'Error fetching your applications',
+      requestId,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
+  }
+});
+
+// -----------------------
+// NEW: Fetch all applications (for HR dashboard)
+// -----------------------
+router.get('/', async (req, res) => {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log(`[${requestId}] Fetching all applications for HR dashboard`);
+
+  try {
+    // Build query object based on filters
+    const query = {};
+    
+    // Filter by candidate name (case-insensitive partial match)
+    if (req.query.candidateName) {
+      query.name = { $regex: req.query.candidateName, $options: 'i' };
+    }
+    
+    // Filter by status
+    if (req.query.status) {
+      query.status = req.query.status;
+    }
+
+    console.log(`[${requestId}] Query filters:`, query);
+    console.log(`[${requestId}] Job title filter:`, req.query.jobTitle);
+
+    // Fetch applications with populated job details
+    let applicationsQuery = Application.find(query)
+      .populate('job', 'title company department location salary status')
+      .sort({ createdAt: -1 }) // Most recent first
+      .lean(); // Optimize for JSON response
+
+    const applications = await applicationsQuery;
+
+    // Filter by job title after population (since it's in the populated job object)
+    let filteredApplications = applications;
+    if (req.query.jobTitle) {
+      filteredApplications = applications.filter(app => 
+        app.job && app.job.title && 
+        app.job.title.toLowerCase().includes(req.query.jobTitle.toLowerCase())
+      );
+    }
+
+    console.log(`[${requestId}] Found ${filteredApplications.length} applications (${applications.length} before job title filter)`);
+
+    res.json(filteredApplications);
+  } catch (error) {
+    console.error(`[${requestId}] Error fetching applications:`, error);
+    res.status(500).json({ 
+      message: 'Error fetching applications',
+      requestId,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
+  }
+});
 
 // -----------------------
 // Submit a new application
@@ -168,64 +249,54 @@ router.post('/', upload, async (req, res) => {
       // Update application with parsed data
       app.parsedResume = {
         ...parsed,
-        parsedAt: new Date(parsed.parsedAt || Date.now()),
+        parsedAt: new Date()
       };
       await app.save();
-      parseSuccess = true;
 
-      // NEW: write the parsed JSON beside the uploaded file (fire-and-forget)
+      // Write success JSON sidecar
       writeParseJson(req.file, {
         applicationId: app._id?.toString?.() || null,
         originalName: req.file.originalname,
         storedFile: path.basename(req.file.path),
-        parsed, // full sanitized parsed result
+        parsed: parsed,
+        confidence: parsed.confidence,
         _metadata: { requestId, createdAt: new Date().toISOString() }
       }, requestId);
 
-      console.log(`[${requestId}] Application updated with parsed resume data`);
+      parseSuccess = true;
     } catch (parseErr) {
-      parseError = parseErr;
-      console.error(`[${requestId}] Resume parsing failed:`, parseErr.message);
-      console.error(`[${requestId}] Parse error stack:`, parseErr.stack);
+      console.error(`[${requestId}] Resume parsing failed:`, parseErr);
+      parseError = parseErr.message;
 
-      if (parseErr.message.includes('PyMuPDF')) {
-        console.error(`[${requestId}] PyMuPDF dependency issue - consider running: pip install PyMuPDF`);
-      } else if (parseErr.message.includes('timeout')) {
-        console.error(`[${requestId}] Parsing timeout - file may be too complex or large`);
-      } else if (parseErr.message.includes('JSON')) {
-        console.error(`[${requestId}] Parser output format issue - check Python script`);
-      }
-
-      // NEW: write an error JSON beside the file so you still get a sidecar
+      // Write error JSON sidecar even on parse failure
       writeParseJson(req.file, {
-        applicationId: app?._id?.toString?.() || null,
+        applicationId: app._id?.toString?.() || null,
         originalName: req.file.originalname,
         storedFile: path.basename(req.file.path),
-        error: parseErr.message || String(parseErr),
+        error: 'Resume parsing failed',
+        parseError: parseErr.message,
+        confidence: 0,
         _metadata: { requestId, createdAt: new Date().toISOString() }
       }, requestId);
-
-      // graceful degradation (keep existing behavior)
     }
 
-    // 7. Prepare and return response
     const endTime = Date.now();
     const totalTime = endTime - startTime;
 
     console.log(`[${requestId}] Application submission completed in ${totalTime}ms`);
-    console.log(`[${requestId}] Parse success: ${parseSuccess}`);
+    console.log(`[${requestId}] Parse success: ${parseSuccess}, error: ${parseError || 'none'}`);
 
-    // Fetch the final application data
-    app = await Application.findById(app._id).lean();
+    // Return the application with populated job data
+    const populatedApp = await Application.findById(app._id)
+      .populate('job', 'title company department location salary');
 
-    // Add metadata to response
     const response = {
-      ...app,
+      ...populatedApp.toObject(),
       _metadata: {
         requestId,
         processingTime: totalTime,
         parseSuccess,
-        parseError: parseError ? parseError.message : null
+        parseError
       }
     };
 
@@ -235,21 +306,14 @@ router.post('/', upload, async (req, res) => {
     const endTime = Date.now();
     const totalTime = endTime - startTime;
 
-    console.error(`[${requestId}] Application submission error after ${totalTime}ms:`, err.message);
-    console.error(`[${requestId}] Error stack:`, err.stack);
+    console.error(`[${requestId}] Application submission error after ${totalTime}ms:`, err);
 
-    // NEW: if there was an upload, drop an error JSON
-    if (req.file) {
-      writeParseJson(req.file, {
-        applicationId: null,
-        originalName: req.file.originalname,
-        storedFile: path.basename(req.file.path),
-        error: err.message || 'Unhandled server error',
-        _metadata: { requestId, createdAt: new Date().toISOString() }
-      }, requestId);
+    // Clean up uploaded file on error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+      console.log(`[${requestId}] Cleaned up failed upload: ${req.file.path}`);
     }
 
-    // Return detailed error information
     res.status(500).json({
       message: 'Error submitting application',
       error: err.message,
@@ -259,26 +323,135 @@ router.post('/', upload, async (req, res) => {
   }
 });
 
-// -----------------------
-// Get all applications for a job
-// -----------------------
-router.get('/job/:jobId', async (req, res) => {
+// Download resume file
+router.get('/download-resume/:applicationId', async (req, res) => {
   try {
-    const applications = await Application.find({ job: req.params.jobId })
-      .populate('job', 'title')
-      .sort('-createdAt');
-    res.json(applications);
+    const { applicationId } = req.params;
+    
+    // Find the application
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    
+    if (!application.resume) {
+      return res.status(404).json({ message: 'Resume file not found for this application' });
+    }
+    
+    // Construct the full file path
+    const filePath = path.join(__dirname, '..', application.resume);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Resume file does not exist on server' });
+    }
+    
+    // Get file stats for proper headers
+    const stats = fs.statSync(filePath);
+    const fileName = path.basename(application.resume);
+    const fileExtension = path.extname(fileName).toLowerCase();
+    
+    // Set appropriate content type based on file extension
+    let contentType = 'application/octet-stream';
+    switch (fileExtension) {
+      case '.pdf':
+        contentType = 'application/pdf';
+        break;
+      case '.doc':
+        contentType = 'application/msword';
+        break;
+      case '.docx':
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+      case '.txt':
+        contentType = 'text/plain';
+        break;
+      default:
+        contentType = 'application/octet-stream';
+    }
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    // Create read stream and pipe to response
+    const fileStream = fs.createReadStream(filePath);
+    
+    fileStream.on('error', (error) => {
+      console.error('Error reading file:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: 'Error reading file' });
+      }
+    });
+    
+    fileStream.pipe(res);
+    
+    console.log(`Resume downloaded: ${fileName} for application ${applicationId}`);
+    
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error downloading resume:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 // -----------------------
-// Reparse an application's resume
+// Get single application by ID
+// -----------------------
+router.get('/:id', async (req, res) => {
+  const startTime = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  console.log(`[${requestId}] Get application request started for ID: ${req.params.id}`);
+
+  try {
+    const application = await Application.findById(req.params.id)
+      .populate('job', 'title company department location salary');
+
+    if (!application) {
+      console.log(`[${requestId}] Application not found: ${req.params.id}`);
+      return res.status(404).json({
+        message: 'Application not found',
+        requestId
+      });
+    }
+
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+
+    console.log(`[${requestId}] Application retrieved successfully in ${totalTime}ms`);
+
+    res.json({
+      ...application.toObject(),
+      _metadata: {
+        requestId,
+        processingTime: totalTime
+      }
+    });
+
+  } catch (err) {
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+
+    console.error(`[${requestId}] Get application error after ${totalTime}ms:`, err.message);
+
+    res.status(500).json({
+      message: 'Error retrieving application',
+      error: err.message,
+      requestId,
+      processingTime: totalTime
+    });
+  }
+});
+
+// -----------------------
+// Reparse resume for an existing application
 // -----------------------
 router.post('/:id/reparse', async (req, res) => {
   const startTime = Date.now();
-  const requestId = `reparse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   console.log(`[${requestId}] Reparse request started for application: ${req.params.id}`);
 
@@ -355,9 +528,12 @@ router.post('/:id/reparse', async (req, res) => {
 
     console.log(`[${requestId}] Reparse completed successfully in ${totalTime}ms`);
 
-    // 5. Return updated application
+    // 5. Return updated application with populated job data
+    const updatedApp = await Application.findById(app._id)
+      .populate('job', 'title company department location salary');
+
     const response = {
-      ...app.toObject(),
+      ...updatedApp.toObject(),
       _metadata: {
         requestId,
         processingTime: totalTime,
@@ -393,7 +569,7 @@ router.patch('/:id/status', async (req, res) => {
       req.params.id,
       { status },
       { new: true }
-    );
+    ).populate('job', 'title company department location salary');
 
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
@@ -402,6 +578,41 @@ router.patch('/:id/status', async (req, res) => {
     res.json(application);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// -----------------------
+// Cancel/Withdraw application (for applicants)
+// -----------------------
+router.patch('/:id/cancel', auth, async (req, res) => {
+  try {
+    const application = await Application.findById(req.params.id);
+    
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    // Check if the user owns this application
+    if (application.email !== req.user.email) {
+      return res.status(403).json({ message: 'You can only cancel your own applications' });
+    }
+
+    // Check if application can be cancelled
+    if (['rejected', 'hired', 'cancelled'].includes(application.status.toLowerCase())) {
+      return res.status(400).json({ message: 'This application cannot be cancelled' });
+    }
+
+    // Update status to cancelled
+    application.status = 'cancelled';
+    await application.save();
+
+    const updatedApp = await Application.findById(application._id)
+      .populate('job', 'title company department location salary');
+
+    res.json(updatedApp);
+  } catch (error) {
+    console.error('Error cancelling application:', error);
+    res.status(500).json({ message: 'Error cancelling application', error: error.message });
   }
 });
 
@@ -415,7 +626,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    await application.remove();
+    await Application.findByIdAndDelete(req.params.id);
     res.json({ message: 'Application deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

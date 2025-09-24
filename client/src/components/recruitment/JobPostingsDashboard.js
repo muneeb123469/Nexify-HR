@@ -110,7 +110,12 @@ const JobPostingsDashboard = () => {
                   <span className="metric-label">Views</span>
                 </div>
               </div>
-              <button className="view-details-btn">View Details</button>
+              <button 
+                className="view-details-btn"
+                onClick={() => navigate(`/jobs/${posting.id}`)}
+              >
+                View Details
+              </button>
             </div>
           ))}
         </div>

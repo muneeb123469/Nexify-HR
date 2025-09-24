@@ -294,7 +294,7 @@ const Sidebar = () => (
     </Logo>
     <SidebarMenu>
       <MenuItem>
-        <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>
+        <NavLink to="/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-chart-line"></i>
           <span>Dashboard Overview</span>
         </NavLink>

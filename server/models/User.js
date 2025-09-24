@@ -22,9 +22,62 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['hr', 'applicant'],
+    enum: ['hr', 'applicant', 'employee'],
     default: 'applicant'
   },
+  // Employee-specific fields
+  employeeId: {
+    type: String,
+    unique: true,
+    sparse: true // Only required for employees
+  },
+  department: {
+    type: String,
+    trim: true
+  },
+  jobTitle: {
+    type: String,
+    trim: true
+  },
+  // Employee Classification fields
+  category: {
+    type: String,
+    enum: ['Technical', 'Administrative', 'Management', 'Support'],
+    trim: true
+  },
+  level: {
+    type: String,
+    enum: ['Junior', 'Mid-level', 'Senior', 'Manager', 'Director'],
+    trim: true
+  },
+  skills: [{
+    type: String,
+    trim: true
+  }],
+  projects: [{
+    type: String,
+    trim: true
+  }],
+  phone: {
+    type: String,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive', 'Terminated'],
+    default: 'Active'
+  },
+  hireDate: {
+    type: Date
+  },
+  salary: {
+    type: Number
+  },
+  manager: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  // Existing fields
   isPending: {
     type: Boolean,
     default: false
@@ -36,7 +89,30 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+});
+
+// Pre-save middleware to update updatedAt
+userSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Generate employee ID for new employees
+userSchema.pre('save', async function(next) {
+  if (this.role === 'employee' && !this.employeeId) {
+    try {
+      const count = await mongoose.model('User').countDocuments({ role: 'employee' });
+      this.employeeId = `EMP${String(count + 1).padStart(3, '0')}`;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
 });
 
 // Method to compare passwords (direct string comparison for testing)
@@ -60,4 +136,4 @@ userSchema.methods.toJSON = function() {
 };
 
 // Export the model with safety check to prevent overwrite errors
-module.exports = mongoose.models.User || mongoose.model('User', userSchema); 
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

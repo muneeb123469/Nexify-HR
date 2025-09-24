@@ -49,7 +49,7 @@ import styled from 'styled-components';
 import JobList from '../jobs/JobList';
 import ApplicationList from '../applications/ApplicationList';
 import InterviewHistory from '../interviews/InterviewHistory';
-import ResumeParsingInterface from '../recruitment/ResumeParsingInterface';
+// import ResumeParsingInterface from '../recruitment/ResumeParsingInterface';
 import './HRDashboard.css';
 import './ApplicantDashboard.css';
 import { useAuth } from '../../context/AuthContext';
@@ -870,12 +870,12 @@ const ApplicantDashboard = () => {
               My Profile
             </NavLink>
           </MenuItem>
-          <MenuItem>
+          {/* <MenuItem>
             <NavLink to="/applicant-dashboard/resume-parsing">
               <i className="fas fa-file-upload"></i>
               Resume Parsing
             </NavLink>
-          </MenuItem>
+          </MenuItem> */}
         </SidebarMenu>
 
         <div className="logout">
@@ -912,7 +912,7 @@ const ApplicantDashboard = () => {
             <Route path="/applications" element={<ApplicationList />} />
             <Route path="/interviews" element={<InterviewHistory />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/resume-parsing" element={<ResumeParsingInterface />} />
+            {/* <Route path="/resume-parsing" element={<ResumeParsingInterface />} /> */}
           </Routes>
         </div>
       </div>

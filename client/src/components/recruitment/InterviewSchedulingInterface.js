@@ -1,44 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './InterviewSchedulingInterface.css';
 
 const InterviewSchedulingInterface = () => {
-  const [shortlistedCandidates, setShortlistedCandidates] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      position: 'Senior Software Engineer',
-      availability: ['2024-03-20', '2024-03-21', '2024-03-22'],
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      position: 'Product Manager',
-      availability: ['2024-03-21', '2024-03-22', '2024-03-23'],
-    },
-  ]);
-
+  const navigate = useNavigate();
+  const [shortlistedCandidates, setShortlistedCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [interviewType, setInterviewType] = useState('onsite');
-  const [interviewers, setInterviewers] = useState([]);
+  const [interviewLocation, setInterviewLocation] = useState('');
+  const [interviewInstructions, setInterviewInstructions] = useState('');
   const [notificationSent, setNotificationSent] = useState(false);
+  
+  // Editable candidate details
+  const [candidateName, setCandidateName] = useState('');
+  const [candidateEmail, setCandidateEmail] = useState('');
+  const [candidatePhone, setCandidatePhone] = useState('');
+  const [candidatePosition, setCandidatePosition] = useState('');
+  const [candidateDepartment, setCandidateDepartment] = useState('');
 
   const timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM',
     '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'
   ];
 
+  // Fetch shortlisted candidates from API
+  useEffect(() => {
+    fetchShortlistedCandidates();
+  }, []);
+
+  const fetchShortlistedCandidates = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch applications with shortlisted status
+      const response = await fetch('http://localhost:5000/api/applications?status=shortlisted');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setShortlistedCandidates(data);
+    } catch (err) {
+      console.error('Error fetching shortlisted candidates:', err);
+      setError('Failed to load shortlisted candidates. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCandidateSelect = (candidate) => {
     setSelectedCandidate(candidate);
+    // Pre-fill editable fields with candidate data
+    setCandidateName(candidate.name);
+    setCandidateEmail(candidate.email);
+    setCandidatePhone(candidate.phone || '');
+    setCandidatePosition(candidate.job?.title || '');
+    setCandidateDepartment(candidate.job?.department || '');
+    
     setSelectedDate('');
     setSelectedTime('');
+    setInterviewType('onsite');
+    setInterviewLocation('');
+    setInterviewInstructions('');
     setNotificationSent(false);
   };
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
-    setSelectedTime('');
     setNotificationSent(false);
   };
 
@@ -49,99 +83,264 @@ const InterviewSchedulingInterface = () => {
 
   const handleInterviewTypeChange = (type) => {
     setInterviewType(type);
+    // Auto-suggest location based on interview type
+    if (type === 'online') {
+      setInterviewLocation('Online Meeting (Link will be provided)');
+    } else if (type === 'phone') {
+      setInterviewLocation('Phone Interview');
+    } else {
+      setInterviewLocation('');
+    }
     setNotificationSent(false);
   };
 
-  const handleInterviewerAdd = (interviewer) => {
-    if (!interviewers.includes(interviewer)) {
-      setInterviewers([...interviewers, interviewer]);
+  const handleScheduleInterview = async () => {
+    try {
+      // Show loading state
+      setNotificationSent(false);
+      
+      // Prepare interview data
+      const interviewData = {
+        candidateName,
+        candidateEmail,
+        candidatePhone,
+        position: candidatePosition,
+        department: candidateDepartment,
+        date: selectedDate,
+        time: selectedTime,
+        type: interviewType,
+        location: interviewLocation,
+        instructions: interviewInstructions
+      };
+
+      // Call the interview scheduling API (real endpoint with email sending)
+      const response = await fetch('http://localhost:5000/api/interviews/schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(interviewData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Success - email sent successfully
+        console.log('Interview scheduled successfully:', result);
+        setNotificationSent(true);
+        
+        // Optional: Show success message with more details
+        setTimeout(() => {
+          alert(`Interview scheduled successfully!\nEmail sent to: ${candidateEmail}\nMessage ID: ${result.data.messageId}`);
+        }, 1000);
+        
+      } else {
+        // Handle API errors
+        console.error('Interview scheduling failed:', result);
+        alert(`Failed to schedule interview: ${result.message}`);
+      }
+
+    } catch (error) {
+      console.error('Error scheduling interview:', error);
+      alert('Network error occurred while scheduling the interview. Please try again.');
     }
   };
 
-  const handleInterviewerRemove = (interviewer) => {
-    setInterviewers(interviewers.filter(i => i !== interviewer));
+  const handleViewCandidate = (candidate) => {
+    navigate(`/hr/candidate-profile/${candidate._id}`);
   };
 
-  const handleScheduleInterview = () => {
-    // Simulate scheduling process
-    setTimeout(() => {
-      setNotificationSent(true);
-    }, 1000);
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
+
+  // Generate available dates (next 7 days for demo)
+  const generateAvailableDates = () => {
+    const dates = [];
+    for (let i = 1; i <= 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  };
+
+  if (loading) {
+    return (
+      <div className="interview-scheduling-interface">
+        <div className="loading">Loading shortlisted candidates...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="interview-scheduling-interface">
+        <div className="error">
+          {error}
+          <button onClick={fetchShortlistedCandidates} className="retry-btn">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="interview-scheduling-interface">
       <div className="scheduling-header">
-        <h1>Interview Scheduling Interface</h1>
+        <h1>Interview Scheduling</h1>
+        <p className="header-subtitle">Schedule interviews for shortlisted candidates</p>
       </div>
 
       <div className="scheduling-content">
         <div className="candidates-section">
-          <h2>Shortlisted Candidates</h2>
-          <div className="candidates-list">
-            {shortlistedCandidates.map(candidate => (
-              <div
-                key={candidate.id}
-                className={`candidate-card ${selectedCandidate?.id === candidate.id ? 'selected' : ''}`}
-                onClick={() => handleCandidateSelect(candidate)}
-              >
-                <h3>{candidate.name}</h3>
-                <p className="position">{candidate.position}</p>
-                <div className="availability">
-                  <h4>Available Dates:</h4>
-                  <div className="date-tags">
-                    {candidate.availability.map(date => (
-                      <span key={date} className="date-tag">{date}</span>
-                    ))}
+          <h2>Shortlisted Candidates ({shortlistedCandidates.length})</h2>
+          {shortlistedCandidates.length === 0 ? (
+            <div className="no-candidates">
+              <p>No shortlisted candidates found.</p>
+              <p>Candidates will appear here when they are shortlisted from the Candidate Applications section.</p>
+            </div>
+          ) : (
+            <div className="candidates-list">
+              {shortlistedCandidates.map(candidate => (
+                <div
+                  key={candidate._id}
+                  className={`candidate-card ${selectedCandidate?._id === candidate._id ? 'selected' : ''}`}
+                >
+                  <div className="candidate-info" onClick={() => handleCandidateSelect(candidate)}>
+                    <h3>{candidate.name}</h3>
+                    <p className="position">{candidate.job?.title || 'N/A'}</p>
+                    <p className="department">{candidate.job?.department || 'N/A'}</p>
+                    <p className="applied-date">Applied: {formatDate(candidate.createdAt)}</p>
+                    <div className="status-badge shortlisted">
+                      Shortlisted
+                    </div>
+                  </div>
+                  <div className="candidate-actions">
+                    <button
+                      className="schedule-btn"
+                      onClick={() => handleCandidateSelect(candidate)}
+                      title="Schedule Interview"
+                    >
+                      Schedule Interview
+                    </button>
+                    <button
+                      className="view-btn"
+                      onClick={() => handleViewCandidate(candidate)}
+                      title="View Candidate Profile"
+                    >
+                      👁️
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="scheduling-section">
           {selectedCandidate ? (
             <>
               <div className="selected-candidate">
-                <h2>Schedule Interview for {selectedCandidate.name}</h2>
-                <p className="position">{selectedCandidate.position}</p>
+                <h2>Schedule Interview</h2>
+                <div className="candidate-details-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Candidate Name</label>
+                      <input 
+                        type="text" 
+                        value={candidateName}
+                        onChange={(e) => setCandidateName(e.target.value)}
+                        className="editable-input"
+                        placeholder="Enter candidate name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Email</label>
+                      <input 
+                        type="email" 
+                        value={candidateEmail}
+                        onChange={(e) => setCandidateEmail(e.target.value)}
+                        className="editable-input"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Phone Number</label>
+                      <input 
+                        type="tel" 
+                        value={candidatePhone}
+                        onChange={(e) => setCandidatePhone(e.target.value)}
+                        className="editable-input"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Position Applied</label>
+                      <input 
+                        type="text" 
+                        value={candidatePosition}
+                        onChange={(e) => setCandidatePosition(e.target.value)}
+                        className="editable-input"
+                        placeholder="Enter position"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label>Department</label>
+                      <input 
+                        type="text" 
+                        value={candidateDepartment}
+                        onChange={(e) => setCandidateDepartment(e.target.value)}
+                        className="editable-input"
+                        placeholder="Enter department"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="scheduling-form">
                 <div className="form-section">
-                  <h3>Select Date</h3>
-                  <div className="date-selection">
-                    {selectedCandidate.availability.map(date => (
-                      <button
-                        key={date}
-                        className={`date-button ${selectedDate === date ? 'selected' : ''}`}
-                        onClick={() => handleDateSelect(date)}
-                      >
-                        {date}
-                      </button>
-                    ))}
+                  <h3>Select Interview Date</h3>
+                  <div className="date-time-inputs">
+                    <div className="form-group">
+                      <label>Interview Date</label>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => handleDateSelect(e.target.value)}
+                        className="date-input"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {selectedDate && (
-                  <div className="form-section">
-                    <h3>Select Time</h3>
-                    <div className="time-selection">
-                      {timeSlots.map(time => (
-                        <button
-                          key={time}
-                          className={`time-button ${selectedTime === time ? 'selected' : ''}`}
-                          onClick={() => handleTimeSelect(time)}
-                        >
-                          {time}
-                        </button>
-                      ))}
+                <div className="form-section">
+                  <h3>Select Interview Time</h3>
+                  <div className="date-time-inputs">
+                    <div className="form-group">
+                      <label>Interview Time</label>
+                      <input
+                        type="time"
+                        value={selectedTime}
+                        onChange={(e) => handleTimeSelect(e.target.value)}
+                        className="time-input"
+                      />
                     </div>
                   </div>
-                )}
+                </div>
 
-                {selectedTime && (
+                {selectedDate && selectedTime && (
                   <>
                     <div className="form-section">
                       <h3>Interview Type</h3>
@@ -150,57 +349,86 @@ const InterviewSchedulingInterface = () => {
                           className={`type-button ${interviewType === 'onsite' ? 'selected' : ''}`}
                           onClick={() => handleInterviewTypeChange('onsite')}
                         >
-                          On-site
+                          On-site Interview
                         </button>
                         <button
                           className={`type-button ${interviewType === 'online' ? 'selected' : ''}`}
                           onClick={() => handleInterviewTypeChange('online')}
                         >
-                          Online
+                          Online Interview
+                        </button>
+                        <button
+                          className={`type-button ${interviewType === 'phone' ? 'selected' : ''}`}
+                          onClick={() => handleInterviewTypeChange('phone')}
+                        >
+                          Phone Interview
                         </button>
                       </div>
                     </div>
 
                     <div className="form-section">
-                      <h3>Interviewers</h3>
-                      <div className="interviewers-selection">
-                        <select
-                          onChange={(e) => handleInterviewerAdd(e.target.value)}
-                          value=""
-                          className="interviewer-select"
-                        >
-                          <option value="">Select Interviewer</option>
-                          <option value="Sarah Johnson">Sarah Johnson</option>
-                          <option value="Mike Brown">Mike Brown</option>
-                          <option value="Lisa Chen">Lisa Chen</option>
-                        </select>
-                        <div className="selected-interviewers">
-                          {interviewers.map(interviewer => (
-                            <div key={interviewer} className="interviewer-tag">
-                              {interviewer}
-                              <button
-                                onClick={() => handleInterviewerRemove(interviewer)}
-                                className="remove-interviewer"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                      <h3>Interview Location</h3>
+                      <div className="location-input-container">
+                        <input
+                          type="text"
+                          className="location-input"
+                          placeholder={
+                            interviewType === 'onsite' 
+                              ? 'Enter office address, meeting room, or specific location'
+                              : interviewType === 'online'
+                              ? 'Online meeting link will be provided'
+                              : 'Phone number will be provided'
+                          }
+                          value={interviewLocation}
+                          onChange={(e) => setInterviewLocation(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-section">
+                      <h3>Interview Instructions</h3>
+                      <textarea
+                        className="interview-instructions"
+                        placeholder="Enter any special instructions for the interview (e.g., documents to bring, meeting location, technical requirements, etc.)"
+                        value={interviewInstructions}
+                        onChange={(e) => setInterviewInstructions(e.target.value)}
+                        rows={4}
+                      />
+                    </div>
+
+                    <div className="interview-summary">
+                      <h4>Interview Summary</h4>
+                      <div className="summary-details">
+                        <p><strong>Candidate:</strong> {candidateName}</p>
+                        <p><strong>Email:</strong> {candidateEmail}</p>
+                        <p><strong>Phone:</strong> {candidatePhone}</p>
+                        <p><strong>Position:</strong> {candidatePosition}</p>
+                        <p><strong>Department:</strong> {candidateDepartment}</p>
+                        <p><strong>Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p><strong>Time:</strong> {new Date(`2000-01-01T${selectedTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                        <p><strong>Type:</strong> {interviewType.charAt(0).toUpperCase() + interviewType.slice(1)} Interview</p>
+                        <p><strong>Location:</strong> {interviewLocation || 'Not specified'}</p>
+                        {interviewInstructions && (
+                          <p><strong>Instructions:</strong> {interviewInstructions}</p>
+                        )}
                       </div>
                     </div>
 
                     <button
                       className="schedule-button"
                       onClick={handleScheduleInterview}
-                      disabled={!selectedDate || !selectedTime || interviewers.length === 0}
+                      disabled={!candidateName || !candidateEmail || !selectedDate || !selectedTime || !interviewLocation}
                     >
                       Schedule Interview
                     </button>
 
                     {notificationSent && (
                       <div className="notification-success">
-                        Interview scheduled successfully! Notifications sent to all participants.
+                        <div className="success-icon">✓</div>
+                        <div className="success-content">
+                          <h4>Interview Scheduled Successfully!</h4>
+                          <p>Interview details have been sent to {candidateName} ({candidateEmail})</p>
+                        </div>
                       </div>
                     )}
                   </>
@@ -209,7 +437,9 @@ const InterviewSchedulingInterface = () => {
             </>
           ) : (
             <div className="no-candidate-selected">
-              <p>Select a candidate to schedule an interview</p>
+              <div className="no-selection-icon">📅</div>
+              <h3>Select a Candidate</h3>
+              <p>Choose a shortlisted candidate from the left panel to schedule their interview</p>
             </div>
           )}
         </div>
@@ -218,4 +448,4 @@ const InterviewSchedulingInterface = () => {
   );
 };
 
-export default InterviewSchedulingInterface; 
+export default InterviewSchedulingInterface;

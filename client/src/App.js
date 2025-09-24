@@ -21,6 +21,7 @@ import Applications from './components/applications/Applications';
 // HR Management Components
 import JobPostingsDashboard from './components/recruitment/JobPostingsDashboard';
 import CandidateApplicationManagement from './components/recruitment/CandidateApplicationManagement';
+import CandidateProfile from './components/recruitment/CandidateProfile';
 import ResumeParsingInterface from './components/recruitment/ResumeParsingInterface';
 import InterviewSchedulingInterface from './components/recruitment/InterviewSchedulingInterface';
 import InterviewFeedbackRecording from './components/recruitment/InterviewFeedbackRecording';
@@ -68,7 +69,7 @@ const App = () => {
               <Route path="/jobs/:id" element={<JobDetails />} />
               <Route path="/jobs/:id/apply" element={<ApplicationForm />} />
               <Route path="/applications" element={<ApplicationList />} />
-              <Route path="/applicant-dashboard/applications" element={<Applications />} />
+              <Route path="/applicant-dashboard/applications" element={<ApplicationList />} />
               <Route path="/applications/new/:id" element={<ApplicationForm />} />
               <Route path="/dashboard" element={<HRDashboard />} />
               <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
@@ -81,6 +82,7 @@ const App = () => {
               {/* HR Management Routes */}
               <Route path="/hr/job-postings" element={<JobPostingsDashboard />} />
               <Route path="/hr/candidate-applications" element={<CandidateApplicationManagement />} />
+              <Route path="/hr/candidate-profile/:applicationId" element={<CandidateProfile />} />
               <Route path="/hr/interview-scheduling" element={<InterviewSchedulingInterface />} />
               <Route path="/hr/interview-feedback" element={<InterviewFeedbackRecording />} />
               <Route path="/hr/offer-letters" element={<OfferLetterGeneration />} />

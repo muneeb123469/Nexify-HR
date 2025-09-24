@@ -18,24 +18,42 @@ export const AuthProvider = ({ children }) => {
   const API_URL = 'http://localhost:5000/api';
 
   // Load user from localStorage on initial mount
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem('user');
+  //   if (storedUser) {
+  //     try {
+  //       const parsedUser = JSON.parse(storedUser);
+  //       setUser(parsedUser);
+  //     } catch (error) {
+  //       console.error('Error parsing stored user:', error);
+  //       localStorage.removeItem('user');
+  //     }
+  //   }
+  //   setLoading(false);
+  // }, []);
+  
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('token');
+
+    if (storedUser && storedToken) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
+        // Set axios default header for restored sessions
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
     }
     setLoading(false);
   }, []);
-
   const login = async (email, password, role) => {
     try {
       setError(null);
-      
+
       // Validate input
       if (!email || !password) {
         throw new Error('Please provide both email and password');
@@ -43,11 +61,11 @@ export const AuthProvider = ({ children }) => {
 
       // Trim and lowercase email
       const trimmedEmail = email.trim().toLowerCase();
-      
-      console.log('Attempting login:', { 
-        email: trimmedEmail, 
+
+      console.log('Attempting login:', {
+        email: trimmedEmail,
         role,
-        hasPassword: !!password 
+        hasPassword: !!password
       });
 
       const response = await axios.post(`${API_URL}/auth/login`, {
@@ -55,21 +73,21 @@ export const AuthProvider = ({ children }) => {
         password,
         role
       });
-      
+
       if (response.data.token && response.data.user) {
         const userData = response.data.user;
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', response.data.token);
-        
+
         // Set default authorization header for future requests
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        
-        console.log('Login successful:', { 
+
+        console.log('Login successful:', {
           user: userData,
-          hasToken: !!response.data.token 
+          hasToken: !!response.data.token
         });
-        
+
         return userData;
       } else {
         throw new Error('Invalid response format from server');
@@ -110,16 +128,16 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await axios.post(`${API_URL}/auth/register`, userData);
-      
+
       if (response.data.token && response.data.user) {
         const newUser = response.data.user;
         setUser(newUser);
         localStorage.setItem('user', JSON.stringify(newUser));
         localStorage.setItem('token', response.data.token);
-        
+
         // Set default authorization header for future requests
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        
+
         return newUser;
       } else {
         throw new Error('Invalid response format from server');

@@ -60,7 +60,7 @@ router.delete('/:id', async (req, res) => {
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
-    await job.remove();
+    await Job.findByIdAndDelete(req.params.id);
     res.json({ message: 'Job deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

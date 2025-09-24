@@ -217,4 +217,42 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router; 
+// Test endpoint to create HR user (remove in production)
+router.post('/create-test-hr', async (req, res) => {
+  try {
+    // Check if test HR user already exists
+    const existingHR = await User.findOne({ email: 'hr@test.com' });
+    if (existingHR) {
+      return res.json({ 
+        message: 'Test HR user already exists',
+        email: 'hr@test.com',
+        password: 'hr123456'
+      });
+    }
+
+    // Create test HR user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('hr123456', salt);
+
+    const testHR = new User({
+      username: 'testhr',
+      email: 'hr@test.com',
+      password: hashedPassword,
+      role: 'hr'
+    });
+
+    await testHR.save();
+
+    res.json({ 
+      message: 'Test HR user created successfully',
+      email: 'hr@test.com',
+      password: 'hr123456',
+      note: 'Use these credentials to login and test interview scheduling'
+    });
+  } catch (error) {
+    console.error('Error creating test HR user:', error);
+    res.status(500).json({ message: 'Error creating test HR user' });
+  }
+});
+
+module.exports = router;
