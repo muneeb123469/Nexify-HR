@@ -48,7 +48,27 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
       }
     }
+
+    // Add axios response interceptor to handle token expiration globally
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          const errorCode = error.response?.data?.code;
+          if (errorCode === 'TOKEN_EXPIRED' || errorCode === 'TOKEN_INVALID' || errorCode === 'NO_TOKEN') {
+            logout();
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
     setLoading(false);
+
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
   }, []);
   const login = async (email, password, role) => {
     try {
@@ -158,6 +178,8 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    // Clear axios default header
+    delete axios.defaults.headers.common['Authorization'];
   };
 
   const isAuthenticated = () => {
@@ -168,6 +190,29 @@ export const AuthProvider = ({ children }) => {
     return user?.role === role;
   };
 
+  // Check if token is expired and handle logout
+  const checkTokenExpiration = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    try {
+      // Decode JWT token to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp < currentTime) {
+        // Token is expired, logout user
+        logout();
+        return false;
+      }
+      return true;
+    } catch (error) {
+      // Invalid token format, logout user
+      logout();
+      return false;
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -176,7 +221,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated,
-    hasRole
+    hasRole,
+    checkTokenExpiration
   };
 
   return (

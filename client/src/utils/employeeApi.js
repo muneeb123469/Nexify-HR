@@ -14,6 +14,23 @@ const getAuthHeaders = () => {
   };
 };
 
+// Handle authentication errors
+const handleAuthError = (response, data) => {
+  if (response.status === 401) {
+    const errorCode = data?.code;
+    if (errorCode === 'TOKEN_EXPIRED' || errorCode === 'TOKEN_INVALID' || errorCode === 'NO_TOKEN') {
+      // Clear stored auth data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Redirect to login page
+      window.location.href = '/login';
+      
+      throw new Error('Session expired. Please login again.');
+    }
+  }
+};
+
 // Employee API functions
 export const employeeApi = {
   // Get all employees
@@ -27,6 +44,7 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to fetch employees');
       }
 
@@ -48,6 +66,7 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to fetch employee');
       }
 
@@ -70,6 +89,7 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to create employee');
       }
 
@@ -92,6 +112,7 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to update employee');
       }
 
@@ -113,6 +134,7 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to terminate employee');
       }
 
@@ -134,12 +156,59 @@ export const employeeApi = {
       const data = await response.json();
       
       if (!response.ok) {
+        handleAuthError(response, data);
         throw new Error(data.message || 'Failed to fetch managers');
       }
 
       return data;
     } catch (error) {
       console.error('Error fetching managers:', error);
+      throw error;
+    }
+  },
+
+  // Add skill to employee
+  addSkill: async (employeeId, skill) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/employees/${employeeId}/skills`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ skill })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        handleAuthError(response, data);
+        throw new Error(data.message || 'Failed to add skill');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error adding skill:', error);
+      throw error;
+    }
+  },
+
+  // Add project to employee
+  addProject: async (employeeId, project) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/employees/${employeeId}/projects`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ project })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        handleAuthError(response, data);
+        throw new Error(data.message || 'Failed to add project');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error adding project:', error);
       throw error;
     }
   }

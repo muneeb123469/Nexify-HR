@@ -22,4 +22,30 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle token expiration
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      const errorCode = error.response?.data?.code;
+      
+      // Handle token expiration
+      if (errorCode === 'TOKEN_EXPIRED' || errorCode === 'TOKEN_INVALID' || errorCode === 'NO_TOKEN') {
+        // Clear stored auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Redirect to login page
+        window.location.href = '/login';
+        
+        return Promise.reject(new Error('Session expired. Please login again.'));
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export default api;

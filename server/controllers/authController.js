@@ -1,9 +1,14 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET || '10', {
-    expiresIn: '30d'
+const generateToken = (userId, role) => {
+  return jwt.sign({
+    user: {
+      id: userId,
+      role: role
+    }
+  }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '24h' // Shorter expiration for better security
   });
 };
 
@@ -36,23 +41,23 @@ exports.signup = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'User already exists',
         field: existingUser.email === email ? 'email' : 'username'
       });
     }
 
     // Create new user
-    const user = new User({ 
-      username, 
-      email, 
+    const user = new User({
+      username,
+      email,
       password,
       role: role || 'applicant' // Default to applicant if no role specified
     });
     await user.save();
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       message: 'User created successfully',
@@ -66,9 +71,9 @@ exports.signup = async (req, res) => {
     });
   } catch (error) {
     console.error('Signup Error:', error);
-    res.status(500).json({ 
-      message: 'Error creating user', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    res.status(500).json({
+      message: 'Error creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -95,7 +100,7 @@ exports.login = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.json({
       message: 'Login successful',
@@ -109,9 +114,9 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ 
-      message: 'Error logging in', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    res.status(500).json({
+      message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 }; 

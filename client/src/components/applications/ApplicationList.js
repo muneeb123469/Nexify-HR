@@ -178,6 +178,26 @@ const ApplicationList = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Helper function to format salary
+  const formatSalary = (salary) => {
+    if (!salary) {
+      return 'Salary not specified';
+    }
+    
+    if (typeof salary === 'string') {
+      return salary;
+    }
+    
+    if (typeof salary === 'object' && salary.min !== undefined && salary.max !== undefined) {
+      const currency = salary.currency || 'USD';
+      const min = salary.min?.toLocaleString() || '0';
+      const max = salary.max?.toLocaleString() || '0';
+      return `$${min} - $${max} ${currency}`;
+    }
+    
+    return 'Salary not specified';
+  };
+
   useEffect(() => {
     // Fetch user's applications (not job-specific)
     fetchApplications();
@@ -346,7 +366,7 @@ const ApplicationList = () => {
               {application.job?.salary && (
                 <Info>
                   <i className="fas fa-dollar-sign"></i>
-                  {application.job.salary}
+                  {formatSalary(application.job.salary)}
                 </Info>
               )}
 

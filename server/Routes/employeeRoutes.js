@@ -25,6 +25,10 @@ router.get('/employees', auth, async (req, res) => {
         email: emp.email,
         department: emp.department,
         role: emp.jobTitle,
+        category: emp.category,
+        level: emp.level,
+        skills: emp.skills || [],
+        projects: emp.projects || [],
         phone: emp.phone,
         status: emp.status,
         hireDate: emp.hireDate,
@@ -64,6 +68,10 @@ router.get('/employees/:id', auth, async (req, res) => {
         email: employee.email,
         department: employee.department,
         role: employee.jobTitle,
+        category: employee.category,
+        level: employee.level,
+        skills: employee.skills || [],
+        projects: employee.projects || [],
         phone: employee.phone,
         status: employee.status,
         hireDate: employee.hireDate,
@@ -127,6 +135,13 @@ router.post('/employees', auth, async (req, res) => {
 
     await employee.save();
 
+    console.log('Employee created successfully:', {
+      id: employee._id,
+      employeeId: employee.employeeId,
+      name: employee.username,
+      email: employee.email
+    });
+
     res.status(201).json({
       success: true,
       message: 'Employee created successfully',
@@ -143,11 +158,36 @@ router.post('/employees', auth, async (req, res) => {
         salary: employee.salary,
         lastModified: employee.updatedAt,
         createdAt: employee.createdAt
-      }
+      },
+      tempPassword: 'temp123456' // Include temp password in response for HR to share with employee
     });
   } catch (error) {
     console.error('Error creating employee:', error);
-    res.status(500).json({ message: 'Error creating employee' });
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      let message = 'Duplicate entry found';
+      
+      if (field === 'employeeId') {
+        message = 'Employee ID already exists. Please try again.';
+      } else if (field === 'email') {
+        message = 'Email address already exists';
+      } else if (field === 'username') {
+        message = 'Username already exists';
+      }
+      
+      return res.status(400).json({ 
+        message,
+        field,
+        duplicateValue: error.keyValue[field]
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Error creating employee',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
@@ -274,6 +314,144 @@ router.get('/managers', auth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching managers:', error);
     res.status(500).json({ message: 'Error fetching managers' });
+  }
+});
+
+// Add skill to employee
+router.post('/employees/:id/skills', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    }
+
+    const { skill } = req.body;
+    if (!skill || !skill.trim()) {
+      return res.status(400).json({ message: 'Skill is required' });
+    }
+
+    const employee = await User.findById(req.params.id);
+    if (!employee || employee.role !== 'employee') {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Check if skill already exists
+    if (employee.skills && employee.skills.includes(skill.trim())) {
+      return res.status(400).json({ message: 'Skill already exists' });
+    }
+
+    // Add skill
+    if (!employee.skills) employee.skills = [];
+    employee.skills.push(skill.trim());
+    await employee.save();
+
+    res.json({
+      success: true,
+      message: 'Skill added successfully',
+      skills: employee.skills
+    });
+  } catch (error) {
+    console.error('Error adding skill:', error);
+    res.status(500).json({ message: 'Error adding skill' });
+  }
+});
+
+// Add project to employee
+router.post('/employees/:id/projects', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    }
+
+    const { project } = req.body;
+    if (!project || !project.trim()) {
+      return res.status(400).json({ message: 'Project is required' });
+    }
+
+    const employee = await User.findById(req.params.id);
+    if (!employee || employee.role !== 'employee') {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Check if project already exists
+    if (employee.projects && employee.projects.includes(project.trim())) {
+      return res.status(400).json({ message: 'Project already exists' });
+    }
+
+    // Add project
+    if (!employee.projects) employee.projects = [];
+    employee.projects.push(project.trim());
+    await employee.save();
+
+    res.json({
+      success: true,
+      message: 'Project added successfully',
+      projects: employee.projects
+    });
+  } catch (error) {
+    console.error('Error adding project:', error);
+    res.status(500).json({ message: 'Error adding project' });
+  }
+});
+
+// Fix employee IDs (admin endpoint)
+router.post('/fix-employee-ids', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    }
+
+    console.log('Starting employee ID fix...');
+    
+    // Find all employees
+    const employees = await User.find({ role: 'employee' }).sort({ createdAt: 1 });
+    
+    // Track used IDs and fix duplicates
+    const usedIds = new Set();
+    let nextNumber = 1;
+    let fixedCount = 0;
+    
+    for (const employee of employees) {
+      let newId;
+      let needsUpdate = false;
+      
+      // If employee has no ID or ID is already used, generate new one
+      if (!employee.employeeId || usedIds.has(employee.employeeId)) {
+        needsUpdate = true;
+        do {
+          newId = `EMP${String(nextNumber).padStart(3, '0')}`;
+          nextNumber++;
+        } while (usedIds.has(newId));
+      } else {
+        newId = employee.employeeId;
+        // Extract number to keep sequence consistent
+        const currentNumber = parseInt(newId.replace('EMP', ''));
+        if (currentNumber >= nextNumber) {
+          nextNumber = currentNumber + 1;
+        }
+      }
+      
+      usedIds.add(newId);
+      
+      // Update if needed
+      if (needsUpdate) {
+        await User.updateOne(
+          { _id: employee._id },
+          { $set: { employeeId: newId } }
+        );
+        fixedCount++;
+        console.log(`Fixed employee ${employee.username}: -> ${newId}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Employee ID fix completed. Fixed ${fixedCount} employees.`,
+      fixedCount,
+      totalEmployees: employees.length
+    });
+  } catch (error) {
+    console.error('Error fixing employee IDs:', error);
+    res.status(500).json({ message: 'Error fixing employee IDs' });
   }
 });
 

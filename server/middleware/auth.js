@@ -19,7 +19,10 @@ const auth = async (req, res, next) => {
     
     // Check if the token exists
     if (!token) {
-      return res.status(401).json({ message: 'No authentication token, access denied' });
+      return res.status(401).json({ 
+        message: 'No authentication token, access denied',
+        code: 'NO_TOKEN'
+      });
     }
 
     // Verify the JWT token
@@ -36,7 +39,10 @@ const auth = async (req, res, next) => {
     // Check if the user exists
     if (!user) {
       console.log('Auth middleware - User not found for ID:', userId);
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ 
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
     // Log the user details
@@ -51,8 +57,33 @@ const auth = async (req, res, next) => {
     // Log the error
     console.error('Auth middleware error:', error);
     
-    // Return a 401 Unauthorized response
-    res.status(401).json({ message: 'Token is not valid' });
+    // Handle specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        message: 'Token has expired. Please login again.',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        message: 'Invalid token format',
+        code: 'INVALID_TOKEN'
+      });
+    }
+    
+    if (error.name === 'NotBeforeError') {
+      return res.status(401).json({ 
+        message: 'Token not active yet',
+        code: 'TOKEN_NOT_ACTIVE'
+      });
+    }
+    
+    // Return a 401 Unauthorized response for other errors
+    res.status(401).json({ 
+      message: 'Token is not valid',
+      code: 'TOKEN_INVALID'
+    });
   }
 };
 
@@ -70,7 +101,7 @@ const authorize = (...roles) => {
     // Check if the user has the required role
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ 
-        message: `User role ${req.user.role} is not authorized to access this route` 
+        message: `User role ${req.user.role} is not authorized to access this route`  
       });
     }
     
