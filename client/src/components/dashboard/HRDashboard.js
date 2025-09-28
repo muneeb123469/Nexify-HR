@@ -27,6 +27,9 @@ import EmployeeClassification from '../employee-management/EmployeeClassificatio
 import WellnessFitnessDashboard from '../remote-work/WellnessFitnessDashboard';
 import RemoteWorkHoursTracker from '../remote-work/RemoteWorkHoursTracker';
 
+// Import Meeting Component
+import Meeting from '../interviews/Meeting';
+
 // Styled Components
 const AppContainer = styled.div`
   display: flex;
@@ -287,7 +290,7 @@ const GridItem = styled.div`
 `;
 
 // Components
-const Sidebar = () => (
+export const Sidebar = () => (
   <SidebarContainer>
     <Logo>
       <h1>Nexify<span>-HR</span></h1>
@@ -318,6 +321,12 @@ const Sidebar = () => (
         <NavLink to="/hr/interview-scheduling" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-calendar-check"></i>
           <span>Interview Scheduling</span>
+        </NavLink>
+      </MenuItem>
+      <MenuItem>
+        <NavLink to="/meetings" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-video"></i>
+          <span>Meetings</span>
         </NavLink>
       </MenuItem>
       <MenuItem>
@@ -1603,6 +1612,7 @@ const HRDashboard = () => {
         <Route path="/hr/candidate-applications" element={<CandidateApplicationManagement />} />
 
         <Route path="/hr/interview-scheduling" element={<InterviewSchedulingInterface />} />
+        <Route path="/meetings" element={<Meeting />} />
         <Route path="/hr/interview-feedback" element={<InterviewFeedbackRecording />} />
         <Route path="/hr/offer-letters" element={<OfferLetterGeneration />} />
         

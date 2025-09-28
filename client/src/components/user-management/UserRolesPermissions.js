@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { FaSearch, FaUserShield, FaUserCog, FaUserEdit, FaEye, FaLock, FaCheck, FaTimes, 
   FaFilter, FaSave, FaPlus, FaUserPlus, FaUserMinus, FaChevronDown, FaChevronUp, 
   FaEllipsisV, FaCalendarAlt, FaIdBadge, FaBuilding, FaInfoCircle } from 'react-icons/fa';
+import { AdminSideBar } from '../dashboard/AdminDashboard';
 
 const UserRolesPermissions = () => {
   const [users, setUsers] = useState([
@@ -229,6 +230,8 @@ const UserRolesPermissions = () => {
   });
 
   return (
+    <div style={{ display: "flex" }}>
+    <AdminSideBar/>
     <Container>
       <Header>
         <HeaderContent>
@@ -459,6 +462,7 @@ const UserRolesPermissions = () => {
         )}
       </ContentContainer>
     </Container>
+    </div>
   );
 };
 
@@ -488,8 +492,6 @@ const SortIndicator = ({ direction }) => (
 // Styled Components
 const Container = styled.div`
   padding: 0;
-  max-width: 100%;
-  margin: 0;
   background-color: #F8F9FA;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

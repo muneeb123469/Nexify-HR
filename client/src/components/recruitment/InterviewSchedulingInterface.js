@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './InterviewSchedulingInterface.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const InterviewSchedulingInterface = () => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const InterviewSchedulingInterface = () => {
   const [interviewLocation, setInterviewLocation] = useState('');
   const [interviewInstructions, setInterviewInstructions] = useState('');
   const [notificationSent, setNotificationSent] = useState(false);
-  
+
   // Editable candidate details
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
@@ -22,10 +23,7 @@ const InterviewSchedulingInterface = () => {
   const [candidatePosition, setCandidatePosition] = useState('');
   const [candidateDepartment, setCandidateDepartment] = useState('');
 
-  const timeSlots = [
-    '09:00 AM', '10:00 AM', '11:00 AM',
-    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'
-  ];
+
 
   // Fetch shortlisted candidates from API
   useEffect(() => {
@@ -36,14 +34,14 @@ const InterviewSchedulingInterface = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch applications with shortlisted status
       const response = await fetch('http://localhost:5000/api/applications?status=shortlisted');
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setShortlistedCandidates(data);
     } catch (err) {
@@ -62,7 +60,7 @@ const InterviewSchedulingInterface = () => {
     setCandidatePhone(candidate.phone || '');
     setCandidatePosition(candidate.job?.title || '');
     setCandidateDepartment(candidate.job?.department || '');
-    
+
     setSelectedDate('');
     setSelectedTime('');
     setInterviewType('onsite');
@@ -98,7 +96,54 @@ const InterviewSchedulingInterface = () => {
     try {
       // Show loading state
       setNotificationSent(false);
-      
+
+      let meetingUrl = null;
+
+      // If it's an online interview, generate a meeting URL and save to database
+      if (interviewType === 'online') {
+        // Generate a unique meeting room ID for Jitsi
+        const meetingId = `HRInterview${Date.now()}`;
+
+        // Create HR moderator URL (joins as moderator, no waiting)
+        const hrModeratorUrl = `https://meet.jit.si/${meetingId}#userInfo.displayName="HR%20Representative"&config.startWithAudioMuted=false&config.startWithVideoMuted=false`;
+
+        // Create applicant URL (regular participant, waits for moderator)
+        const applicantUrl = `https://meet.jit.si/${meetingId}#userInfo.displayName="${encodeURIComponent(candidateName)}"`;
+
+        // Use applicant URL as the main meeting URL (this goes in the email)
+        meetingUrl = applicantUrl;
+
+        console.log('HR Moderator URL:', hrModeratorUrl);
+        console.log('Applicant URL:', applicantUrl);
+
+        // Save meeting details to database
+        const meetingData = {
+          date: selectedDate,
+          time: selectedTime,
+          participantNames: [candidateName, 'HR Representative'],
+          duration: 60, // Default 60 minutes
+          meetingUrl: applicantUrl, // Applicant URL (waits for moderator)
+          hrModeratorUrl: hrModeratorUrl // HR URL (joins as moderator)
+        };
+
+        try {
+          const meetingResponse = await fetch('http://localhost:5000/api/meetings/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(meetingData)
+          });
+
+          if (meetingResponse.ok) {
+            const meetingResult = await meetingResponse.json();
+            console.log('Meeting saved to database:', meetingResult);
+          } else {
+            console.error('Failed to save meeting to database');
+          }
+        } catch (error) {
+          console.error('Error saving meeting:', error);
+        }
+      }
+
       // Prepare interview data
       const interviewData = {
         candidateName,
@@ -109,7 +154,7 @@ const InterviewSchedulingInterface = () => {
         date: selectedDate,
         time: selectedTime,
         type: interviewType,
-        location: interviewLocation,
+        location: meetingUrl || interviewLocation, // Use meeting URL if online interview
         instructions: interviewInstructions
       };
 
@@ -128,12 +173,14 @@ const InterviewSchedulingInterface = () => {
         // Success - email sent successfully
         console.log('Interview scheduled successfully:', result);
         setNotificationSent(true);
-        
-        // Optional: Show success message with more details
+
+        // Show success message
+        const successMessage = `Interview scheduled successfully!\nEmail sent to: ${candidateEmail}\nMessage ID: ${result.data.messageId}`;
+
         setTimeout(() => {
-          alert(`Interview scheduled successfully!\nEmail sent to: ${candidateEmail}\nMessage ID: ${result.data.messageId}`);
+          alert(successMessage);
         }, 1000);
-        
+
       } else {
         // Handle API errors
         console.error('Interview scheduling failed:', result);
@@ -158,16 +205,7 @@ const InterviewSchedulingInterface = () => {
     });
   };
 
-  // Generate available dates (next 7 days for demo)
-  const generateAvailableDates = () => {
-    const dates = [];
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      dates.push(date.toISOString().split('T')[0]);
-    }
-    return dates;
-  };
+
 
   if (loading) {
     return (
@@ -191,6 +229,8 @@ const InterviewSchedulingInterface = () => {
   }
 
   return (
+    <>
+       <Sidebar/>
     <div className="interview-scheduling-interface">
       <div className="scheduling-header">
         <h1>Interview Scheduling</h1>
@@ -252,8 +292,8 @@ const InterviewSchedulingInterface = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Candidate Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={candidateName}
                         onChange={(e) => setCandidateName(e.target.value)}
                         className="editable-input"
@@ -262,8 +302,8 @@ const InterviewSchedulingInterface = () => {
                     </div>
                     <div className="form-group">
                       <label>Email</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         value={candidateEmail}
                         onChange={(e) => setCandidateEmail(e.target.value)}
                         className="editable-input"
@@ -274,8 +314,8 @@ const InterviewSchedulingInterface = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Phone Number</label>
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         value={candidatePhone}
                         onChange={(e) => setCandidatePhone(e.target.value)}
                         className="editable-input"
@@ -284,8 +324,8 @@ const InterviewSchedulingInterface = () => {
                     </div>
                     <div className="form-group">
                       <label>Position Applied</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={candidatePosition}
                         onChange={(e) => setCandidatePosition(e.target.value)}
                         className="editable-input"
@@ -296,8 +336,8 @@ const InterviewSchedulingInterface = () => {
                   <div className="form-row">
                     <div className="form-group full-width">
                       <label>Department</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={candidateDepartment}
                         onChange={(e) => setCandidateDepartment(e.target.value)}
                         className="editable-input"
@@ -373,11 +413,11 @@ const InterviewSchedulingInterface = () => {
                           type="text"
                           className="location-input"
                           placeholder={
-                            interviewType === 'onsite' 
+                            interviewType === 'onsite'
                               ? 'Enter office address, meeting room, or specific location'
                               : interviewType === 'online'
-                              ? 'Online meeting link will be provided'
-                              : 'Phone number will be provided'
+                                ? 'Online meeting link will be provided'
+                                : 'Phone number will be provided'
                           }
                           value={interviewLocation}
                           onChange={(e) => setInterviewLocation(e.target.value)}
@@ -445,6 +485,7 @@ const InterviewSchedulingInterface = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

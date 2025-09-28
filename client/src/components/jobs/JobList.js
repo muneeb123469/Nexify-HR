@@ -4,11 +4,11 @@ import { useJobs } from '../../context/JobContext';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
+import { ApplicantSideBar } from '../dashboard/ApplicantDashboard';
 
 const Container = styled.div`
-  padding: 2rem;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left:20%;
 `;
 
 const Header = styled.div`
@@ -120,6 +120,8 @@ const JobList = () => {
   if (error) return <Container>Error: {error}</Container>;
 
   return (
+    <>
+    <ApplicantSideBar/>
     <Container>
       {/* <Header>
         <Title>Job Listings</Title>
@@ -170,6 +172,7 @@ const JobList = () => {
         ))}
       </JobGrid>
     </Container>
+        </>
   );
 };
 

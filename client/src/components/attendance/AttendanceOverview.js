@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationCircle } from 'react-icons/fa';
+import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 
 const Container = styled.div`
-  padding: 24px;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left:20%;
 `;
 
 const Grid = styled.div`
@@ -221,6 +221,8 @@ const AttendanceOverview = () => {
   };
   
   return (
+    <div>
+    <EmployerSideBar/>
     <Container>
       <Grid>
         <Card>
@@ -302,6 +304,7 @@ const AttendanceOverview = () => {
         </Card>
       </Grid>
     </Container>
+        </div>
   );
 };
 

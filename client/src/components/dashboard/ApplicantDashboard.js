@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import axios from 'axios';
 import JobList from '../jobs/JobList';
 import ApplicationList from '../applications/ApplicationList';
 import InterviewHistory from '../interviews/InterviewHistory';
@@ -187,13 +188,49 @@ function InterviewSchedule({ interviews }) {
 }
 
 // Profile Management Component
-function ProfileManagement({ profile, onUpdate }) {
+function ProfileManagement({ profile, onUpdate, isLoading }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSave = () => {
-    onUpdate(editedProfile);
+  useEffect(() => {
+    setEditedProfile(profile);
+  }, [profile]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onUpdate(editedProfile);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedProfile(profile);
     setIsEditing(false);
+    setError(null);
+  };
+
+  const handleSkillAdd = (newSkill) => {
+    if (newSkill.trim() && !editedProfile.skills.includes(newSkill.trim())) {
+      setEditedProfile({
+        ...editedProfile,
+        skills: [...editedProfile.skills, newSkill.trim()]
+      });
+    }
+  };
+
+  const handleSkillRemove = (skillToRemove) => {
+    setEditedProfile({
+      ...editedProfile,
+      skills: editedProfile.skills.filter(skill => skill !== skillToRemove)
+    });
   };
 
   return (
@@ -640,7 +677,7 @@ function CompanyMessages({ applicantName }) {
 }
 
 // Add SidebarItem component for better organization
-function SidebarItem({ icon, text, active = false, onClick }) {
+ function SidebarItem({ icon, text, active = false, onClick }) {
   return (
     <button 
       className={`w-full flex items-center p-3 rounded-md transition-all duration-200 ${
@@ -679,7 +716,67 @@ function MobileSidebar({ isOpen, onClose, children }) {
     </>
   );
 }
+export const ApplicantSideBar=()=>{
+    const { user, logout } = useAuth();
+      const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+  return (
+         <div className="sidebar">
+        <div className="logo">
+          <h1>Nexify<span>HR</span></h1>
+        </div>
+        
+        <SidebarMenu>
+          <MenuItem>
+            <NavLink to="/applicant-dashboard" end>
+              <i className="fas fa-home"></i>
+              Dashboard
+            </NavLink>
+          </MenuItem>
+          <MenuItem>
+            <NavLink to="/jobs">
+              <i className="fas fa-briefcase"></i>
+              Browse Jobs
+            </NavLink>
+          </MenuItem>
+          <MenuItem>
+            <NavLink to="/applicant-dashboard/applications">
+              <i className="fas fa-file-alt"></i>
+              My Applications
+            </NavLink>
+          </MenuItem>
+          <MenuItem>
+            <NavLink to="/applicant-dashboard/interviews">
+              <i className="fas fa-calendar-alt"></i>
+              Interview History
+            </NavLink>
+          </MenuItem>
+          <MenuItem>
+            <NavLink to="/self-service/personal-info">
+              <i className="fas fa-user"></i>
+              My Profile
+            </NavLink>
+          </MenuItem>
+          {/* <MenuItem>
+            <NavLink to="/applicant-dashboard/resume-parsing">
+              <i className="fas fa-file-upload"></i>
+              Resume Parsing
+            </NavLink>
+          </MenuItem> */}
+        </SidebarMenu>
 
+        <div className="logout">
+          <button onClick={handleLogout}>
+            <i className="fas fa-sign-out-alt"></i>
+            Logout
+          </button>
+        </div>
+      </div>
+  )
+}
 const ApplicantDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -820,72 +917,16 @@ const ApplicantDashboard = () => {
     // Handle notification click (e.g., navigate to relevant page)
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const filteredApplications = applications.filter(app => 
     app.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.jobId.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   return (
     <div className="applicant-dashboard">
       {/* Sidebar */}
-      <div className="sidebar">
-        <div className="logo">
-          <h1>Nexify<span>HR</span></h1>
-        </div>
-        
-        <SidebarMenu>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard" end>
-              <i className="fas fa-home"></i>
-              Dashboard
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/jobs">
-              <i className="fas fa-briefcase"></i>
-              Browse Jobs
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard/applications">
-              <i className="fas fa-file-alt"></i>
-              My Applications
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard/interviews">
-              <i className="fas fa-calendar-alt"></i>
-              Interview History
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/self-service/personal-info">
-              <i className="fas fa-user"></i>
-              My Profile
-            </NavLink>
-          </MenuItem>
-          {/* <MenuItem>
-            <NavLink to="/applicant-dashboard/resume-parsing">
-              <i className="fas fa-file-upload"></i>
-              Resume Parsing
-            </NavLink>
-          </MenuItem> */}
-        </SidebarMenu>
-
-        <div className="logout">
-          <button onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i>
-            Logout
-          </button>
-        </div>
-      </div>
-
+      <ApplicantSideBar/>
       {/* Main Content */}
       <div className="main-content">
         <div className="header">

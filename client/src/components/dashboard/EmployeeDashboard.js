@@ -1416,13 +1416,12 @@ const MobileMenuButton = styled.button`
     display: block;
   }
 `;
+export const EmployerSideBar=()=>{
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-const EmployeeDashboard = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  return (
-    <DashboardContainer>
-      <MobileMenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+  return(
+    <>
+        <MobileMenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
         <FaThLarge />
       </MobileMenuButton>
       
@@ -1464,6 +1463,13 @@ const EmployeeDashboard = () => {
           Logout
         </LogoutButton>
       </Sidebar>
+      </>)
+}
+const EmployeeDashboard = () => {
+
+  return (
+    <DashboardContainer>
+     <EmployerSideBar/>
 
       <MainContent>
         <Header>

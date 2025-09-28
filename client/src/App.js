@@ -36,6 +36,7 @@ import PayrollTaxManagement from './components/employee-management/PayrollTaxMan
 import SalaryCalculation from './components/payroll-management/SalaryCalculation';
 import PayslipGeneration from './components/payroll-management/PayslipGeneration';
 import InterviewHistory from './components/interviews/InterviewHistory';
+import Meeting from './components/interviews/Meeting';
 // Performance and Analytics Components
 import GoalSettingDashboard from './components/performance-analytics/GoalSettingDashboard';
 
@@ -79,9 +80,11 @@ const App = () => {
               <Route path='/two-factor-authentication' element={<TwoFactorAuthentication/>}/>
               <Route path="/applicant-dashboard/interviews" element={<InterviewHistory />} />
               <Route path="/applicant-dashboard/resume-parsing" element={<ResumeParsingInterface />} />
+              <Route path="/meetings/:receiverId" element={<Meeting />} />
+              <Route path="/meetings" element={<Meeting />} />
               {/* HR Management Routes */}
               <Route path="/hr/job-postings" element={<JobPostingsDashboard />} />
-              <Route path="/hr/candidate-applications" element={<CandidateApplicationManagement />} />
+              <Route path="/hr/candidate-applications/:jobId?" element={<CandidateApplicationManagement />} />
               <Route path="/hr/candidate-profile/:applicationId" element={<CandidateProfile />} />
               <Route path="/hr/interview-scheduling" element={<InterviewSchedulingInterface />} />
               <Route path="/hr/interview-feedback" element={<InterviewFeedbackRecording />} />

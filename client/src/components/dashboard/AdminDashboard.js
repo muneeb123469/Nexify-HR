@@ -1054,23 +1054,17 @@ function RemoteWorkAnalytics() {
     </div>
   );
 }
-
-const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState('overview');
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  return (
-    <div className="flex h-screen bg-[#F8F9FA]">
-      {/* Mobile Menu Button */}
-      <button 
+export const AdminSideBar=()=>{
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [activeSection, setActiveSection] = useState('overview');
+  return(
+    <>
+     <button 
         className="fixed top-4 left-4 z-50 lg:hidden bg-[#4C9F9F] text-white p-2 rounded-md"
         onClick={() => setIsSidebarOpen(true)}
       >
         <Menu size={24} />
       </button>
-
       {/* Responsive Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
         <div className="flex flex-col h-full">
@@ -1341,6 +1335,17 @@ const AdminDashboard = () => {
           </div>
         </div>
       </MobileSidebar>
+      </>)
+}
+const AdminDashboard = () => {
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  return (
+    <div className="flex h-screen bg-[#F8F9FA]">
+      {/* Mobile Menu Button */}
+   
+     <AdminSideBar/>
       
       {/* Main Content */}
       <main className="flex-1 overflow-auto">

@@ -62,6 +62,24 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  address: {
+    type: String,
+    trim: true
+  },
+  emergencyContacts: [{
+    name: {
+      type: String,
+      trim: true
+    },
+    relationship: {
+      type: String,
+      trim: true
+    },
+    phone: {
+      type: String,
+      trim: true
+    }
+  }],
   status: {
     type: String,
     enum: ['Active', 'Inactive', 'Terminated'],

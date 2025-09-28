@@ -1,35 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import './PersonalInformationManagement.css';
 
+// Create axios instance with base configuration
+const apiClient = axios.create({
+  baseURL: 'http://localhost:5000/api'
+});
+
+// Add request interceptor to include token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 const PersonalInformationManagement = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [notification, setNotification] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Sample data - replace with actual data from your backend
+  // Real user data from database
   const [personalInfo, setPersonalInfo] = useState({
     basicInfo: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@company.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Main St, City, State 12345'
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: ''
     },
-    emergencyContacts: [
-      {
-        name: 'Jane Doe',
-        relationship: 'Spouse',
-        phone: '+1 (555) 987-6543'
-      }
-    ],
+    emergencyContacts: [],
     bankingInfo: {
-      bankName: 'Sample Bank',
-      accountNumber: '****1234',
-      routingNumber: '****5678'
+      bankName: '',
+      accountNumber: '',
+      routingNumber: ''
     }
   });
 
   const [editedInfo, setEditedInfo] = useState(personalInfo);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    // Add a small delay to ensure the component is fully mounted
+    const timer = setTimeout(() => {
+      fetchUserProfile();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      console.log('Token found:', !!token);
+
+      if (!token) {
+        setNotification({
+          type: 'error',
+          message: 'No authentication token found. Please log in again.'
+        });
+        return;
+      }
+
+      console.log('Fetching user profile...');
+      const response = await apiClient.get('/users/profile');
+
+      console.log('Profile response:', response.data);
+
+      if (response.data.success) {
+        const userData = response.data.user;
+
+        // Parse username into first and last name if available
+        const nameParts = userData.username ? userData.username.split(' ') : ['', ''];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const userInfo = {
+          basicInfo: {
+            firstName: firstName,
+            lastName: lastName,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || ''
+          },
+          emergencyContacts: userData.emergencyContacts || [],
+          bankingInfo: {
+            bankName: '',
+            accountNumber: '',
+            routingNumber: ''
+          }
+        };
+
+        setPersonalInfo(userInfo);
+        setEditedInfo(userInfo);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      console.error('Error details:', error.response?.data);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to load profile data. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = () => {
     setEditedInfo(personalInfo);
@@ -79,7 +167,7 @@ const PersonalInformationManagement = () => {
 
   const validateForm = () => {
     const { basicInfo, emergencyContacts } = editedInfo;
-    
+
     if (!basicInfo.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       setNotification({
         type: 'error',
@@ -109,34 +197,92 @@ const PersonalInformationManagement = () => {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    // Add to audit log
-    const timestamp = new Date().toISOString();
-    setAuditLog(prev => [
-      ...prev,
-      {
-        timestamp,
-        action: 'Update personal information',
-        details: 'Personal information updated'
-      }
-    ]);
+    try {
+      setSaving(true);
 
-    setPersonalInfo(editedInfo);
-    setIsEditing(false);
-    setNotification({
-      type: 'success',
-      message: 'Personal information updated successfully!'
-    });
+      // Prepare data for API
+      const updateData = {
+        username: `${editedInfo.basicInfo.firstName} ${editedInfo.basicInfo.lastName}`.trim(),
+        email: editedInfo.basicInfo.email,
+        phone: editedInfo.basicInfo.phone,
+        address: editedInfo.basicInfo.address,
+        emergencyContacts: editedInfo.emergencyContacts,
+        skills: [] // Keep existing skills
+      };
+
+      console.log('Updating profile with data:', updateData);
+
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setNotification({
+          type: 'error',
+          message: 'No authentication token found. Please log in again.'
+        });
+        return;
+      }
+
+      const response = await apiClient.put('/users/profile', updateData);
+
+      if (response.data.success) {
+        // Add to audit log
+        const timestamp = new Date().toISOString();
+        setAuditLog(prev => [
+          ...prev,
+          {
+            timestamp,
+            action: 'Update personal information',
+            details: 'Personal information updated successfully'
+          }
+        ]);
+
+        setPersonalInfo(editedInfo);
+        setIsEditing(false);
+        setNotification({
+          type: 'success',
+          message: 'Personal information updated successfully!'
+        });
+
+        // Clear notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to update profile. Please try again.'
+      });
+
+      // Clear notification after 5 seconds
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="personal-info-management">
+        <div className="dashboard-header">
+          <h1>Personal Information Management</h1>
+        </div>
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="personal-info-management">
       <div className="dashboard-header">
         <h1>Personal Information Management</h1>
         {!isEditing && (
-          <button className="edit-button" onClick={handleEdit}>
+          <button className="edit-button" onClick={handleEdit} disabled={saving}>
             Edit Information
           </button>
         )}
@@ -224,7 +370,7 @@ const PersonalInformationManagement = () => {
           </div>
         </div>
 
-        <div className="info-section">
+        {/* <div className="info-section">
           <h2>Banking Information</h2>
           <div className="info-grid">
             {Object.entries(isEditing ? editedInfo.bankingInfo : personalInfo.bankingInfo).map(([key, value]) => (
@@ -243,15 +389,15 @@ const PersonalInformationManagement = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {isEditing && (
           <div className="action-buttons">
-            <button className="cancel-button" onClick={handleCancel}>
+            <button className="cancel-button" onClick={handleCancel} disabled={saving}>
               Cancel
             </button>
-            <button className="save-button" onClick={handleSave}>
-              Save Changes
+            <button className="save-button" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         )}

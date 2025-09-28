@@ -5,11 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 import './ApplicationList.css';
+import { ApplicantSideBar } from '../dashboard/ApplicantDashboard';
 
 const Container = styled.div`
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin-left:20%;
 `;
 
 const Header = styled.div`
@@ -274,6 +274,7 @@ const ApplicationList = () => {
 
   if (error) {
     return (
+
       <Container>
         <ErrorMessage>
           <i className="fas fa-exclamation-triangle" style={{marginRight: '0.5rem'}}></i>
@@ -284,6 +285,8 @@ const ApplicationList = () => {
   }
 
   return (
+          <>
+      <ApplicantSideBar/>
     <Container>
       <Header>
         <Title>My Applications</Title>
@@ -413,6 +416,7 @@ const ApplicationList = () => {
         </ApplicationGrid>
       )}
     </Container>
+    </>
   );
 };
 

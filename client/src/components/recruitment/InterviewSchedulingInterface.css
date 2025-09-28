@@ -1,7 +1,6 @@
 .interview-scheduling-interface {
-  padding: 2rem;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left: 20%;
 }
 
 .scheduling-header {

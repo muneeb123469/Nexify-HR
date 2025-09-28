@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJobs } from '../../context/JobContext';
 import './JobPostingsDashboard.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const JobPostingsDashboard = () => {
   const navigate = useNavigate();
@@ -40,6 +41,8 @@ const JobPostingsDashboard = () => {
   }, [jobs, filters]);
 
   return (
+    <div>
+    <Sidebar/>
     <div className="job-postings-dashboard">
       <div className="dashboard-header">
         <h1>Job Postings Dashboard</h1>
@@ -114,13 +117,22 @@ const JobPostingsDashboard = () => {
                 className="view-details-btn"
                 onClick={() => navigate(`/jobs/${posting.id}`)}
               >
+              
                 View Details
+              </button>
+                  <button 
+                className="view-details-btn"
+                onClick={() => navigate(`/hr/candidate-applications/${posting.id}`)}
+              >
+              
+                View Applicantions
               </button>
             </div>
           ))}
         </div>
       )}
     </div>
+        </div>
   );
 };
 

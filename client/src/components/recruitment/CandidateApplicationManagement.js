@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useParams, useNavigate } from 'react-router-dom';
 import './CandidateApplicationManagement.css';
+import { Sidebar } from '../dashboard/HRDashboard';
+
 
 const CandidateApplicationManagement = () => {
+  const { jobId } = useParams();
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,7 @@ const CandidateApplicationManagement = () => {
       if (filters.candidateName) queryParams.append('candidateName', filters.candidateName);
       if (filters.jobTitle) queryParams.append('jobTitle', filters.jobTitle);
       if (filters.status) queryParams.append('status', filters.status);
+      if(jobId) queryParams.append('jobId',jobId)
       
       const response = await fetch(`http://localhost:5000/api/applications?${queryParams}`);
       
@@ -210,6 +214,8 @@ const CandidateApplicationManagement = () => {
   }
 
   return (
+    <>
+       <Sidebar/>
     <div className="candidate-application-management">
       <div className="management-header">
         <h1>Candidate Application Management</h1>
@@ -350,6 +356,7 @@ const CandidateApplicationManagement = () => {
         )}
       </div>
     </div>
+        </>
   );
 };
 

@@ -75,7 +75,9 @@ router.get('/', async (req, res) => {
     if (req.query.status) {
       query.status = req.query.status;
     }
-
+      if (req.query.jobId) {
+      query.job = req.query.jobId;
+    }
     console.log(`[${requestId}] Query filters:`, query);
     console.log(`[${requestId}] Job title filter:`, req.query.jobTitle);
 

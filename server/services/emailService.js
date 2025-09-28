@@ -87,7 +87,7 @@ const generateInterviewEmailHTML = (interviewDetails) => {
             
             <div class="detail-row">
               <span class="label">Location:</span>
-              <span class="value">${location}</span>
+              <span class="value">${type === 'online' && location.includes('meet.jit.si') ? `<a href="${location}" target="_blank" style="color: #3182ce; text-decoration: none;">Join Online Meeting</a>` : location}</span>
             </div>
           </div>
           
@@ -96,6 +96,15 @@ const generateInterviewEmailHTML = (interviewDetails) => {
               <h4 style="margin-top: 0; color: #2b6cb0;">📝 Special Instructions</h4>
               <p style="margin-bottom: 0;">${instructions}</p>
             </div>
+          ` : ''}
+          
+          ${type === 'online' && location.includes('meet.jit.si') ? `
+          <div style="background-color: #e6f3ff; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3182ce;">
+            <h4 style="margin: 0 0 10px 0; color: #2d3748;">🎥 Online Interview Instructions</h4>
+            <p style="margin: 5px 0;">Click the meeting link above at your scheduled time to join the interview.</p>
+            <p style="margin: 5px 0;">Please ensure you have a stable internet connection and test your camera/microphone beforehand.</p>
+            <p style="margin: 5px 0;"><strong>Meeting Link:</strong> <a href="${location}" target="_blank" style="color: #3182ce;">${location}</a></p>
+          </div>
           ` : ''}
           
           <p>Please confirm your attendance by replying to this email. If you need to reschedule, please contact us as soon as possible.</p>
@@ -141,6 +150,13 @@ Interview Details:
 - Time: ${formatTime(interviewDetails.time)}
 - Type: ${interviewDetails.type.charAt(0).toUpperCase() + interviewDetails.type.slice(1)} Interview
 - Location: ${interviewDetails.location}
+
+${interviewDetails.type === 'online' && interviewDetails.location.includes('meet.jit.si') ? `
+ONLINE INTERVIEW INSTRUCTIONS:
+- Click this link at your scheduled time: ${interviewDetails.location}
+- Ensure you have a stable internet connection
+- Test your camera and microphone beforehand
+` : ''}
 
 ${interviewDetails.instructions ? `Special Instructions: ${interviewDetails.instructions}` : ''}
 
