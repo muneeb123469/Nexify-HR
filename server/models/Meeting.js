@@ -28,6 +28,50 @@ const meetingSchema = new mongoose.Schema({
   interviewConducted: {
     type: Boolean,
     default: false
+  },
+  // Interview-specific fields
+  candidateEmail: {
+    type: String,
+    required: false
+  },
+  jobTitle: {
+    type: String,
+    required: false
+  },
+  company: {
+    type: String,
+    required: false
+  },
+  interviewType: {
+    type: String,
+    enum: ['Technical Interview', 'HR Interview', 'Behavioral Interview', 'Final Interview'],
+    required: false
+  },
+  interviewer: {
+    type: String,
+    required: false
+  },
+  location: {
+    type: String,
+    required: false
+  },
+  status: {
+    type: String,
+    enum: ['Upcoming', 'Completed', 'Cancelled'],
+    default: 'Upcoming'
+  },
+  result: {
+    type: String,
+    enum: ['Passed', 'Failed', 'Pending'],
+    required: false
+  },
+  feedback: {
+    type: String,
+    required: false
+  },
+  notes: {
+    type: String,
+    required: false
   }
 }, {
   timestamps: true
@@ -48,7 +92,14 @@ meetingSchema.statics.getAllMeetings = async function() {
 };
 
 meetingSchema.statics.markInterviewConducted = async function(meetingId) {
-  return await this.findByIdAndUpdate(meetingId, { interviewConducted: true }, { new: true });
+  return await this.findByIdAndUpdate(
+    meetingId, 
+    { 
+      interviewConducted: true,
+      status: 'Completed'
+    }, 
+    { new: true }
+  );
 };
 
 // Export the model with safety check to prevent overwrite errors

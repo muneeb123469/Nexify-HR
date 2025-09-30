@@ -866,29 +866,7 @@ const ApplicantDashboard = () => {
     }
   ];
 
-  // Mock data for interviews
-  const interviews = [
-    {
-      id: 1,
-      position: 'Senior Software Engineer',
-      company: 'Tech Corp',
-      date: 'March 25, 2024',
-      time: '10:00 AM',
-      mode: 'Virtual',
-      platform: 'Zoom',
-      location: null
-    },
-    {
-      id: 2,
-      position: 'Product Manager',
-      company: 'Innovate Inc',
-      date: 'March 28, 2024',
-      time: '2:00 PM',
-      mode: 'In-person',
-      platform: null,
-      location: '123 Tech Street, San Francisco, CA'
-    }
-  ];
+  // Interview data is now fetched from the API in the DashboardOverview component
 
   const handleViewDetails = (application) => {
     setSelectedApplication(application);
@@ -971,6 +949,68 @@ const ApplicantDashboard = () => {
 
 // Dashboard Overview Component
 const DashboardOverview = () => {
+  const [dashboardStats, setDashboardStats] = useState({
+    activeApplications: 0,
+    upcomingInterviews: 0,
+    completedInterviews: 0,
+    totalApplications: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch applications and interviews in parallel
+      const [applicationsResponse, interviewsResponse] = await Promise.all([
+        axios.get('http://localhost:5000/api/applications/user'),
+        axios.get('http://localhost:5000/api/meetings/applicant/interviews')
+      ]);
+
+      const applications = applicationsResponse.data;
+      const interviews = interviewsResponse.data;
+
+      // Calculate stats
+      const activeApplications = applications.filter(app => 
+        ['pending', 'reviewed', 'shortlisted'].includes(app.status.toLowerCase())
+      ).length;
+
+      const upcomingInterviews = interviews.filter(interview => 
+        interview.status === 'Upcoming'
+      ).length;
+
+      const completedInterviews = interviews.filter(interview => 
+        interview.status === 'Completed'
+      ).length;
+
+      setDashboardStats({
+        activeApplications,
+        upcomingInterviews,
+        completedInterviews,
+        totalApplications: applications.length
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Keep default values on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-overview">
+        <h2>Welcome to Your Dashboard</h2>
+        <div className="loading">Loading dashboard data...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-overview">
       <h2>Welcome to Your Dashboard</h2>
@@ -978,22 +1018,22 @@ const DashboardOverview = () => {
         <div className="stat-card">
           <i className="fas fa-briefcase"></i>
           <h3>Active Applications</h3>
-          <p>5</p>
+          <p>{dashboardStats.activeApplications}</p>
         </div>
         <div className="stat-card">
           <i className="fas fa-calendar-check"></i>
           <h3>Upcoming Interviews</h3>
-          <p>2</p>
+          <p>{dashboardStats.upcomingInterviews}</p>
         </div>
         <div className="stat-card">
           <i className="fas fa-check-circle"></i>
           <h3>Completed Interviews</h3>
-          <p>3</p>
+          <p>{dashboardStats.completedInterviews}</p>
         </div>
         <div className="stat-card">
           <i className="fas fa-file-alt"></i>
           <h3>Total Applications</h3>
-          <p>10</p>
+          <p>{dashboardStats.totalApplications}</p>
         </div>
       </div>
     </div>

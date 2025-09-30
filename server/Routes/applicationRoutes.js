@@ -114,7 +114,7 @@ router.get('/', async (req, res) => {
 // -----------------------
 // Submit a new application
 // -----------------------
-router.post('/', upload, async (req, res) => {
+router.post('/', auth, upload, async (req, res) => {
   const startTime = Date.now();
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 

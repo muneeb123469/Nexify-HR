@@ -1,58 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import './InterviewHistory.css';
 
 const InterviewHistory = () => {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all, upcoming, past
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockInterviews = [
-      {
-        id: 1,
-        jobTitle: 'Senior Software Engineer',
-        company: 'Tech Corp',
-        date: '2024-03-25',
-        time: '10:00 AM',
-        type: 'Technical Interview',
-        status: 'Upcoming',
-        interviewer: 'John Smith',
-        location: 'Virtual (Zoom)',
-        notes: 'Please prepare for coding questions and system design discussion'
-      },
-      {
-        id: 2,
-        jobTitle: 'Frontend Developer',
-        company: 'Web Solutions',
-        date: '2024-03-15',
-        time: '2:00 PM',
-        type: 'HR Interview',
-        status: 'Completed',
-        result: 'Passed',
-        feedback: 'Strong communication skills and good technical knowledge',
-        interviewer: 'Sarah Johnson',
-        location: 'Virtual (Teams)'
-      },
-      {
-        id: 3,
-        jobTitle: 'Full Stack Developer',
-        company: 'Digital Innovations',
-        date: '2024-03-10',
-        time: '11:00 AM',
-        type: 'Technical Interview',
-        status: 'Completed',
-        result: 'Failed',
-        feedback: 'Need to improve on system design concepts',
-        interviewer: 'Mike Brown',
-        location: 'Office'
-      }
-    ];
-
-    setInterviews(mockInterviews);
-    setLoading(false);
+    fetchInterviews();
   }, []);
+
+  const fetchInterviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get('http://localhost:5000/api/meetings/applicant/interviews');
+      
+      // Transform the data to match the expected format
+      const transformedInterviews = response.data.map(interview => ({
+        id: interview._id,
+        jobTitle: interview.jobTitle || 'Software Engineer Position',
+        company: interview.company || 'Nexify Technologies',
+        date: interview.date,
+        time: interview.time,
+        type: interview.interviewType || 'Technical Interview',
+        interviewType: interview.interviewType || 'Technical Interview',
+        status: interview.status || 'Upcoming',
+        interviewer: interview.interviewer || 'HR Representative',
+        location: interview.location || interview.meetingUrl || 'Location TBD',
+        notes: interview.notes,
+        result: interview.result,
+        feedback: interview.feedback,
+        duration: interview.duration,
+        meetingUrl: interview.meetingUrl
+      }));
+      
+      setInterviews(transformedInterviews);
+    } catch (err) {
+      console.error('Error fetching interviews:', err);
+      setError('Failed to load interview history. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -91,6 +87,20 @@ const InterviewHistory = () => {
     return <div className="loading">Loading interviews...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="error-container">
+        <div className="error-message">
+          <h2>Error Loading Interviews</h2>
+          <p>{error}</p>
+          <button onClick={fetchInterviews} className="retry-btn">
+            <i className="fas fa-refresh"></i> Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="interview-history">
       <div className="header">
@@ -109,7 +119,28 @@ const InterviewHistory = () => {
       </div>
 
       <div className="interviews-grid">
-        {filteredInterviews.map(interview => (
+        {filteredInterviews.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-content">
+              <i className="fas fa-calendar-times"></i>
+              <h3>No Interviews Found</h3>
+              <p>
+                {filter === 'all' 
+                  ? "You don't have any interviews scheduled yet." 
+                  : `No ${filter} interviews found.`}
+              </p>
+              {filter !== 'all' && (
+                <button 
+                  onClick={() => setFilter('all')} 
+                  className="show-all-btn"
+                >
+                  Show All Interviews
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          filteredInterviews.map(interview => (
           <div key={interview.id} className="interview-card">
             <div className="interview-header">
               <h3>{interview.jobTitle}</h3>
@@ -125,8 +156,8 @@ const InterviewHistory = () => {
               <p><i className="fas fa-calendar"></i> Date: {interview.date}</p>
               <p><i className="fas fa-clock"></i> Time: {interview.time}</p>
               <p><i className="fas fa-user"></i> Interviewer: {interview.interviewer}</p>
-              <p><i className="fas fa-map-marker-alt"></i> Location: {interview.location}</p>
-              <p><i className="fas fa-tag"></i> Type: {interview.type}</p>
+              <p><i className="fas fa-star"></i> We're excited to discuss your qualifications and explore how you can contribute to our innovative team</p>
+              <p><i className="fas fa-tag"></i> Type: {interview.interviewType || interview.type}</p>
               
               {interview.status === 'Completed' && (
                 <>
@@ -159,7 +190,8 @@ const InterviewHistory = () => {
               </div>
             )}
           </div>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

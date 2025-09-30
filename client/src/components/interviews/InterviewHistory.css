@@ -157,6 +157,103 @@
   color: #666;
 }
 
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 24px;
+}
+
+.error-message {
+  text-align: center;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  max-width: 400px;
+}
+
+.error-message h2 {
+  color: #FF5A5A;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+.error-message p {
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.retry-btn {
+  background-color: #4C9F9F;
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.retry-btn:hover {
+  background-color: #2A6F6F;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.empty-state-content {
+  text-align: center;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 48px 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  max-width: 400px;
+}
+
+.empty-state-content i {
+  font-size: 3rem;
+  color: #E0E0E0;
+  margin-bottom: 24px;
+}
+
+.empty-state-content h3 {
+  color: #2C3E50;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+}
+
+.empty-state-content p {
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.show-all-btn {
+  background-color: #4C9F9F;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.show-all-btn:hover {
+  background-color: #2A6F6F;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .header {

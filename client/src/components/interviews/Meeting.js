@@ -113,14 +113,14 @@ const Meeting = () => {
                         <FaVideo className="me-2" /> Join as HR (Moderator)
                       </a>
                     )}
-                    <a 
+                    {/* <a 
                       href={meeting.meetingUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="action-button secondary-button"
                     >
                       <FaVideo className="me-2" /> Applicant Link
-                    </a>
+                    </a> */}
                     <button 
                       onClick={() => copyLink(meeting.hrModeratorUrl || meeting.meetingUrl)}
                       className="action-button"

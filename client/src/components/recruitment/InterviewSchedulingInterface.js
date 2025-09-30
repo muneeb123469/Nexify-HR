@@ -123,7 +123,12 @@ const InterviewSchedulingInterface = () => {
           participantNames: [candidateName, 'HR Representative'],
           duration: 60, // Default 60 minutes
           meetingUrl: applicantUrl, // Applicant URL (waits for moderator)
-          hrModeratorUrl: hrModeratorUrl // HR URL (joins as moderator)
+          hrModeratorUrl: hrModeratorUrl, // HR URL (joins as moderator)
+          candidateEmail: candidateEmail, // Link meeting to applicant
+          jobTitle: candidatePosition || 'Software Engineer Position',
+          company: 'Nexify Technologies',
+          interviewType: 'Technical Interview',
+          interviewer: 'HR Representative'
         };
 
         try {

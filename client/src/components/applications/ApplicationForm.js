@@ -50,6 +50,11 @@ const Input = styled.input`
   border-radius: 4px;
   font-size: 1rem;
   &:focus { outline: none; border-color: #1a73e8; }
+  &:read-only {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+  }
 `;
 
 const TextArea = styled.textarea`
@@ -103,7 +108,7 @@ const ApplicationForm = () => {
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   // Only the fields your server accepts
@@ -207,12 +212,12 @@ const ApplicationForm = () => {
 
         <FormGroup>
           <Label>Full Name *</Label>
-          <Input name="name" type="text" value={formData.name} onChange={handleChange} required />
+          <Input name="name" type="text" value={formData.name} readOnly />
         </FormGroup>
 
         <FormGroup>
           <Label>Email *</Label>
-          <Input name="email" type="email" value={formData.email} onChange={handleChange} required />
+          <Input name="email" type="email" value={formData.email} readOnly />
         </FormGroup>
 
         <FormGroup>
