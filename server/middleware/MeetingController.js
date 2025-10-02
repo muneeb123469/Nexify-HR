@@ -66,3 +66,63 @@ exports.markInterviewConducted = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+// Submit applicant feedback for interview
+exports.submitApplicantFeedback = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const { feedback, rating } = req.body;
+    const applicantEmail = req.user.email;
+
+    console.log(`Submitting feedback for meeting ${meetingId} by ${applicantEmail}`);
+    console.log('Request body:', req.body);
+    console.log('User from token:', req.user);
+
+    // Validate input
+    if (!feedback || !rating) {
+      return res.status(400).json({ error: "Feedback and rating are required" });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
+
+    // Find the meeting and verify it belongs to the applicant
+    console.log('Looking for meeting with ID:', meetingId, 'and candidateEmail:', applicantEmail);
+    
+    const meeting = await Meeting.findOne({
+      _id: meetingId,
+      $or: [
+        { candidateEmail: applicantEmail },
+        { participantNames: { $in: [req.user.username] } }
+      ]
+    });
+
+    console.log('Found meeting:', meeting ? 'Yes' : 'No');
+
+    if (!meeting) {
+      return res.status(404).json({ error: "Interview not found or you don't have permission to provide feedback" });
+    }
+
+    // Update the meeting with applicant feedback
+    const updatedMeeting = await Meeting.findByIdAndUpdate(
+      meetingId,
+      {
+        applicantFeedback: feedback,
+        applicantRating: rating,
+        feedbackSubmittedAt: new Date()
+      },
+      { new: true }
+    );
+
+    console.log(`Feedback submitted successfully for meeting ${meetingId}`);
+
+    res.status(200).json({
+      message: "Feedback submitted successfully",
+      meeting: updatedMeeting
+    });
+  } catch (error) {
+    console.error('Error submitting applicant feedback:', error);
+    res.status(500).json({ error: "Failed to submit feedback" });
+  }
+};

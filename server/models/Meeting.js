@@ -72,6 +72,21 @@ const meetingSchema = new mongoose.Schema({
   notes: {
     type: String,
     required: false
+  },
+  // Applicant feedback fields
+  applicantFeedback: {
+    type: String,
+    required: false
+  },
+  applicantRating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    required: false
+  },
+  feedbackSubmittedAt: {
+    type: Date,
+    required: false
   }
 }, {
   timestamps: true
