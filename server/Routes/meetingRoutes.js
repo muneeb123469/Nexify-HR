@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createMeeting, getAllMeetings, markInterviewConducted, getApplicantInterviews, submitApplicantFeedback } = require('../middleware/MeetingController');
+const { createMeeting, getAllMeetings, markInterviewConducted, getApplicantInterviews, submitApplicantFeedback, submitHRFeedback } = require('../middleware/MeetingController');
 const { auth } = require('../middleware/auth');
 
 // Create a new meeting
@@ -17,5 +17,8 @@ router.put('/:meetingId/conducted', markInterviewConducted);
 
 // Submit applicant feedback for interview
 router.put('/:meetingId/feedback', auth, submitApplicantFeedback);
+
+// Submit HR feedback for interview
+router.put('/:meetingId/hr-feedback', submitHRFeedback);
 
 module.exports = router;

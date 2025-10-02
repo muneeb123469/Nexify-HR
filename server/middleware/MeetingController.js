@@ -126,3 +126,46 @@ exports.submitApplicantFeedback = async (req, res) => {
     res.status(500).json({ error: "Failed to submit feedback" });
   }
 };
+
+// Submit HR feedback for interview
+exports.submitHRFeedback = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const { feedback } = req.body;
+
+    console.log(`Submitting HR feedback for meeting ${meetingId}`);
+    console.log('HR Feedback data:', feedback);
+
+    // Validate input
+    if (!feedback || !feedback.overallAssessment) {
+      return res.status(400).json({ error: "Overall assessment is required" });
+    }
+
+    // Find the meeting
+    const meeting = await Meeting.findById(meetingId);
+
+    if (!meeting) {
+      return res.status(404).json({ error: "Interview not found" });
+    }
+
+    // Update the meeting with HR feedback
+    const updatedMeeting = await Meeting.findByIdAndUpdate(
+      meetingId,
+      {
+        hrFeedback: feedback,
+        hrFeedbackSubmittedAt: new Date()
+      },
+      { new: true }
+    );
+
+    console.log(`HR feedback submitted successfully for meeting ${meetingId}`);
+
+    res.status(200).json({
+      message: "HR feedback submitted successfully",
+      meeting: updatedMeeting
+    });
+  } catch (error) {
+    console.error('Error submitting HR feedback:', error);
+    res.status(500).json({ error: "Failed to submit HR feedback" });
+  }
+};

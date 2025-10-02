@@ -87,6 +87,53 @@ const meetingSchema = new mongoose.Schema({
   feedbackSubmittedAt: {
     type: Date,
     required: false
+  },
+  // HR feedback fields
+  hrFeedback: {
+    technicalSkills: {
+      type: Number,
+      min: 0,
+      max: 5,
+      required: false
+    },
+    communication: {
+      type: Number,
+      min: 0,
+      max: 5,
+      required: false
+    },
+    problemSolving: {
+      type: Number,
+      min: 0,
+      max: 5,
+      required: false
+    },
+    culturalFit: {
+      type: Number,
+      min: 0,
+      max: 5,
+      required: false
+    },
+    strengths: {
+      type: String,
+      required: false
+    },
+    weaknesses: {
+      type: String,
+      required: false
+    },
+    overallAssessment: {
+      type: String,
+      required: false
+    },
+    notes: {
+      type: String,
+      required: false
+    }
+  },
+  hrFeedbackSubmittedAt: {
+    type: Date,
+    required: false
   }
 }, {
   timestamps: true

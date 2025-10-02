@@ -261,3 +261,24 @@ ndary-button {
 .secondary-button:hover {
     background-color: #4b5563;
 }
+
+.feedback-button {
+    background-color: #8b5cf6;
+    color: #fff;
+}
+
+.feedback-button:hover {
+    background-color: #7c3aed;
+}
+
+.feedback-submitted {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #dcfce7;
+    color: #166534;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: 1px solid #bbf7d0;
+}

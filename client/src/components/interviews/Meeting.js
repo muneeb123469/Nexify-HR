@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { FaVideo, FaClock, FaCopy } from 'react-icons/fa';
+import HRFeedbackModal from './HRFeedbackModal';
 import "./Meeting.css";
 
 const Meeting = () => {
   const [meetings, setMeetings] = useState([]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
 
   useEffect(() => {
     fetchMeetings();
@@ -46,6 +49,32 @@ const Meeting = () => {
     } catch (error) {
       console.error('Error marking interview as conducted:', error);
       alert("Error updating interview status.");
+    }
+  };
+
+  const handleSubmitFeedback = (meeting) => {
+    setSelectedMeeting(meeting);
+    setShowFeedbackModal(true);
+  };
+
+  const submitHRFeedback = async (feedback) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting._id}/hr-feedback`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback })
+      });
+
+      if (response.ok) {
+        alert("Feedback submitted successfully!");
+        fetchMeetings(); // Refresh the list
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to submit feedback: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error submitting HR feedback:', error);
+      alert("Error submitting feedback.");
     }
   };
 
@@ -141,12 +170,32 @@ const Meeting = () => {
                         ✅ Mark as Conducted
                       </button>
                     )}
+                    {meeting.interviewConducted && !meeting.hrFeedback && (
+                      <button 
+                        onClick={() => handleSubmitFeedback(meeting)}
+                        className="action-button feedback-button"
+                      >
+                        📝 Submit Feedback
+                      </button>
+                    )}
+                    {meeting.interviewConducted && meeting.hrFeedback && (
+                      <span className="feedback-submitted">
+                        ✅ Feedback Submitted
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
           );
         })}
       </div>
+
+      <HRFeedbackModal
+        meeting={selectedMeeting}
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        onSubmit={submitHRFeedback}
+      />
     </div>
   );
 };
