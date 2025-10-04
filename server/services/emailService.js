@@ -208,6 +208,60 @@ const testEmailConnection = async () => {
 
 module.exports = {
   sendInterviewEmail,
+  // Offer-letter specific email sender
+  async sendOfferEmail(offer) {
+    try {
+      const transporter = createTransporter();
+      const subject = `Offer Letter - ${offer.position}`;
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Offer Letter</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #2d3748; }
+            .container { max-width: 640px; margin: 0 auto; padding: 24px; background:#f8fafc }
+            .header { background:#2b6cb0; color:white; padding:20px; border-radius:8px 8px 0 0 }
+            .card { background:white; padding:20px; border-radius:0 0 8px 8px; }
+            .row { margin:8px 0 }
+            .label { font-weight:bold }
+            ul { margin:8px 0 0 18px }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>Offer Letter</h2>
+            </div>
+            <div class="card">
+              <p>Dear <strong>${offer.candidateName}</strong>,</p>
+              <p>We are pleased to offer you the position of <strong>${offer.position}</strong> in our organization.</p>
+              <div class="row"><span class="label">Salary:</span> ${offer.salary}</div>
+              <div class="row"><span class="label">Start Date:</span> ${formatDate(offer.startDate)}</div>
+              ${offer.benefits?.length ? `<div class="row"><span class="label">Benefits:</span><ul>${offer.benefits.map(b=>`<li>${b}</li>`).join('')}</ul></div>` : ''}
+              ${offer.additionalNotes ? `<div class="row"><span class="label">Notes:</span> ${offer.additionalNotes}</div>` : ''}
+              <p>Please reply to confirm acceptance. We look forward to working with you.</p>
+              <p>Best regards,<br/>HR Department</p>
+            </div>
+          </div>
+        </body>
+        </html>`;
+
+      const mail = await transporter.sendMail({
+        from: { name: 'HR Department', address: 'hamad1919ahmad@gmail.com' },
+        to: offer.candidateEmail,
+        subject,
+        html,
+        text: `Dear ${offer.candidateName},\n\nWe are pleased to offer you the position of ${offer.position}.\nSalary: ${offer.salary}\nStart Date: ${formatDate(offer.startDate)}\nBenefits: ${(offer.benefits||[]).join(', ')}\n${offer.additionalNotes ? `Notes: ${offer.additionalNotes}\n` : ''}\nPlease reply to confirm.\n\nBest regards,\nHR Department`
+      });
+
+      return { success: true, messageId: mail.messageId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
   testEmailConnection,
   formatDate,
   formatTime

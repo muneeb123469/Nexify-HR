@@ -617,7 +617,7 @@ const EmployeeDatabaseManagement = () => {
                 onClick={() => setShowAuditLogs(false)}
                 className="close-button"
               >
-                Close
+                X
               </button>
             </div>
           </div>

@@ -567,8 +567,9 @@ const AttendanceChart = ({ attendanceData, currentMonth }) => {
 };
 
 const Calendar = ({ month, year }) => {
-  const daysInMonth = new Date(year, month + 1, 0). getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
+  const today = new Date();
   
   const days = [];
   for (let i = 0; i < firstDay; i++) {
@@ -588,7 +589,7 @@ const Calendar = ({ month, year }) => {
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <h3>Personal Calendar</h3>
+        {/* <h3>Personal Calendar</h3> */}
       </div>
       <div className="month-navigation">
         <button className="prev-month"><i className="fas fa-chevron-left"></i></button>
@@ -605,7 +606,7 @@ const Calendar = ({ month, year }) => {
           {days.map((day, index) => (
             <div 
               key={index} 
-              className={`day ${day.empty ? 'empty' : ''} ${day.day === 15 ? 'leave' : ''} ${day.day === 8 ? 'today' : ''}`}
+              className={`day ${day.empty ? 'empty' : ''} ${(!day.empty && day.day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? 'today' : ''}`}
             >
               {day.day}
             </div>
@@ -1506,36 +1507,38 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const mockApprovals = [
-      { 
-        date: '03/03/2023', 
-        name: 'Kate Ano', 
-        position: 'Finance Manager', 
-        type: 'Casual leave', 
-        duration: '02 (05-06 Jul)' 
-      },
-      { 
-        date: '01/17/2023', 
-        name: 'Irmas Pektisl', 
-        position: 'Software Developer', 
-        type: 'Late entry', 
-        duration: '01 (08 Jul)' 
-      },
-      { 
-        date: '27/06/2022', 
-        name: 'Mugelan Peter', 
-        position: 'HR Manager', 
-        type: 'Paternity leave', 
-        duration: '05 (05-09 Jul)' 
-      },
-      { 
-        date: '27/06/2022', 
-        name: 'Amelia', 
-        position: 'Testing Assistant', 
-        type: 'Paternity leave', 
-        duration: '05 (05-09 Jul)' 
+    const loadApprovals = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/applications');
+        const data = await res.json();
+        const formatDate = (d) => {
+          const dt = new Date(d);
+          const mm = String(dt.getMonth() + 1).padStart(2, '0');
+          const dd = String(dt.getDate()).padStart(2, '0');
+          const yyyy = dt.getFullYear();
+          return `${mm}/${dd}/${yyyy}`;
+        };
+        const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const daysBetween = (a, b) => Math.max(0, Math.round((b - a) / (1000*60*60*24)));
+        const today = new Date();
+        const mapped = data.slice(0, 6).map(app => {
+          const created = new Date(app.createdAt);
+          const dd = String(created.getDate()).padStart(2, '0');
+          const mon = monthShort[created.getMonth()];
+          const pendingDays = String(daysBetween(created, today)).padStart(2, '0');
+          return {
+            date: formatDate(created),
+            name: app.name,
+            position: app.job?.title || 'N/A',
+            type: (app.status || 'pending').replace(/^./, c => c.toUpperCase()),
+            duration: `${pendingDays} (${dd} ${mon})`
+          };
+        });
+        setApprovals(mapped);
+      } catch (e) {
+        setApprovals([]);
       }
-    ];
+    };
     
     const generateAttendanceData = () => {
       const data = [];
@@ -1550,8 +1553,8 @@ const Dashboard = () => {
       }
       return data;
     };
-    
-    setApprovals(mockApprovals);
+
+    loadApprovals();
     setAttendanceData(generateAttendanceData());
     setLoading(false);
   }, []);
@@ -1564,7 +1567,7 @@ const Dashboard = () => {
     <div className="dashboard">
       <DashboardGrid>
         <GridItem className="calendar">
-          <Calendar month={8} year={2022} />
+          {(() => { const now = new Date(); return <Calendar month={now.getMonth()} year={now.getFullYear()} />; })()}
         </GridItem>
         <GridItem className="approvals">
           <ApprovalTable approvals={approvals} />

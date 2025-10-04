@@ -1,30 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './OfferLetterGeneration.css';
 
 const OfferLetterGeneration = () => {
-  const [shortlistedCandidates, setShortlistedCandidates] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      position: 'Senior Software Engineer',
-      email: 'john.doe@example.com',
-      phone: '+1 234 567 8900',
-      status: 'pending',
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      position: 'Product Manager',
-      email: 'jane.smith@example.com',
-      phone: '+1 234 567 8901',
-      status: 'offer_sent',
-      offerDetails: {
-        salary: '$120,000',
-        startDate: '2024-04-01',
-        benefits: ['Health Insurance', '401(k)', 'Stock Options'],
-      }
-    },
-  ]);
+  const [shortlistedCandidates, setShortlistedCandidates] = useState([]);
 
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [offerDetails, setOfferDetails] = useState({
@@ -34,6 +12,45 @@ const OfferLetterGeneration = () => {
     additionalNotes: '',
   });
   const [offerSent, setOfferSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const previewRef = useRef(null);
+
+  // Fetch shortlisted candidates from the database
+  useEffect(() => {
+    fetchShortlistedCandidates();
+  }, []);
+
+  const fetchShortlistedCandidates = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/applications?status=shortlisted');
+      if (!response.ok) {
+        throw new Error('Failed to fetch shortlisted candidates');
+      }
+      const applications = await response.json();
+      
+      // Transform applications to match the expected format
+      const candidates = applications.map(app => ({
+        id: app._id,
+        name: app.name,
+        position: app.job?.title || 'Position not specified',
+        email: app.email,
+        phone: app.phone,
+        status: app.offerStatus === 'sent' ? 'offer_sent' : 'pending',
+        offerDetails: app.offerDetails || null,
+        applicationId: app._id
+      }));
+      
+      setShortlistedCandidates(candidates);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching shortlisted candidates:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCandidateSelect = (candidate) => {
     setSelectedCandidate(candidate);
@@ -66,15 +83,42 @@ const OfferLetterGeneration = () => {
     }));
   };
 
-  const handleSendOffer = () => {
-    setShortlistedCandidates(prev =>
-      prev.map(candidate =>
-        candidate.id === selectedCandidate.id
-          ? { ...candidate, status: 'offer_sent', offerDetails }
-          : candidate
-      )
-    );
-    setOfferSent(true);
+  const handleSendOffer = async () => {
+    if (!selectedCandidate) return;
+    try {
+      setSending(true);
+      setError(null);
+      const response = await fetch(`http://localhost:5000/api/applications/${selectedCandidate.applicationId}/offer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(offerDetails)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to send offer');
+      }
+      const { application } = await response.json();
+      setShortlistedCandidates(prev =>
+        prev.map(c => c.id === application._id ? { ...c, status: 'offer_sent', offerDetails: application.offerDetails } : c)
+      );
+      setOfferSent(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!previewRef.current) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const html = `<!doctype html><html><head><title>Offer Letter</title><style>body{font-family:Arial, sans-serif;padding:24px} h3{margin-top:0}</style></head><body>${previewRef.current.innerHTML}</body></html>`;
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   const availableBenefits = [
@@ -175,7 +219,7 @@ const OfferLetterGeneration = () => {
                 </div>
               </div>
 
-              <div className="offer-preview">
+              <div className="offer-preview" ref={previewRef}>
                 <h3>Offer Letter Preview</h3>
                 <div className="preview-content">
                   <p>Dear {selectedCandidate.name},</p>
@@ -200,9 +244,18 @@ const OfferLetterGeneration = () => {
               <button
                 className="send-offer-button"
                 onClick={handleSendOffer}
-                disabled={!offerDetails.salary || !offerDetails.startDate || offerDetails.benefits.length === 0}
+                disabled={sending || !offerDetails.salary || !offerDetails.startDate || offerDetails.benefits.length === 0}
               >
-                Send Offer Letter
+                {sending ? 'Sending...' : 'Send Offer Letter'}
+              </button>
+
+              <button
+                className="send-offer-button"
+                onClick={handleDownloadPdf}
+                disabled={!selectedCandidate}
+                style={{ backgroundColor: '#3182ce', marginLeft: '0.5rem' }}
+              >
+                Download PDF
               </button>
 
               {offerSent && (

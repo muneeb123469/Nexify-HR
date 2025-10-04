@@ -71,6 +71,20 @@ const applicationSchema = new mongoose.Schema({
     enum: ['pending', 'reviewed', 'shortlisted', 'rejected'],
     default: 'pending'
   },
+  // Offer letter workflow fields
+  offerStatus: {
+    type: String,
+    enum: ['none', 'pending', 'sent', 'accepted', 'declined'],
+    default: 'none'
+  },
+  offerDetails: {
+    salary: { type: String },
+    startDate: { type: String },
+    benefits: [{ type: String }],
+    additionalNotes: { type: String },
+    generatedAt: { type: Date },
+    sentAt: { type: Date },
+  },
   // Include parsed resume data from CV parser
   parsedResume: ParsedResumeSchema,
   createdAt: {

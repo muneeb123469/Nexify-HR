@@ -9,6 +9,7 @@ const { parseResume } = require('../services/cvParser');
 const upload = require('../middleware/upload'); // Enhanced upload middleware
 const { validateApplicationRequest } = require('../utils/validation');
 const { auth } = require('../middleware/auth'); // Authentication middleware
+const { sendOfferEmail } = require('../services/emailService');
 
 // NEW: for writing the sidecar JSON next to the uploaded file
 
@@ -580,6 +581,60 @@ router.patch('/:id/status', async (req, res) => {
     res.json(application);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// -----------------------
+// Generate and send offer letter, persist details
+// -----------------------
+router.post('/:id/offer', async (req, res) => {
+  try {
+    const { salary, startDate, benefits = [], additionalNotes = '' } = req.body || {};
+
+    if (!salary || !startDate) {
+      return res.status(400).json({ message: 'Salary and start date are required' });
+    }
+
+    const application = await Application.findById(req.params.id).populate('job', 'title department');
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    // Save offer details
+    application.offerDetails = {
+      salary,
+      startDate,
+      benefits,
+      additionalNotes,
+      generatedAt: application.offerDetails?.generatedAt || new Date(),
+      sentAt: new Date()
+    };
+    application.offerStatus = 'sent';
+    await application.save();
+
+    // Send offer-letter email with dedicated template
+    let emailResult;
+    try {
+      emailResult = await sendOfferEmail({
+        candidateName: application.name,
+        candidateEmail: application.email,
+        position: application.job?.title || 'Position',
+        salary,
+        startDate,
+        benefits,
+        additionalNotes
+      });
+    } catch (e) {
+      emailResult = { success: false, error: e.message };
+    }
+
+    res.json({
+      message: 'Offer saved' + (emailResult.success ? ' and email sent' : ' (email failed)'),
+      application
+    });
+  } catch (error) {
+    console.error('Error sending offer:', error);
+    res.status(500).json({ message: 'Failed to send offer', error: error.message });
   }
 });
 
