@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaDownload, FaPaperPlane, FaCheck, FaSpinner, FaFileExport, FaRedo } from 'react-icons/fa';
 import './PayslipGeneration.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const PayslipGeneration = () => {
   const [payslips, setPayslips] = useState([
@@ -146,9 +147,11 @@ const PayslipGeneration = () => {
   });
 
   return (
-    <div className="payslip-generation">
-      <div className="generation-header">
-        <h1>Payslip Generation and Distribution</h1>
+    <>
+      <Sidebar />
+      <div className="payslip-generation">
+        <div className="generation-header">
+          <h1>Payslip Generation and Distribution</h1>
         <div className="action-buttons">
           <div className="export-container">
             <select 
@@ -390,7 +393,8 @@ const PayslipGeneration = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

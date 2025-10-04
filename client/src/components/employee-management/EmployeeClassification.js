@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { employeeApi } from '../../utils/employeeApi';
 import './EmployeeClassification.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const EmployeeClassification = () => {
   const [employees, setEmployees] = useState([]);
@@ -130,38 +131,46 @@ const EmployeeClassification = () => {
 
   if (loading) {
     return (
-      <div className="employee-classification">
-        <div className="classification-header">
-          <h1>Employee Classification</h1>
+      <>
+        <Sidebar />
+        <div className="employee-classification">
+          <div className="classification-header">
+            <h1>Employee Classification</h1>
+          </div>
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading employees...</p>
+          </div>
         </div>
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading employees...</p>
-        </div>
-      </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="employee-classification">
-        <div className="classification-header">
-          <h1>Employee Classification</h1>
+      <>
+        <Sidebar />
+        <div className="employee-classification">
+          <div className="classification-header">
+            <h1>Employee Classification</h1>
+          </div>
+          <div className="error-state">
+            <p>Error: {error}</p>
+            <button onClick={fetchEmployees} className="retry-button">
+              Retry
+            </button>
+          </div>
         </div>
-        <div className="error-state">
-          <p>Error: {error}</p>
-          <button onClick={fetchEmployees} className="retry-button">
-            Retry
-          </button>
-        </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="employee-classification">
-      <div className="classification-header">
-        <h1>Employee Classification</h1>
+    <>
+      <Sidebar />
+      <div className="employee-classification">
+        <div className="classification-header">
+          <h1>Employee Classification</h1>
         <div className="filters">
           <div className="filter-group">
             <label>Department</label>
@@ -296,7 +305,8 @@ const EmployeeClassification = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

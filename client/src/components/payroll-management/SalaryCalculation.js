@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaSpinner, FaCheck, FaExclamationTriangle, FaSearch, FaFilter, FaDownload, FaTimes, FaUserCircle, FaInfoCircle, FaChevronDown, FaCalculator, FaChartLine, FaMoneyBillWave, FaFileInvoiceDollar, FaClipboardCheck } from 'react-icons/fa';
 import './SalaryCalculation.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const SalaryCalculation = () => {
   const [employees, setEmployees] = useState([
@@ -297,9 +298,11 @@ const SalaryCalculation = () => {
   );
 
   return (
-    <div className="salary-calculation">
-      <div className="calculation-header">
-        <h1>Salary Calculation and Deductions</h1>
+    <>
+      <Sidebar />
+      <div className="salary-calculation">
+        <div className="calculation-header">
+          <h1>Salary Calculation and Deductions</h1>
         <div className="action-buttons">
           <button
             onClick={handleCalculateAll}
@@ -733,7 +736,8 @@ const SalaryCalculation = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

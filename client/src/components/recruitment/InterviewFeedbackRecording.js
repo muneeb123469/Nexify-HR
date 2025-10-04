@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './InterviewFeedbackRecording.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const InterviewFeedbackRecording = () => {
   const [interviews, setInterviews] = useState([]);
@@ -133,10 +134,12 @@ const InterviewFeedbackRecording = () => {
   };
 
   return (
-    <div className="interview-feedback-recording">
-      <div className="feedback-header">
-        <h1>Interview Feedback Recording</h1>
-      </div>
+    <>
+      <Sidebar />
+      <div className="interview-feedback-recording">
+        <div className="feedback-header">
+          <h1>Interview Feedback Recording</h1>
+        </div>
 
       <div className="feedback-content">
         <div className="interviews-section">
@@ -430,7 +433,8 @@ const InterviewFeedbackRecording = () => {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

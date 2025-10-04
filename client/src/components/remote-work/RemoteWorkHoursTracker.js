@@ -11,6 +11,7 @@ import {
   FaStop,
   FaCheck
 } from 'react-icons/fa';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const RemoteWorkHoursTracker = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -318,17 +319,22 @@ const RemoteWorkHoursTracker = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="auth-required">
-        <h2>Authentication Required</h2>
-        <p>Please log in to access the Remote Work Hours Tracker.</p>
-      </div>
+      <>
+        <Sidebar />
+        <div className="auth-required">
+          <h2>Authentication Required</h2>
+          <p>Please log in to access the Remote Work Hours Tracker.</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="remote-work-hours-tracker">
-      <div className="tracker-header">
-        <h1>Remote Work Hours Tracker</h1>
+    <>
+      <Sidebar />
+      <div className="remote-work-hours-tracker">
+        <div className="tracker-header">
+          <h1>Remote Work Hours Tracker</h1>
         <div className="header-actions">
           <div className="date-picker-wrapper">
             <FaCalendarAlt className="icon" />
@@ -615,7 +621,8 @@ const RemoteWorkHoursTracker = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

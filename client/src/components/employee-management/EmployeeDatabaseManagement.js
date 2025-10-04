@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { employeeApi } from '../../utils/employeeApi';
 import './EmployeeDatabaseManagement.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const EmployeeDatabaseManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -241,19 +242,24 @@ const EmployeeDatabaseManagement = () => {
 
   if (loading) {
     return (
-      <div className="employee-database-management">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading employees...</p>
+      <>
+        <Sidebar />
+        <div className="employee-database-management">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading employees...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="employee-database-management">
-      <div className="database-header">
-        <h1>Employee Database Management</h1>
+    <>
+      <Sidebar />
+      <div className="employee-database-management">
+        <div className="database-header">
+          <h1>Employee Database Management</h1>
         <div className="header-actions">
           <input
             type="text"
@@ -623,7 +629,8 @@ const EmployeeDatabaseManagement = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

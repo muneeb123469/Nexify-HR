@@ -1,7 +1,16 @@
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .interview-feedback-recording {
-  padding: 2rem;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left: 20%;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 .feedback-header {

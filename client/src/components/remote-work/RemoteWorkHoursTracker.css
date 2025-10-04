@@ -13,11 +13,20 @@
   --transition-speed: 0.3s;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .remote-work-hours-tracker {
-  padding: 2rem;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left: 20%;
   background-color: #f8f9fa;
+  animation: fadeIn 0.5s ease-in-out;
   min-height: 100vh;
 }
 

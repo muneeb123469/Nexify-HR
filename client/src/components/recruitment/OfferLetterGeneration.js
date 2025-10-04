@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './OfferLetterGeneration.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const OfferLetterGeneration = () => {
   const [shortlistedCandidates, setShortlistedCandidates] = useState([]);
@@ -133,10 +134,12 @@ const OfferLetterGeneration = () => {
   ];
 
   return (
-    <div className="offer-letter-generation">
-      <div className="offer-header">
-        <h1>Offer Letter Generation and Sending</h1>
-      </div>
+    <>
+      <Sidebar />
+      <div className="offer-letter-generation">
+        <div className="offer-header">
+          <h1>Offer Letter Generation and Sending</h1>
+        </div>
 
       <div className="offer-content">
         <div className="candidates-section">
@@ -271,7 +274,8 @@ const OfferLetterGeneration = () => {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaVideo, FaClock, FaCopy } from 'react-icons/fa';
 import HRFeedbackModal from './HRFeedbackModal';
 import "./Meeting.css";
+import { Sidebar } from "../dashboard/HRDashboard";
 
 const Meeting = () => {
   const [meetings, setMeetings] = useState([]);
@@ -87,6 +88,8 @@ const Meeting = () => {
 
 
   return (
+    <>
+    <Sidebar/>
     <div className="gig-container animate-fade-in">
       <div className="page-header">
         <h1>Interview Meetings</h1>
@@ -197,6 +200,7 @@ const Meeting = () => {
         onSubmit={submitHRFeedback}
       />
     </div>
+    </>
   );
 };
 

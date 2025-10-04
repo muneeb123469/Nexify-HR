@@ -20,6 +20,7 @@ import {
   FaInstagram
 } from 'react-icons/fa';
 import './WellnessFitnessDashboard.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const WellnessFitnessDashboard = () => {
   const [selectedProgram, setSelectedProgram] = useState(null);
@@ -282,10 +283,12 @@ const WellnessFitnessDashboard = () => {
   );
 
   return (
-    <div className="wellness-fitness-dashboard">
-      <div className="dashboard-header">
-        <h1>Wellness and Fitness Programs</h1>
-      </div>
+    <>
+      <Sidebar />
+      <div className="wellness-fitness-dashboard">
+        <div className="dashboard-header">
+          <h1>Wellness and Fitness Programs</h1>
+        </div>
 
       {notification && (
         <div className={`notification ${notification.type}`}>
@@ -495,7 +498,8 @@ const WellnessFitnessDashboard = () => {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

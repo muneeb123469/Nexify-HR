@@ -1431,7 +1431,7 @@ export const EmployerSideBar=()=>{
             <h1>Nexify<span>-HR</span></h1>
           </Logo>
           <Nav>
-            <NavItem active>
+            <NavItem active onClick={() => window.location.href = '/employee-dashboard'}>
               <FaThLarge />
               Dashboard Overview
             </NavItem>

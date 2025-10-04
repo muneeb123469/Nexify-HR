@@ -2,7 +2,7 @@
 
 /* Global resets and base styles */
 * {
-    margin: 0;
+    margin-left: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,8 +17,7 @@ body {
 /* Container styles */
 .gig-container {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
+    margin-left: 20%;
     animation: fadeIn 0.5s ease-in-out;
 }
 

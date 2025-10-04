@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './PayrollTaxManagement.css';
+import { Sidebar } from '../dashboard/HRDashboard';
 
 const PayrollTaxManagement = () => {
   const [employees, setEmployees] = useState([
@@ -113,9 +114,11 @@ const PayrollTaxManagement = () => {
   );
 
   return (
-    <div className="payroll-tax-management">
-      <div className="management-header">
-        <h1>Payroll & Tax Management</h1>
+    <>
+      <Sidebar />
+      <div className="payroll-tax-management">
+        <div className="management-header">
+          <h1>Payroll & Tax Management</h1>
         <div className="search-container">
           <input
             type="text"
@@ -287,7 +290,8 @@ const PayrollTaxManagement = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
