@@ -11,9 +11,15 @@ import {
   FaStop,
   FaCheck
 } from 'react-icons/fa';
+import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { useAuth } from '../../context/AuthContext';
 
 const RemoteWorkHoursTracker = () => {
+  const { user } = useAuth();
+  
+  // Determine which sidebar to use based on user role
+  const SidebarComponent = user?.role === 'hr' ? Sidebar : EmployerSideBar;
   const [isAdmin, setIsAdmin] = useState(false);
   const [notification, setNotification] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -28,6 +34,13 @@ const RemoteWorkHoursTracker = () => {
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+
+  const handleDateRangeChange = (field, value) => {
+    setDateRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedEmployee, setSelectedEmployee] = useState('all');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -320,7 +333,7 @@ const RemoteWorkHoursTracker = () => {
   if (!isAuthenticated) {
     return (
       <>
-        <Sidebar />
+        <SidebarComponent />
         <div className="auth-required">
           <h2>Authentication Required</h2>
           <p>Please log in to access the Remote Work Hours Tracker.</p>
@@ -331,7 +344,7 @@ const RemoteWorkHoursTracker = () => {
 
   return (
     <>
-      <Sidebar />
+      <SidebarComponent />
       <div className="remote-work-hours-tracker">
         <div className="tracker-header">
           <h1>Remote Work Hours Tracker</h1>

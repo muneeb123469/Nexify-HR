@@ -2,10 +2,60 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationCircle } from 'react-icons/fa';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
+import TimeTracker from './TimeTracker';
 
 const Container = styled.div`
-  max-width: 1200px;
-  margin-left:20%;
+  margin-left: 250px;
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 16px;
+  }
+`;
+
+const TabContainer = styled.div`
+  background: #FFFFFF;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+`;
+
+const TabHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const Tab = styled.button`
+  flex: 1;
+  padding: 16px 24px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: ${props => props.active ? '#4C9F9F' : '#666666'};
+  border-bottom: 3px solid ${props => props.active ? '#4C9F9F' : 'transparent'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    color: #4C9F9F;
+    background: rgba(76, 159, 159, 0.05);
+  }
+
+  svg {
+    font-size: 1.125rem;
+  }
+`;
+
+const TabContent = styled.div`
+  padding: 0;
 `;
 
 const Grid = styled.div`
@@ -183,6 +233,7 @@ const LegendItem = styled.div`
 
 const AttendanceOverview = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('overview');
   
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
@@ -220,91 +271,125 @@ const AttendanceOverview = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
   
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'time':
+        return <TimeTracker />;
+      case 'overview':
+      default:
+        return (
+          <div style={{ padding: '24px' }}>
+            <Grid>
+              <Card>
+                <Title>
+                  <FaCalendarAlt />
+                  Attendance Overview
+                </Title>
+                
+                <StatsGrid>
+                  <StatCard>
+                    <StatValue>22</StatValue>
+                    <StatLabel>Present Days</StatLabel>
+                  </StatCard>
+                  <StatCard>
+                    <StatValue>3</StatValue>
+                    <StatLabel>Late Days</StatLabel>
+                  </StatCard>
+                  <StatCard>
+                    <StatValue>1</StatValue>
+                    <StatLabel>Absent Days</StatLabel>
+                  </StatCard>
+                </StatsGrid>
+                
+                <Calendar>
+                  <CalendarHeader>
+                    <MonthSelector>
+                      <button onClick={handlePrevMonth}>←</button>
+                      <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                      <button onClick={handleNextMonth}>→</button>
+                    </MonthSelector>
+                  </CalendarHeader>
+                  
+                  <WeekDays>
+                    {weekDays.map(day => (
+                      <span key={day}>{day}</span>
+                    ))}
+                  </WeekDays>
+                  
+                  <Days>
+                    {days.map((day, index) => (
+                      day ? (
+                        <Day
+                          key={index}
+                          status={day.status}
+                          className={day.date.toDateString() === new Date().toDateString() ? 'today' : ''}
+                        >
+                          {day.date.getDate()}
+                        </Day>
+                      ) : (
+                        <Day key={index} />
+                      )
+                    ))}
+                  </Days>
+                  
+                  <Legend>
+                    <LegendItem type="present">
+                      <FaCheckCircle />
+                      Present
+                    </LegendItem>
+                    <LegendItem type="late">
+                      <FaExclamationCircle />
+                      Late
+                    </LegendItem>
+                    <LegendItem type="absent">
+                      <FaTimesCircle />
+                      Absent
+                    </LegendItem>
+                  </Legend>
+                </Calendar>
+              </Card>
+              
+              <Card>
+                <Title>
+                  <FaClock />
+                  Recent Activity
+                </Title>
+                
+                {/* Add recent activity list here */}
+              </Card>
+            </Grid>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div>
-    <EmployerSideBar/>
-    <Container>
-      <Grid>
-        <Card>
-          <Title>
-            <FaCalendarAlt />
-            Attendance Overview
-          </Title>
-          
-          <StatsGrid>
-            <StatCard>
-              <StatValue>22</StatValue>
-              <StatLabel>Present Days</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatValue>3</StatValue>
-              <StatLabel>Late Days</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatValue>1</StatValue>
-              <StatLabel>Absent Days</StatLabel>
-            </StatCard>
-          </StatsGrid>
-          
-          <Calendar>
-            <CalendarHeader>
-              <MonthSelector>
-                <button onClick={handlePrevMonth}>←</button>
-                <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <button onClick={handleNextMonth}>→</button>
-              </MonthSelector>
-            </CalendarHeader>
-            
-            <WeekDays>
-              {weekDays.map(day => (
-                <span key={day}>{day}</span>
-              ))}
-            </WeekDays>
-            
-            <Days>
-              {days.map((day, index) => (
-                day ? (
-                  <Day
-                    key={index}
-                    status={day.status}
-                    className={day.date.toDateString() === new Date().toDateString() ? 'today' : ''}
-                  >
-                    {day.date.getDate()}
-                  </Day>
-                ) : (
-                  <Day key={index} />
-                )
-              ))}
-            </Days>
-            
-            <Legend>
-              <LegendItem type="present">
-                <FaCheckCircle />
-                Present
-              </LegendItem>
-              <LegendItem type="late">
-                <FaExclamationCircle />
-                Late
-              </LegendItem>
-              <LegendItem type="absent">
-                <FaTimesCircle />
-                Absent
-              </LegendItem>
-            </Legend>
-          </Calendar>
-        </Card>
-        
-        <Card>
-          <Title>
-            <FaClock />
-            Recent Activity
-          </Title>
-          
-          {/* Add recent activity list here */}
-        </Card>
-      </Grid>
-    </Container>
-        </div>
+    <>
+      <EmployerSideBar />
+      <Container>
+        <TabContainer>
+          <TabHeader>
+            <Tab 
+              active={activeTab === 'overview'} 
+              onClick={() => setActiveTab('overview')}
+            >
+              <FaCalendarAlt />
+              Overview
+            </Tab>
+            <Tab 
+              active={activeTab === 'time'} 
+              onClick={() => setActiveTab('time')}
+            >
+              <FaClock />
+              Time
+            </Tab>
+          </TabHeader>
+          <TabContent>
+            {renderTabContent()}
+          </TabContent>
+        </TabContainer>
+      </Container>
+    </>
   );
 };
 

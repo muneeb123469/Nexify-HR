@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   Calendar, 
@@ -1055,6 +1056,7 @@ function RemoteWorkAnalytics() {
   );
 }
 export const AdminSideBar=()=>{
+    const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
       const [activeSection, setActiveSection] = useState('overview');
   return(
@@ -1091,6 +1093,7 @@ export const AdminSideBar=()=>{
                 onClick={() => {
                   setActiveSection('overview');
                   setIsSidebarOpen(false);
+                  navigate('/admin-dashboard');
                 }}
               />
               <SidebarItem 
@@ -1315,6 +1318,7 @@ export const AdminSideBar=()=>{
                 onClick={() => {
                   setActiveSection('settings');
                   setIsSidebarOpen(false);
+                  window.location.href = '/admin/settings';
                 }}
               />
             </div>
@@ -1338,6 +1342,7 @@ export const AdminSideBar=()=>{
       </>)
 }
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 

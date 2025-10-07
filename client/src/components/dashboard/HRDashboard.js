@@ -355,6 +355,12 @@ export const Sidebar = () => (
           <span>Employee Classification</span>
         </NavLink>
       </MenuItem>
+      <MenuItem>
+        <NavLink to="/hr/attendance" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-clock"></i>
+          <span>Attendance</span>
+        </NavLink>
+      </MenuItem>
 
       {/* Payroll Section */}
       <MenuItem>

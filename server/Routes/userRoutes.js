@@ -135,4 +135,35 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Get all employees (HR only)
+router.get('/employees', authenticateToken, async (req, res) => {
+    try {
+        // Check if user is HR
+        const currentUser = await User.findById(req.user.user.id);
+        if (!currentUser || currentUser.role !== 'hr') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. HR role required.'
+            });
+        }
+
+        // Fetch all employees
+        const employees = await User.find({ 
+            role: 'employee',
+            status: { $ne: 'terminated' } // Exclude terminated employees
+        }).select('username email department jobTitle createdAt').sort({ username: 1 });
+
+        res.json({
+            success: true,
+            data: employees
+        });
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching employees'
+        });
+    }
+});
+
 module.exports = router;

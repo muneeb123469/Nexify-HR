@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaFileAlt, FaPaperPlane } from 'react-icons/fa';
+import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 
 const Container = styled.div`
+  margin-left: 250px;
   padding: 24px;
   max-width: 800px;
-  margin: 0 auto;
+  margin-right: auto;
+  background: #f5f5f5;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 16px;
+  }
 `;
 
 const Form = styled.form`
@@ -136,7 +145,9 @@ const LeaveRequest = () => {
   };
 
   return (
-    <Container>
+    <>
+      <EmployerSideBar />
+      <Container>
       <Form onSubmit={handleSubmit}>
         <Title>
           <FaCalendarAlt />
@@ -203,7 +214,8 @@ const LeaveRequest = () => {
           Submit Request
         </SubmitButton>
       </Form>
-    </Container>
+      </Container>
+    </>
   );
 };
 

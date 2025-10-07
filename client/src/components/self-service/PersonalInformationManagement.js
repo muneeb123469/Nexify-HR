@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import './PersonalInformationManagement.css';
 
 // Create axios instance with base configuration
@@ -278,7 +279,9 @@ const PersonalInformationManagement = () => {
   }
 
   return (
-    <div className="personal-info-management">
+    <>
+      <EmployerSideBar />
+      <div className="personal-info-management">
       <div className="dashboard-header">
         <h1>Personal Information Management</h1>
         {!isEditing && (
@@ -417,7 +420,8 @@ const PersonalInformationManagement = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

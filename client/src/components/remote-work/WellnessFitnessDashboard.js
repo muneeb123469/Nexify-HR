@@ -20,9 +20,15 @@ import {
   FaInstagram
 } from 'react-icons/fa';
 import './WellnessFitnessDashboard.css';
+import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { useAuth } from '../../context/AuthContext';
 
 const WellnessFitnessDashboard = () => {
+  const { user } = useAuth();
+  
+  // Determine which sidebar to use based on user role
+  const SidebarComponent = user?.role === 'hr' ? Sidebar : EmployerSideBar;
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [notification, setNotification] = useState(null);
   const [userPreferences, setUserPreferences] = useState({
@@ -284,7 +290,7 @@ const WellnessFitnessDashboard = () => {
 
   return (
     <>
-      <Sidebar />
+      <SidebarComponent />
       <div className="wellness-fitness-dashboard">
         <div className="dashboard-header">
           <h1>Wellness and Fitness Programs</h1>
