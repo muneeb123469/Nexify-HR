@@ -49,6 +49,8 @@ import RemoteWorkHoursTracker from './components/remote-work/RemoteWorkHoursTrac
 
 // Leave and Attendance Components
 import LeaveRequest from './components/leave/LeaveRequest';
+import LeaveManagement from './components/leave/LeaveManagement';
+import HRLeaveRequests from './components/leave/HRLeaveRequests';
 import AttendanceOverview from './components/attendance/AttendanceOverview';
 import HRAttendanceView from './components/attendance/HRAttendanceView';
 
@@ -112,9 +114,10 @@ const App = () => {
               <Route path="/remote-work/hours-tracker" element={<RemoteWorkHoursTracker />} />
 
               {/* Leave and Attendance Routes */}
-              <Route path="/employee/leave-request" element={<LeaveRequest />} />
+              <Route path="/employee/leave-request" element={<LeaveManagement />} />
               <Route path="/employee/attendance" element={<AttendanceOverview />} />
               <Route path="/hr/attendance" element={<HRAttendanceView />} />
+              <Route path="/hr/leave-requests" element={<HRLeaveRequests />} />
 
               {/* Admin Routes */}
               <Route path="/admin/hr-approvals" element={<HRApprovalList />} />

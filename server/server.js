@@ -39,6 +39,7 @@ app.use('/api/meetings', require('./Routes/meetingRoutes'));
 app.use('/api/users', require('./Routes/userRoutes'));
 app.use('/api', require('./Routes/employeeRoutes'));
 app.use('/api', require('./Routes/attendanceRoutes'));
+app.use('/api/leave', require('./Routes/leaveRoutes'));
 app.use('/api/locations', require('./Routes/locationRoutes'));
 
 // MongoDB Connection

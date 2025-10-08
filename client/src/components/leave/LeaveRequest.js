@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { FaCalendarAlt, FaFileAlt, FaPaperPlane } from 'react-icons/fa';
+import { FaCalendarAlt, FaFileAlt, FaPaperPlane, FaSpinner, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 
 const Container = styled.div`
@@ -119,9 +119,36 @@ const SubmitButton = styled.button`
   &:hover {
     background: #2A6F6F;
   }
+
+  &:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
 `;
 
-const LeaveRequest = () => {
+const Message = styled.div`
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+
+  &.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  &.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+`;
+
+const LeaveRequest = ({ showSidebar = true, onRequestSubmitted }) => {
   const [formData, setFormData] = useState({
     leaveType: '',
     startDate: '',
@@ -129,6 +156,8 @@ const LeaveRequest = () => {
     reason: '',
     attachments: null
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -136,23 +165,86 @@ const LeaveRequest = () => {
       ...prev,
       [name]: files ? files[0] : value
     }));
+    // Clear messages when user starts typing
+    if (message.text) {
+      setMessage({ type: '', text: '' });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log(formData);
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage({ type: 'error', text: 'Please login to submit leave request' });
+        setLoading(false);
+        return;
+      }
+
+      // Prepare form data
+      const submitData = {
+        leaveType: formData.leaveType,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        reason: formData.reason
+      };
+
+      const response = await fetch('http://localhost:5000/api/leave/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(submitData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: 'Leave request submitted successfully!' });
+        // Reset form
+        setFormData({
+          leaveType: '',
+          startDate: '',
+          endDate: '',
+          reason: '',
+          attachments: null
+        });
+        // Call callback if provided
+        if (onRequestSubmitted) {
+          setTimeout(() => onRequestSubmitted(), 1500); // Small delay to show success message
+        }
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Failed to submit leave request' });
+      }
+    } catch (error) {
+      console.error('Error submitting leave request:', error);
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
-      <EmployerSideBar />
-      <Container>
+      {showSidebar && <EmployerSideBar />}
+      <Container style={!showSidebar ? { marginLeft: 0, padding: 0, background: 'transparent', minHeight: 'auto' } : {}}>
       <Form onSubmit={handleSubmit}>
         <Title>
           <FaCalendarAlt />
           Request Leave
         </Title>
+
+        {message.text && (
+          <Message className={message.type}>
+            {message.type === 'success' ? <FaCheckCircle /> : <FaExclamationCircle />}
+            {message.text}
+          </Message>
+        )}
 
         <FormGroup>
           <Label>Leave Type</Label>
@@ -209,9 +301,9 @@ const LeaveRequest = () => {
           />
         </FormGroup>
 
-        <SubmitButton type="submit">
-          <FaPaperPlane />
-          Submit Request
+        <SubmitButton type="submit" disabled={loading}>
+          {loading ? <FaSpinner className="fa-spin" /> : <FaPaperPlane />}
+          {loading ? 'Submitting...' : 'Submit Request'}
         </SubmitButton>
       </Form>
       </Container>

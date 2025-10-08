@@ -7,6 +7,7 @@ import './HRDashboard.css';
 // Import HR Management Components
 import JobPostingsDashboard from '../recruitment/JobPostingsDashboard';
 import CandidateApplicationManagement from '../recruitment/CandidateApplicationManagement';
+import HRLeaveRequests from '../leave/HRLeaveRequests';
 
 import InterviewSchedulingInterface from '../recruitment/InterviewSchedulingInterface';
 import InterviewFeedbackRecording from '../recruitment/InterviewFeedbackRecording';
@@ -358,7 +359,13 @@ export const Sidebar = () => (
       <MenuItem>
         <NavLink to="/hr/attendance" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-clock"></i>
-          <span>Attendance</span>
+          <span>Attendance & Leave</span>
+        </NavLink>
+      </MenuItem>
+      <MenuItem>
+        <NavLink to="/hr/leave-requests" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-calendar-check"></i>
+          <span>Leave Requests</span>
         </NavLink>
       </MenuItem>
 
@@ -434,12 +441,12 @@ const HeaderComponent = () => (
 
 const ApprovalTable = ({ approvals }) => (
   <div className="approval-section">
-    <h2>Approval</h2>
+    {/* <h2>Approval</h2> */}
     <div className="filter-tabs">
       <span className="active">ALL APPLICATIONS</span>
       <span>APPLICANT</span>
-      <span>APPLICATION TYPE</span>
-      <span>DURATION</span>
+      {/* <span>APPLICATION TYPE</span>
+      <span>DURATION</span> */}
     </div>
     <table className="approval-table">
       <thead>
@@ -466,7 +473,7 @@ const ApprovalTable = ({ approvals }) => (
         ))}
       </tbody>
     </table>
-    <div className="status-indicators">
+    {/* <div className="status-indicators">
       <div className="status-item">
         <span className="status-dot approved"></span>
         <span>Approved</span>
@@ -479,7 +486,7 @@ const ApprovalTable = ({ approvals }) => (
         <span className="status-dot pending"></span>
         <span>Pending</span>
       </div>
-    </div>
+    </div> */}
   </div>
 );
 
@@ -619,7 +626,7 @@ const Calendar = ({ month, year }) => {
           ))}
         </div>
       </div>
-      <div className="calendar-legend">
+      {/* <div className="calendar-legend">
         <div className="legend-item">
           <span className="dot holiday"></span>
           <span>Don't Holiday</span>
@@ -628,7 +635,7 @@ const Calendar = ({ month, year }) => {
           <span className="dot leave"></span>
           <span>Leave</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
