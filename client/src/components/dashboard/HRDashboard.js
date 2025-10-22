@@ -362,6 +362,12 @@ export const Sidebar = () => (
           <span>Leave Requests</span>
         </NavLink>
       </MenuItem>
+      <MenuItem>
+        <NavLink to="/hr/performance-evaluation" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-chart-bar"></i>
+          <span>Performance & Task Evaluation</span>
+        </NavLink>
+      </MenuItem>
 
       {/* Payroll Section */}
       <MenuItem>

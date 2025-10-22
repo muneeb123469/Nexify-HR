@@ -59,6 +59,9 @@ import HRAttendanceView from './components/attendance/HRAttendanceView';
 import HRApprovalList from './components/admin/HRApprovalList';
 import LocationSettings from './components/admin/LocationSettings';
 
+// Performance & Task Evaluation Components
+import PerformanceTaskEvaluation from './components/performance/PerformanceTaskEvaluation';
+
 const App = () => {
   return (
     <Router>
@@ -121,6 +124,9 @@ const App = () => {
               <Route path="/employee/attendance" element={<AttendanceOverview />} />
               <Route path="/hr/attendance" element={<HRAttendanceView />} />
               <Route path="/hr/leave-requests" element={<HRLeaveRequests />} />
+
+              {/* Performance & Task Evaluation Routes */}
+              <Route path="/hr/performance-evaluation" element={<PerformanceTaskEvaluation />} />
 
               {/* Admin Routes */}
               <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
