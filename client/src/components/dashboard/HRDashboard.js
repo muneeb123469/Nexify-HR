@@ -345,21 +345,15 @@ export const Sidebar = () => (
 
       {/* Employee Management Section */}
       <MenuItem>
-        <NavLink to="/employee/database" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-users"></i>
-          <span>Employee Records</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/employee/classification" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-list"></i>
-          <span>Employee Classification</span>
+        <NavLink to="/employee/management" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-users-cog"></i>
+          <span>Employee Management</span>
         </NavLink>
       </MenuItem>
       <MenuItem>
         <NavLink to="/hr/attendance" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-clock"></i>
-          <span>Attendance & Leave</span>
+          <span>Attendance Management</span>
         </NavLink>
       </MenuItem>
       <MenuItem>

@@ -28,6 +28,7 @@ import InterviewFeedbackRecording from './components/recruitment/InterviewFeedba
 import OfferLetterGeneration from './components/recruitment/OfferLetterGeneration';
 
 // Employee Management Components
+import EmployeeManagement from './components/employee-management/EmployeeManagement';
 import EmployeeDatabaseManagement from './components/employee-management/EmployeeDatabaseManagement';
 import NewEmployeeProfile from './components/employee-management/NewEmployeeProfile';
 import EmployeeProfileManagement from './components/employee-management/EmployeeProfileManagement';
@@ -95,6 +96,7 @@ const App = () => {
               <Route path="/hr/offer-letters" element={<OfferLetterGeneration />} />
 
               {/* Employee Management Routes */}
+              <Route path="/employee/management" element={<EmployeeManagement />} />
               <Route path="/employee/database" element={<EmployeeDatabaseManagement />} />
               <Route path="/employee/new-profile" element={<NewEmployeeProfile />} />
               <Route path="/employee/profile-management" element={<EmployeeProfileManagement />} />
@@ -108,6 +110,7 @@ const App = () => {
 
               {/* Personal Information Management Route */}
               <Route path="/self-service/personal-info" element={<PersonalInformationManagement />} />
+              <Route path="/applicant/profile" element={<PersonalInformationManagement />} />
 
               {/* Remote Work & Performance Management Routes */}
               <Route path="/remote-work/wellness-fitness" element={<WellnessFitnessDashboard />} />

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
+import { ApplicantSideBar } from '../dashboard/ApplicantDashboard';
+import { Sidebar } from '../dashboard/HRDashboard';
 import './PersonalInformationManagement.css';
 
 // Create axios instance with base configuration
@@ -278,9 +280,22 @@ const PersonalInformationManagement = () => {
     );
   }
 
+  // Determine which sidebar to use based on user role
+  const getSidebarComponent = () => {
+    switch (user?.role) {
+      case 'hr':
+        return <Sidebar />;
+      case 'applicant':
+        return <ApplicantSideBar />;
+      case 'employee':
+      default:
+        return <EmployerSideBar />;
+    }
+  };
+
   return (
     <>
-      <EmployerSideBar />
+      {getSidebarComponent()}
       <div className="personal-info-management">
       <div className="dashboard-header">
         <h1>Personal Information Management</h1>

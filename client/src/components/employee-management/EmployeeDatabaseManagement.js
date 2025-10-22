@@ -242,22 +242,17 @@ const EmployeeDatabaseManagement = () => {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <div className="employee-database-management">
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading employees...</p>
-          </div>
+      <div className="employee-database-management">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading employees...</p>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Sidebar />
-      <div className="employee-database-management">
+    <div className="employee-database-management">
         <div className="database-header">
           <h1>Employee Database Management</h1>
         <div className="header-actions">
@@ -629,8 +624,7 @@ const EmployeeDatabaseManagement = () => {
           </div>
         )}
       </div>
-      </div>
-    </>
+    </div>
   );
 };
 

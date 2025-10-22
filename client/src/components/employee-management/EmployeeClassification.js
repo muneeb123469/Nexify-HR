@@ -131,44 +131,36 @@ const EmployeeClassification = () => {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <div className="employee-classification">
-          <div className="classification-header">
-            <h1>Employee Classification</h1>
-          </div>
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading employees...</p>
-          </div>
+      <div className="employee-classification">
+        <div className="classification-header">
+          <h1>Employee Classification</h1>
         </div>
-      </>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading employees...</p>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Sidebar />
-        <div className="employee-classification">
-          <div className="classification-header">
-            <h1>Employee Classification</h1>
-          </div>
-          <div className="error-state">
-            <p>Error: {error}</p>
-            <button onClick={fetchEmployees} className="retry-button">
-              Retry
-            </button>
-          </div>
+      <div className="employee-classification">
+        <div className="classification-header">
+          <h1>Employee Classification</h1>
         </div>
-      </>
+        <div className="error-state">
+          <p>Error: {error}</p>
+          <button onClick={fetchEmployees} className="retry-button">
+            Retry
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Sidebar />
-      <div className="employee-classification">
+    <div className="employee-classification">
         <div className="classification-header">
           <h1>Employee Classification</h1>
         <div className="filters">
@@ -305,8 +297,7 @@ const EmployeeClassification = () => {
           </div>
         )}
       </div>
-      </div>
-    </>
+    </div>
   );
 };
 

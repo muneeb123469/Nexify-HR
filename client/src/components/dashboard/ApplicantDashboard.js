@@ -755,7 +755,7 @@ export const ApplicantSideBar=()=>{
             </NavLink>
           </MenuItem>
           <MenuItem>
-            <NavLink to="/self-service/personal-info">
+            <NavLink to="/applicant/profile">
               <i className="fas fa-user"></i>
               My Profile
             </NavLink>
