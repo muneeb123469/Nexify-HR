@@ -55,6 +55,9 @@ import HRLeaveRequests from './components/leave/HRLeaveRequests';
 import AttendanceOverview from './components/attendance/AttendanceOverview';
 import HRAttendanceView from './components/attendance/HRAttendanceView';
 
+// Task Management Components
+import AssignedTasks from './components/tasks/AssignedTasks';
+
 // Admin Components
 import HRApprovalList from './components/admin/HRApprovalList';
 import LocationSettings from './components/admin/LocationSettings';
@@ -124,6 +127,9 @@ const App = () => {
               <Route path="/employee/attendance" element={<AttendanceOverview />} />
               <Route path="/hr/attendance" element={<HRAttendanceView />} />
               <Route path="/hr/leave-requests" element={<HRLeaveRequests />} />
+
+              {/* Task Management Routes */}
+              <Route path="/employee/assigned-tasks" element={<AssignedTasks />} />
 
               {/* Performance & Task Evaluation Routes */}
               <Route path="/hr/performance-evaluation" element={<PerformanceTaskEvaluation />} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaThLarge, FaUsers, FaClock, FaLeaf, FaMoneyBill, FaCog, FaChartBar, FaSignOutAlt, FaSearch, FaMicrophone, FaBell, FaChevronRight, FaDownload, FaMoneyBillWave, FaPercent, FaTrophy, FaBullseye, FaHistory, FaPlus, FaCheckCircle, FaSpinner, FaCalendarAlt, FaFileUpload, FaFileAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaComments, FaPaperPlane, FaHeadset, FaBolt, FaHeartbeat, FaUserEdit } from 'react-icons/fa';
+import { FaThLarge, FaUsers, FaClock, FaLeaf, FaMoneyBill, FaCog, FaChartBar, FaSignOutAlt, FaSearch, FaMicrophone, FaBell, FaChevronRight, FaDownload, FaMoneyBillWave, FaPercent, FaTrophy, FaBullseye, FaHistory, FaPlus, FaCheckCircle, FaSpinner, FaCalendarAlt, FaFileUpload, FaFileAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaComments, FaPaperPlane, FaHeadset, FaBolt, FaHeartbeat, FaUserEdit, FaTasks } from 'react-icons/fa';
 
 const DashboardContainer = styled.div`
   display: flex;
@@ -1443,7 +1443,10 @@ export const EmployerSideBar=()=>{
               <FaLeaf />
               Leave Management
             </NavItem>
-           
+            <NavItem onClick={() => window.location.href = '/employee/assigned-tasks'}>
+              <FaTasks />
+              Assigned Tasks
+            </NavItem>
             <NavItem onClick={() => window.location.href = '/self-service/personal-info'}>
               <FaUserEdit />
               Personal Information

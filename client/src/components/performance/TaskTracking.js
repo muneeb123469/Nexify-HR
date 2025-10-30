@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../utils/api';
 import './TaskTracking.css';
 
 const TaskTracking = () => {
@@ -13,110 +14,75 @@ const TaskTracking = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data - will be replaced with API calls
+  // Fetch tasks and employees from backend
   useEffect(() => {
-    const mockTasks = [
-      {
-        id: 1,
-        title: 'Complete Q4 Financial Report',
-        description: 'Prepare comprehensive financial analysis for Q4 2024',
-        employee: { id: 1, name: 'John Doe', email: 'john@company.com' },
-        assignedDate: '2024-01-01',
-        dueDate: '2024-01-15',
-        status: 'in-progress',
-        priority: 'high',
-        category: 'admin',
-        estimatedHours: 20,
-        actualHours: 12,
-        progress: 60,
-        milestones: [
-          { id: 1, title: 'Data Collection', completed: true, dueDate: '2024-01-05' },
-          { id: 2, title: 'Analysis & Charts', completed: true, dueDate: '2024-01-10' },
-          { id: 3, title: 'Final Review', completed: false, dueDate: '2024-01-14' }
-        ],
-        comments: [
-          { id: 1, text: 'Started data collection', date: '2024-01-02', author: 'John Doe' },
-          { id: 2, text: 'Completed initial analysis', date: '2024-01-08', author: 'John Doe' }
-        ]
-      },
-      {
-        id: 2,
-        title: 'Update Marketing Campaign',
-        description: 'Revise social media marketing strategy for new product launch',
-        employee: { id: 2, name: 'Jane Smith', email: 'jane@company.com' },
-        assignedDate: '2024-01-03',
-        dueDate: '2024-01-12',
-        status: 'completed',
-        priority: 'medium',
-        category: 'marketing',
-        estimatedHours: 15,
-        actualHours: 14,
-        progress: 100,
-        milestones: [
-          { id: 1, title: 'Market Research', completed: true, dueDate: '2024-01-06' },
-          { id: 2, title: 'Strategy Development', completed: true, dueDate: '2024-01-09' },
-          { id: 3, title: 'Campaign Launch', completed: true, dueDate: '2024-01-12' }
-        ],
-        comments: [
-          { id: 1, text: 'Research completed ahead of schedule', date: '2024-01-05', author: 'Jane Smith' },
-          { id: 2, text: 'Campaign launched successfully', date: '2024-01-12', author: 'Jane Smith' }
-        ]
-      },
-      {
-        id: 3,
-        title: 'Client Follow-up Calls',
-        description: 'Contact all pending clients for project updates',
-        employee: { id: 3, name: 'Mike Johnson', email: 'mike@company.com' },
-        assignedDate: '2024-01-05',
-        dueDate: '2024-01-10',
-        status: 'overdue',
-        priority: 'high',
-        category: 'sales',
-        estimatedHours: 8,
-        actualHours: 3,
-        progress: 30,
-        milestones: [
-          { id: 1, title: 'Prepare Client List', completed: true, dueDate: '2024-01-06' },
-          { id: 2, title: 'Initial Calls', completed: false, dueDate: '2024-01-08' },
-          { id: 3, title: 'Follow-up & Reports', completed: false, dueDate: '2024-01-10' }
-        ],
-        comments: [
-          { id: 1, text: 'Client list prepared', date: '2024-01-06', author: 'Mike Johnson' }
-        ]
-      },
-      {
-        id: 4,
-        title: 'System Security Audit',
-        description: 'Conduct comprehensive security review of all systems',
-        employee: { id: 1, name: 'John Doe', email: 'john@company.com' },
-        assignedDate: '2024-01-08',
-        dueDate: '2024-01-20',
-        status: 'pending',
-        priority: 'high',
-        category: 'development',
-        estimatedHours: 25,
-        actualHours: 0,
-        progress: 0,
-        milestones: [
-          { id: 1, title: 'Initial Assessment', completed: false, dueDate: '2024-01-12' },
-          { id: 2, title: 'Vulnerability Testing', completed: false, dueDate: '2024-01-16' },
-          { id: 3, title: 'Report Generation', completed: false, dueDate: '2024-01-19' }
-        ],
-        comments: []
-      }
-    ];
-
-    setTasks(mockTasks);
-    setFilteredTasks(mockTasks);
-
-    setEmployees([
-      { id: 1, name: 'John Doe' },
-      { id: 2, name: 'Jane Smith' },
-      { id: 3, name: 'Mike Johnson' },
-      { id: 4, name: 'Sarah Wilson' }
-    ]);
+    fetchTasksAndEmployees();
   }, []);
+
+  const fetchTasksAndEmployees = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch all tasks
+      const tasksResponse = await api.get('/tasks/all');
+      const tasksData = tasksResponse.data.tasks || [];
+
+      // Transform backend data to match frontend structure
+      const transformedTasks = tasksData.map(task => ({
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        employee: {
+          id: task.employeeId?._id || task.employeeId,
+          name: task.employeeName,
+          email: task.employeeEmail
+        },
+        assignedDate: task.assignedDate,
+        dueDate: task.dueDate,
+        status: task.status.replace('_', '-'), // Convert 'in_progress' to 'in-progress'
+        priority: task.priority,
+        category: task.category,
+        estimatedHours: task.estimatedHours,
+        actualHours: 0, // This field doesn't exist in backend yet
+        progress: task.progress,
+        milestones: task.milestones.map(m => ({
+          id: m._id,
+          title: m.title,
+          completed: m.completed,
+          dueDate: m.dueDate
+        })),
+        comments: task.comments.map(c => ({
+          id: c._id,
+          text: c.message,
+          date: c.timestamp,
+          author: c.author
+        }))
+      }));
+
+      setTasks(transformedTasks);
+      setFilteredTasks(transformedTasks);
+
+      // Fetch employees list
+      const employeesResponse = await api.get('/tasks/employees/list');
+      const employeesData = employeesResponse.data.employees || [];
+
+      const transformedEmployees = employeesData.map(emp => ({
+        id: emp._id,
+        name: emp.username
+      }));
+
+      setEmployees(transformedEmployees);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching tasks and employees:', err);
+      setError(err.response?.data?.message || 'Failed to load tasks');
+      setLoading(false);
+    }
+  };
 
   // Filter tasks based on selected filters
   useEffect(() => {
@@ -180,10 +146,26 @@ const TaskTracking = () => {
     setShowTaskModal(false);
   };
 
-  const updateTaskStatus = (taskId, newStatus) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      // Convert status format back to backend format (e.g., 'in-progress' to 'in_progress')
+      const backendStatus = newStatus.replace('-', '_');
+
+      await api.put(`/tasks/${taskId}/status`, { status: backendStatus });
+
+      // Update local state
+      setTasks(prev => prev.map(task =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+
+      // Update selected task if it's the one being updated
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(prev => ({ ...prev, status: newStatus }));
+      }
+    } catch (err) {
+      console.error('Error updating task status:', err);
+      alert('Failed to update task status');
+    }
   };
 
   const getTaskStats = () => {
@@ -197,6 +179,32 @@ const TaskTracking = () => {
   };
 
   const stats = getTaskStats();
+
+  if (loading) {
+    return (
+      <div className="task-tracking">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="task-tracking">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <h3>Error Loading Tasks</h3>
+          <p>{error}</p>
+          <button onClick={fetchTasksAndEmployees} className="retry-button">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="task-tracking">
@@ -243,8 +251,8 @@ const TaskTracking = () => {
       <div className="tracking-filters">
         <div className="filter-group">
           <label>Status:</label>
-          <select 
-            value={filters.status} 
+          <select
+            value={filters.status}
             onChange={(e) => handleFilterChange('status', e.target.value)}
           >
             <option value="all">All Status</option>
@@ -257,8 +265,8 @@ const TaskTracking = () => {
 
         <div className="filter-group">
           <label>Priority:</label>
-          <select 
-            value={filters.priority} 
+          <select
+            value={filters.priority}
             onChange={(e) => handleFilterChange('priority', e.target.value)}
           >
             <option value="all">All Priorities</option>
@@ -270,8 +278,8 @@ const TaskTracking = () => {
 
         <div className="filter-group">
           <label>Employee:</label>
-          <select 
-            value={filters.employee} 
+          <select
+            value={filters.employee}
             onChange={(e) => handleFilterChange('employee', e.target.value)}
           >
             <option value="all">All Employees</option>
@@ -283,8 +291,8 @@ const TaskTracking = () => {
 
         <div className="filter-group">
           <label>Date Range:</label>
-          <select 
-            value={filters.dateRange} 
+          <select
+            value={filters.dateRange}
             onChange={(e) => handleFilterChange('dateRange', e.target.value)}
           >
             <option value="all">All Time</option>
@@ -302,13 +310,13 @@ const TaskTracking = () => {
             <div className="task-header">
               <h3>{task.title}</h3>
               <div className="task-badges">
-                <span 
+                <span
                   className="priority-badge"
                   style={{ backgroundColor: getPriorityColor(task.priority) }}
                 >
                   {task.priority}
                 </span>
-                <span 
+                <span
                   className="status-badge"
                   style={{ backgroundColor: getStatusColor(task.status) }}
                 >
@@ -327,9 +335,9 @@ const TaskTracking = () => {
                 <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
               </div>
               <div className="progress-bar">
-                <div 
+                <div
                   className="progress-fill"
-                  style={{ 
+                  style={{
                     width: `${task.progress}%`,
                     backgroundColor: getProgressColor(task.progress)
                   }}
@@ -343,7 +351,7 @@ const TaskTracking = () => {
               </div>
               <div className="milestone-dots">
                 {task.milestones.map(milestone => (
-                  <div 
+                  <div
                     key={milestone.id}
                     className={`milestone-dot ${milestone.completed ? 'completed' : 'pending'}`}
                   />
@@ -431,7 +439,7 @@ const TaskTracking = () => {
                     </div>
                     <div className="info-item">
                       <label>Status:</label>
-                      <span 
+                      <span
                         className="status-badge"
                         style={{ backgroundColor: getStatusColor(selectedTask.status) }}
                       >
@@ -440,7 +448,7 @@ const TaskTracking = () => {
                     </div>
                     <div className="info-item">
                       <label>Priority:</label>
-                      <span 
+                      <span
                         className="priority-badge"
                         style={{ backgroundColor: getPriorityColor(selectedTask.priority) }}
                       >
@@ -469,9 +477,9 @@ const TaskTracking = () => {
                         <span>Estimated: {selectedTask.estimatedHours}h</span>
                       </div>
                       <div className="time-bar">
-                        <div 
+                        <div
                           className="time-fill"
-                          style={{ 
+                          style={{
                             width: `${Math.min((selectedTask.actualHours / selectedTask.estimatedHours) * 100, 100)}%`,
                             backgroundColor: selectedTask.actualHours > selectedTask.estimatedHours ? '#ef4444' : '#10b981'
                           }}
@@ -490,19 +498,19 @@ const TaskTracking = () => {
                   <div className="status-actions">
                     <h4>Update Status</h4>
                     <div className="status-buttons">
-                      <button 
+                      <button
                         className="status-btn pending"
                         onClick={() => updateTaskStatus(selectedTask.id, 'pending')}
                       >
                         Pending
                       </button>
-                      <button 
+                      <button
                         className="status-btn in-progress"
                         onClick={() => updateTaskStatus(selectedTask.id, 'in-progress')}
                       >
                         In Progress
                       </button>
-                      <button 
+                      <button
                         className="status-btn completed"
                         onClick={() => updateTaskStatus(selectedTask.id, 'completed')}
                       >

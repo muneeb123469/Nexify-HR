@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './TaskAssignment.css';
 
 const TaskAssignment = () => {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [taskForm, setTaskForm] = useState({
@@ -11,29 +13,96 @@ const TaskAssignment = () => {
     type: 'daily',
     dueDate: '',
     estimatedHours: '',
-    category: 'general',
+    category: 'development',
     milestones: []
   });
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', description: '' });
   const [recentTasks, setRecentTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [stats, setStats] = useState({ active: 0, overdue: 0, completedToday: 0 });
 
-  // Mock employee data - will be replaced with API call
+  // Fetch employees from backend
   useEffect(() => {
-    setEmployees([
-      { id: 1, name: 'John Doe', email: 'john@company.com', department: 'Engineering' },
-      { id: 2, name: 'Jane Smith', email: 'jane@company.com', department: 'Marketing' },
-      { id: 3, name: 'Mike Johnson', email: 'mike@company.com', department: 'Sales' },
-      { id: 4, name: 'Sarah Wilson', email: 'sarah@company.com', department: 'HR' }
-    ]);
-
-    // Mock recent tasks
-    setRecentTasks([
-      { id: 1, title: 'Complete Q4 Report', employee: 'John Doe', dueDate: '2024-01-15', status: 'pending' },
-      { id: 2, title: 'Update Marketing Campaign', employee: 'Jane Smith', dueDate: '2024-01-12', status: 'in-progress' },
-      { id: 3, title: 'Client Follow-up', employee: 'Mike Johnson', dueDate: '2024-01-10', status: 'completed' }
-    ]);
+    fetchEmployees();
+    fetchRecentTasks();
+    fetchStats();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/tasks/employees/list', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch employees');
+      }
+
+      const data = await response.json();
+      console.log('Fetched employees:', data.employees);
+      setEmployees(data.employees);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setError('Failed to load employees');
+    }
+  };
+
+  const fetchRecentTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/tasks/assigned-by-me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent tasks');
+      }
+
+      const data = await response.json();
+      // Get only the 5 most recent tasks
+      setRecentTasks(data.tasks.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching recent tasks:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/tasks/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+
+      const data = await response.json();
+      const tasks = data.tasks;
+      
+      const today = new Date().toDateString();
+      setStats({
+        active: tasks.filter(t => t.status === 'in_progress' || t.status === 'pending').length,
+        overdue: tasks.filter(t => t.status === 'overdue').length,
+        completedToday: tasks.filter(t => 
+          t.status === 'completed' && 
+          new Date(t.completedDate).toDateString() === today
+        ).length
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -61,25 +130,76 @@ const TaskAssignment = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: API call to create task
-    console.log('Creating task:', { ...taskForm, employeeId: selectedEmployee });
-    
-    // Reset form
-    setTaskForm({
-      title: '',
-      description: '',
-      priority: 'medium',
-      type: 'daily',
-      dueDate: '',
-      estimatedHours: '',
-      category: 'general',
-      milestones: []
-    });
-    setSelectedEmployee('');
-    
-    alert('Task assigned successfully!');
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Prepare task data
+      const taskData = {
+        employeeId: selectedEmployee,
+        title: taskForm.title,
+        description: taskForm.description,
+        priority: taskForm.priority,
+        taskType: taskForm.type,
+        category: taskForm.category,
+        dueDate: taskForm.dueDate,
+        estimatedHours: parseFloat(taskForm.estimatedHours) || 0,
+        milestones: taskForm.milestones.map(m => ({
+          title: m.title,
+          dueDate: m.dueDate,
+          completed: false
+        })),
+        notes: ''
+      };
+
+      const response = await fetch('http://localhost:5000/api/tasks/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(taskData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to assign task');
+      }
+
+      // Success
+      setSuccess('Task assigned successfully!');
+      
+      // Reset form
+      setTaskForm({
+        title: '',
+        description: '',
+        priority: 'medium',
+        type: 'daily',
+        dueDate: '',
+        estimatedHours: '',
+        category: 'development',
+        milestones: []
+      });
+      setSelectedEmployee('');
+
+      // Refresh recent tasks and stats
+      fetchRecentTasks();
+      fetchStats();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      setError(error.message || 'Failed to assign task');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getPriorityColor = (priority) => {
@@ -106,9 +226,23 @@ const TaskAssignment = () => {
         {/* Task Creation Form */}
         <div className="task-form-section">
           <div className="section-header">
-            <h2>📋 Create New Task</h2>
-            <p>Assign tasks to employees with deadlines and milestones</p>
+            <h2>📋 Assign New Tasks</h2>
+            {/* <p>Assign tasks to employees with deadlines and milestones</p> */}
           </div>
+
+          {error && (
+            <div className="alert alert-error">
+              <span>⚠️ {error}</span>
+              <button onClick={() => setError(null)}>✕</button>
+            </div>
+          )}
+
+          {success && (
+            <div className="alert alert-success">
+              <span>✓ {success}</span>
+              <button onClick={() => setSuccess(null)}>✕</button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="task-form">
             <div className="form-row">
@@ -121,8 +255,8 @@ const TaskAssignment = () => {
                 >
                   <option value="">Choose an employee...</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} - {emp.department}
+                    <option key={emp._id} value={emp._id}>
+                      {emp.username} {emp.department ? `- ${emp.department}` : ''}
                     </option>
                   ))}
                 </select>
@@ -134,7 +268,7 @@ const TaskAssignment = () => {
                   <option value="daily">Daily Task</option>
                   <option value="weekly">Weekly Task</option>
                   <option value="monthly">Monthly Task</option>
-                  <option value="project">Project Task</option>
+                  <option value="project-based">Project-Based Task</option>
                 </select>
               </div>
             </div>
@@ -176,12 +310,17 @@ const TaskAssignment = () => {
               <div className="form-group">
                 <label>Category</label>
                 <select name="category" value={taskForm.category} onChange={handleInputChange}>
-                  <option value="general">General</option>
                   <option value="development">Development</option>
                   <option value="marketing">Marketing</option>
                   <option value="sales">Sales</option>
-                  <option value="support">Support</option>
                   <option value="admin">Administrative</option>
+                  <option value="support">Support</option>
+                  <option value="design">Design</option>
+                  <option value="reporting">Reporting</option>
+                  <option value="documentation">Documentation</option>
+                  <option value="training">Training</option>
+                  <option value="technical">Technical</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
@@ -247,8 +386,8 @@ const TaskAssignment = () => {
               )}
             </div>
 
-            <button type="submit" className="submit-btn">
-              📋 Assign Task
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? '⏳ Assigning...' : '📋 Assign Task'}
             </button>
           </form>
         </div>
@@ -260,15 +399,15 @@ const TaskAssignment = () => {
             <h3>📊 Quick Stats</h3>
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-number">24</div>
+                <div className="stat-number">{stats.active}</div>
                 <div className="stat-label">Active Tasks</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">8</div>
+                <div className="stat-number">{stats.overdue}</div>
                 <div className="stat-label">Overdue</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">16</div>
+                <div className="stat-number">{stats.completedToday}</div>
                 <div className="stat-label">Completed Today</div>
               </div>
             </div>
@@ -278,21 +417,25 @@ const TaskAssignment = () => {
           <div className="recent-tasks">
             <h3>📝 Recent Assignments</h3>
             <div className="tasks-list">
-              {recentTasks.map(task => (
-                <div key={task.id} className="task-item">
-                  <div className="task-info">
-                    <h4>{task.title}</h4>
-                    <p>{task.employee}</p>
-                    <p className="task-due">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
+              {recentTasks.length > 0 ? (
+                recentTasks.map(task => (
+                  <div key={task._id} className="task-item">
+                    <div className="task-info">
+                      <h4>{task.title}</h4>
+                      <p>{task.employeeName}</p>
+                      <p className="task-due">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
+                    </div>
+                    <div 
+                      className="task-status"
+                      style={{ backgroundColor: getStatusColor(task.status) }}
+                    >
+                      {task.status.replace('_', ' ')}
+                    </div>
                   </div>
-                  <div 
-                    className="task-status"
-                    style={{ backgroundColor: getStatusColor(task.status) }}
-                  >
-                    {task.status}
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="no-tasks">No recent tasks assigned yet.</p>
+              )}
             </div>
           </div>
         </div>
