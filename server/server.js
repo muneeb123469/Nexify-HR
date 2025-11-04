@@ -42,6 +42,7 @@ app.use('/api', require('./Routes/attendanceRoutes'));
 app.use('/api/leave', require('./Routes/leaveRoutes'));
 app.use('/api/locations', require('./Routes/locationRoutes'));
 app.use('/api/tasks', require('./Routes/taskRoutes'));
+app.use('/api/reports', require('./Routes/reportRoutes'));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/job-portal';

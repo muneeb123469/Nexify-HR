@@ -314,13 +314,9 @@ const TaskAssignment = () => {
                   <option value="marketing">Marketing</option>
                   <option value="sales">Sales</option>
                   <option value="admin">Administrative</option>
-                  <option value="support">Support</option>
                   <option value="design">Design</option>
                   <option value="reporting">Reporting</option>
-                  <option value="documentation">Documentation</option>
-                  <option value="training">Training</option>
                   <option value="technical">Technical</option>
-                  <option value="other">Other</option>
                 </select>
               </div>
             </div>

@@ -170,8 +170,28 @@ const AssignedTasks = () => {
       }
 
       const data = await response.json();
-      setTasks(data.tasks);
-      setFilteredTasks(data.tasks);
+      
+      // Map backend data to frontend format if needed
+      const formattedTasks = data.tasks.map(task => ({
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        status: task.status || 'pending',
+        dueDate: task.dueDate,
+        assignedBy: `${task.assignedByName} (${task.assignedByRole})`,
+        assignedDate: task.createdAt,
+        category: task.category,
+        estimatedHours: task.estimatedHours,
+        progress: task.progress || 0,
+        completedDate: task.completedDate,
+        milestones: task.milestones || [],
+        comments: task.comments || [],
+        attachments: task.attachments || []
+      }));
+      
+      setTasks(formattedTasks);
+      setFilteredTasks(formattedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       // Fallback to mock data if API fails
@@ -280,7 +300,9 @@ const AssignedTasks = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({
+          status: newStatus
+        })
       });
 
       if (!response.ok) {
@@ -292,13 +314,13 @@ const AssignedTasks = () => {
       // Update local state
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task._id === taskId ? data.task : task
+          task._id === taskId || task.id === taskId ? {...task, status: newStatus} : task
         )
       );
 
       // Update selected task if it's the one being updated
-      if (selectedTask && selectedTask._id === taskId) {
-        setSelectedTask(data.task);
+      if (selectedTask && (selectedTask._id === taskId || selectedTask.id === taskId)) {
+        setSelectedTask({...selectedTask, status: newStatus});
       }
 
       alert('Task status updated successfully!');
@@ -313,6 +335,15 @@ const AssignedTasks = () => {
     setHasUnsavedChanges(true);
   };
 
+  const handleEstimatedHoursChange = (e) => {
+    const newHours = e.target.value;
+    setSelectedTask({
+      ...selectedTask,
+      estimatedHours: newHours
+    });
+    setHasUnsavedChanges(true);
+  };
+
   const saveProgressChanges = async () => {
     if (!selectedTask) return;
 
@@ -324,7 +355,9 @@ const AssignedTasks = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ progress: tempProgress })
+        body: JSON.stringify({
+          progress: tempProgress
+        })
       });
 
       if (!response.ok) {
@@ -336,12 +369,17 @@ const AssignedTasks = () => {
       // Update local state
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task._id === selectedTask._id ? data.task : task
+          task._id === selectedTask._id || task.id === selectedTask.id ? {
+            ...task,
+            progress: tempProgress,
+            status: selectedTask.status,
+            estimatedHours: selectedTask.estimatedHours
+          } : task
         )
       );
 
       // Update selected task
-      setSelectedTask(data.task);
+      setSelectedTask({...selectedTask, progress: tempProgress});
       setHasUnsavedChanges(false);
 
       alert('Task progress updated successfully!');
@@ -538,6 +576,33 @@ const AssignedTasks = () => {
       )}
     </div>
   );
+
+  const handleDeleteTask = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/tasks/${selectedTask._id || selectedTask.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+
+      // Filter out the deleted task
+      const updatedTasks = tasks.filter(task => (task._id || task.id) !== (selectedTask._id || selectedTask.id));
+      setTasks(updatedTasks);
+      setFilteredTasks(updatedTasks);
+      setSelectedTask(null);
+      
+      alert('Task deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
+  };
 
   const TaskDetails = () => {
     if (!selectedTask) {

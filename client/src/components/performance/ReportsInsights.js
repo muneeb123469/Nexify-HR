@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './ReportsInsights.css';
 
 const ReportsInsights = () => {
@@ -8,89 +9,46 @@ const ReportsInsights = () => {
   const [loading, setLoading] = useState(false);
   const [exportFormat, setExportFormat] = useState('pdf');
 
-  // Mock report data - will be replaced with API calls
+  // Fetch real report data from API
   useEffect(() => {
-    setLoading(true);
-    
-    setTimeout(() => {
-      setReportData({
-        overview: {
-          totalEmployees: 24,
-          activeTasks: 156,
-          completionRate: 87,
-          averageProductivity: 84,
-          topPerformers: [
-            { name: 'Sarah Wilson', score: 94, department: 'HR' },
-            { name: 'John Doe', score: 92, department: 'Engineering' },
-            { name: 'Jane Smith', score: 89, department: 'Marketing' }
-          ],
-          lowPerformers: [
-            { name: 'Mike Johnson', score: 72, department: 'Sales' },
-            { name: 'Alex Brown', score: 68, department: 'Support' },
-            { name: 'Lisa Davis', score: 65, department: 'Admin' }
-          ],
-          riskAreas: [
-            { area: 'Deadline Compliance', risk: 'High', impact: 'Critical' },
-            { area: 'Task Overload', risk: 'Medium', impact: 'Moderate' },
-            { area: 'Resource Allocation', risk: 'Low', impact: 'Minor' }
-          ]
-        },
-        productivity: {
-          trends: [
-            { period: 'Week 1', score: 82 },
-            { period: 'Week 2', score: 85 },
-            { period: 'Week 3', score: 87 },
-            { period: 'Week 4', score: 84 }
-          ],
-          departmentComparison: [
-            { department: 'Engineering', current: 91, previous: 88, change: 3 },
-            { department: 'Marketing', current: 85, previous: 82, change: 3 },
-            { department: 'Sales', current: 79, previous: 83, change: -4 },
-            { department: 'HR', current: 88, previous: 85, change: 3 }
-          ],
-          taskCategories: [
-            { category: 'Development', completed: 45, pending: 12, overdue: 3 },
-            { category: 'Marketing', completed: 38, pending: 8, overdue: 2 },
-            { category: 'Sales', completed: 32, pending: 15, overdue: 5 },
-            { category: 'Administrative', completed: 28, pending: 6, overdue: 1 }
-          ]
-        },
-        efficiency: {
-          timeUtilization: 78,
-          resourceEfficiency: 82,
-          processOptimization: 75,
-          communicationScore: 88,
-          bottlenecks: [
-            { process: 'Task Assignment', delay: '2.3 days', impact: 'High' },
-            { process: 'Review Process', delay: '1.8 days', impact: 'Medium' },
-            { process: 'Resource Approval', delay: '3.1 days', impact: 'High' }
-          ],
-          improvements: [
-            { area: 'Automated Workflows', potential: '25%', priority: 'High' },
-            { area: 'Better Communication', potential: '18%', priority: 'Medium' },
-            { area: 'Resource Planning', potential: '22%', priority: 'High' }
-          ]
-        },
-        compliance: {
-          deadlineCompliance: 87,
-          qualityStandards: 92,
-          processAdherence: 85,
-          documentationScore: 79,
-          violations: [
-            { type: 'Missed Deadline', count: 8, severity: 'Medium' },
-            { type: 'Quality Issues', count: 3, severity: 'High' },
-            { type: 'Process Deviation', count: 5, severity: 'Low' }
-          ],
-          recommendations: [
-            'Implement automated deadline reminders',
-            'Enhance quality control processes',
-            'Provide process training to team leads',
-            'Improve documentation standards'
-          ]
+    const fetchReportData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        let data = {};
+
+        // Fetch data based on selected report
+        if (selectedReport === 'overview') {
+          const response = await axios.get('http://localhost:5000/api/reports/executive-summary', config);
+          data.overview = response.data;
+        } else if (selectedReport === 'productivity') {
+          const response = await axios.get('http://localhost:5000/api/reports/productivity-analysis', config);
+          data.productivity = response.data;
+        } else if (selectedReport === 'efficiency') {
+          const response = await axios.get('http://localhost:5000/api/reports/efficiency-report', config);
+          data.efficiency = response.data;
+        } else if (selectedReport === 'compliance') {
+          const response = await axios.get('http://localhost:5000/api/reports/compliance-report', config);
+          data.compliance = response.data;
         }
-      });
-      setLoading(false);
-    }, 1000);
+
+        setReportData(data);
+      } catch (error) {
+        console.error('Error fetching report data:', error);
+        // Show error message to user
+        alert('Failed to fetch report data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportData();
   }, [selectedReport, dateRange]);
 
   const reportTypes = [
@@ -100,9 +58,83 @@ const ReportsInsights = () => {
     { id: 'compliance', label: 'Compliance Report', icon: '✅' }
   ];
 
-  const handleExport = (format) => {
-    // TODO: Implement export functionality
-    alert(`Exporting ${selectedReport} report as ${format.toUpperCase()}...`);
+  const handleExport = async (format) => {
+    if (format !== 'pdf') {
+      alert(`${format.toUpperCase()} export coming soon!`);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Map report types to download endpoints
+      const endpointMap = {
+        'overview': 'executive-summary',
+        'productivity': 'productivity-analysis',
+        'efficiency': 'efficiency-report',
+        'compliance': 'compliance-report'
+      };
+
+      const endpoint = endpointMap[selectedReport];
+      if (!endpoint) {
+        alert('Invalid report type');
+        return;
+      }
+
+      // Show loading message
+      const downloadBtn = document.querySelector('.export-btn.pdf');
+      if (downloadBtn) {
+        downloadBtn.textContent = 'Downloading...';
+        downloadBtn.disabled = true;
+      }
+
+      // Fetch the PDF
+      const response = await fetch(`http://localhost:5000/api/reports/download/${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download report');
+      }
+
+      // Create a blob from the response
+      const blob = await response.blob();
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${endpoint}-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Reset button
+      if (downloadBtn) {
+        downloadBtn.textContent = '📄 PDF';
+        downloadBtn.disabled = false;
+      }
+
+      alert('Report downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Failed to download report. Please try again.');
+      
+      // Reset button on error
+      const downloadBtn = document.querySelector('.export-btn.pdf');
+      if (downloadBtn) {
+        downloadBtn.textContent = '📄 PDF';
+        downloadBtn.disabled = false;
+      }
+    }
   };
 
   const getRiskColor = (risk) => {
@@ -206,6 +238,29 @@ const ReportsInsights = () => {
               </div>
             ))}
           </div>
+
+          {/* Employees at Risk Section */}
+          {reportData.overview?.employeesAtRisk && reportData.overview.employeesAtRisk.length > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <h4>⚠️ Employees with Tasks Near Due Date</h4>
+              <div className="risk-table">
+                <div className="risk-header">
+                  <span>Employee Name</span>
+                  <span>Department</span>
+                  <span>Tasks at Risk</span>
+                </div>
+                {reportData.overview.employeesAtRisk.map((emp, index) => (
+                  <div key={index} className="risk-row">
+                    <span className="risk-area">{emp.employeeName}</span>
+                    <span className="risk-impact">{emp.department}</span>
+                    <span className="risk-level" style={{ backgroundColor: '#f59e0b' }}>
+                      {emp.tasksAtRisk} task{emp.tasksAtRisk > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -460,7 +515,16 @@ const ReportsInsights = () => {
             {reportData.compliance?.recommendations?.map((recommendation, index) => (
               <div key={index} className="recommendation-item">
                 <div className="recommendation-icon">💡</div>
-                <div className="recommendation-text">{recommendation}</div>
+                <div className="recommendation-text">
+                  {typeof recommendation === 'string' ? recommendation : (
+                    <>
+                      <strong>{recommendation.title}</strong>
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+                        {recommendation.description}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -520,7 +584,7 @@ const ReportsInsights = () => {
           </div>
 
           <div className="export-options">
-            <label>Export:</label>
+            <label>Download Report</label>
             <div className="export-buttons">
               <button 
                 className="export-btn pdf"
@@ -528,7 +592,7 @@ const ReportsInsights = () => {
               >
                 📄 PDF
               </button>
-              <button 
+              {/* <button 
                 className="export-btn excel"
                 onClick={() => handleExport('excel')}
               >
@@ -539,7 +603,7 @@ const ReportsInsights = () => {
                 onClick={() => handleExport('csv')}
               >
                 📋 CSV
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -554,14 +618,14 @@ const ReportsInsights = () => {
           </h2>
           <p>Generated on {new Date().toLocaleDateString()} for {dateRange}</p>
         </div>
-        <div className="report-actions">
+        {/* <div className="report-actions">
           <button className="action-btn schedule">
             📅 Schedule Report
           </button>
           <button className="action-btn share">
             📤 Share Report
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Report Content */}
