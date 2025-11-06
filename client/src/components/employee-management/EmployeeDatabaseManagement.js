@@ -23,7 +23,8 @@ const EmployeeDatabaseManagement = () => {
     hireDate: '',
     salary: '',
     managerId: '',
-    status: 'Active'
+    status: 'Active',
+    employeeStatus: ''
   });
 
   // Fetch employees and managers on component mount
@@ -75,7 +76,8 @@ const EmployeeDatabaseManagement = () => {
       hireDate: '',
       salary: '',
       managerId: '',
-      status: 'Active'
+      status: 'Active',
+      employeeStatus: ''
     });
     setShowAddForm(true);
     setShowEditForm(false);
@@ -93,7 +95,8 @@ const EmployeeDatabaseManagement = () => {
       hireDate: employee.hireDate ? new Date(employee.hireDate).toISOString().split('T')[0] : '',
       salary: employee.salary || '',
       managerId: employee.manager?._id || '',
-      status: employee.status
+      status: employee.status,
+      employeeStatus: employee.employeeStatus || ''
     });
     setShowEditForm(true);
     setShowAddForm(false);
@@ -126,7 +129,8 @@ const EmployeeDatabaseManagement = () => {
         phone: newEmployee.phone,
         hireDate: newEmployee.hireDate,
         salary: newEmployee.salary ? parseFloat(newEmployee.salary) : null,
-        managerId: newEmployee.managerId || null
+        managerId: newEmployee.managerId || null,
+        employeeStatus: newEmployee.employeeStatus
       };
 
       const response = await employeeApi.createEmployee(employeeData);
@@ -142,7 +146,8 @@ const EmployeeDatabaseManagement = () => {
           hireDate: '',
           salary: '',
           managerId: '',
-          status: 'Active'
+          status: 'Active',
+          employeeStatus: ''
         });
         setNotification({
           type: 'success',
@@ -172,7 +177,8 @@ const EmployeeDatabaseManagement = () => {
         status: newEmployee.status,
         hireDate: newEmployee.hireDate,
         salary: newEmployee.salary ? parseFloat(newEmployee.salary) : null,
-        managerId: newEmployee.managerId || null
+        managerId: newEmployee.managerId || null,
+        employeeStatus: newEmployee.employeeStatus
       };
 
       const response = await employeeApi.updateEmployee(selectedEmployee.id, employeeData);
@@ -290,6 +296,7 @@ const EmployeeDatabaseManagement = () => {
                 <th>Name</th>
                 <th>Department</th>
                 <th>Role</th>
+                <th>Employee Type</th>
                 <th>Status</th>
                 <th>Last Modified</th>
                 <th>Actions</th>
@@ -298,7 +305,7 @@ const EmployeeDatabaseManagement = () => {
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="no-data">
+                  <td colSpan="8" className="no-data">
                     {searchTerm ? 'No employees found matching your search.' : 'No employees found. Add some employees to get started.'}
                   </td>
                 </tr>
@@ -309,6 +316,7 @@ const EmployeeDatabaseManagement = () => {
                     <td>{employee.name}</td>
                     <td>{employee.department || 'N/A'}</td>
                     <td>{employee.role || 'N/A'}</td>
+                    <td>{employee.employeeStatus || 'Not specified'}</td>
                     <td>
                       <span className={`status-badge ${employee.status.toLowerCase()}`}>
                         {employee.status}
@@ -430,7 +438,7 @@ const EmployeeDatabaseManagement = () => {
                       name="salary"
                       value={newEmployee.salary}
                       onChange={handleInputChange}
-                      placeholder="Annual salary"
+                      placeholder="Monthly salary"
                     />
                   </div>
                   <div className="form-group">
@@ -446,6 +454,23 @@ const EmployeeDatabaseManagement = () => {
                           {manager.name} - {manager.title}
                         </option>
                       ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Employee Status *</label>
+                    <select
+                      name="employeeStatus"
+                      value={newEmployee.employeeStatus}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Employee Status</option>
+                      <option value="Full-time permanent employee">Full-time permanent employee</option>
+                      <option value="Part-time employee">Part-time employee</option>
+                      <option value="Contract-based employee">Contract-based employee</option>
+                      <option value="Intern">Intern</option>
                     </select>
                   </div>
                 </div>
@@ -562,7 +587,7 @@ const EmployeeDatabaseManagement = () => {
                       name="salary"
                       value={newEmployee.salary}
                       onChange={handleInputChange}
-                      placeholder="Annual salary"
+                      placeholder="Monthly salary"
                     />
                   </div>
                 </div>
@@ -580,6 +605,21 @@ const EmployeeDatabaseManagement = () => {
                           {manager.name} - {manager.title}
                         </option>
                       ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Employee Status *</label>
+                    <select
+                      name="employeeStatus"
+                      value={newEmployee.employeeStatus}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Employee Status</option>
+                      <option value="Full-time permanent employee">Full-time permanent employee</option>
+                      <option value="Part-time employee">Part-time employee</option>
+                      <option value="Contract-based employee">Contract-based employee</option>
+                      <option value="Intern">Intern</option>
                     </select>
                   </div>
                 </div>
@@ -610,6 +650,7 @@ const EmployeeDatabaseManagement = () => {
                   <p><strong>Last Modified:</strong> {formatDate(selectedEmployee.lastModified)}</p>
                   <p><strong>Created:</strong> {formatDate(selectedEmployee.createdAt)}</p>
                   <p><strong>Current Status:</strong> {selectedEmployee.status}</p>
+                  <p><strong>Employee Status:</strong> {selectedEmployee.employeeStatus || 'Not specified'}</p>
                   <p><strong>Department:</strong> {selectedEmployee.department}</p>
                   <p><strong>Role:</strong> {selectedEmployee.role}</p>
                 </div>

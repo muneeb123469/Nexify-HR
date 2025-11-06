@@ -31,6 +31,7 @@ router.get('/employees', auth, async (req, res) => {
         projects: emp.projects || [],
         phone: emp.phone,
         status: emp.status,
+        employeeStatus: emp.employeeStatus,
         hireDate: emp.hireDate,
         salary: emp.salary,
         manager: emp.manager,
@@ -74,6 +75,7 @@ router.get('/employees/:id', auth, async (req, res) => {
         projects: employee.projects || [],
         phone: employee.phone,
         status: employee.status,
+        employeeStatus: employee.employeeStatus,
         hireDate: employee.hireDate,
         salary: employee.salary,
         manager: employee.manager,
@@ -94,12 +96,12 @@ router.post('/employees', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
     }
 
-    const { name, email, department, jobTitle, phone, hireDate, salary, managerId } = req.body;
+    const { name, email, department, jobTitle, phone, hireDate, salary, managerId, employeeStatus } = req.body;
 
     // Validate required fields
-    if (!name || !email || !department || !jobTitle) {
+    if (!name || !email || !department || !jobTitle || !employeeStatus) {
       return res.status(400).json({ 
-        message: 'Please provide all required fields: name, email, department, jobTitle' 
+        message: 'Please provide all required fields: name, email, department, jobTitle, employeeStatus' 
       });
     }
 
@@ -130,7 +132,8 @@ router.post('/employees', auth, async (req, res) => {
       hireDate: hireDate ? new Date(hireDate) : new Date(),
       salary: salary ? parseFloat(salary) : null,
       manager: managerId || null,
-      status: 'Active'
+      status: 'Active',
+      employeeStatus
     });
 
     await employee.save();
@@ -154,6 +157,7 @@ router.post('/employees', auth, async (req, res) => {
         role: employee.jobTitle,
         phone: employee.phone,
         status: employee.status,
+        employeeStatus: employee.employeeStatus,
         hireDate: employee.hireDate,
         salary: employee.salary,
         lastModified: employee.updatedAt,
@@ -198,7 +202,7 @@ router.put('/employees/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
     }
 
-    const { name, email, department, jobTitle, phone, status, hireDate, salary, managerId } = req.body;
+    const { name, email, department, jobTitle, phone, status, hireDate, salary, managerId, employeeStatus } = req.body;
 
     const employee = await User.findById(req.params.id);
     if (!employee || employee.role !== 'employee') {
@@ -234,6 +238,7 @@ router.put('/employees/:id', auth, async (req, res) => {
     if (hireDate) employee.hireDate = new Date(hireDate);
     if (salary !== undefined) employee.salary = salary ? parseFloat(salary) : null;
     if (managerId !== undefined) employee.manager = managerId || null;
+    if (employeeStatus) employee.employeeStatus = employeeStatus;
 
     await employee.save();
 
@@ -249,6 +254,7 @@ router.put('/employees/:id', auth, async (req, res) => {
         role: employee.jobTitle,
         phone: employee.phone,
         status: employee.status,
+        employeeStatus: employee.employeeStatus,
         hireDate: employee.hireDate,
         salary: employee.salary,
         lastModified: employee.updatedAt,

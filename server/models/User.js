@@ -85,6 +85,13 @@ const userSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Terminated'],
     default: 'Active'
   },
+  employeeStatus: {
+    type: String,
+    enum: ['Full-time permanent employee', 'Part-time employee', 'Contract-based employee', 'Intern'],
+    required: function() {
+      return this.role === 'employee';
+    }
+  },
   hireDate: {
     type: Date
   },
