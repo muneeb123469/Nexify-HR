@@ -36,12 +36,27 @@ export const employeeApi = {
   // Get all employees
   getAllEmployees: async () => {
     try {
+      console.log('Making request to:', `${API_BASE_URL}/employees`);
+      console.log('Headers:', getAuthHeaders());
+      
       const response = await fetch(`${API_BASE_URL}/employees`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned non-JSON response');
+      }
+
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (!response.ok) {
         handleAuthError(response, data);

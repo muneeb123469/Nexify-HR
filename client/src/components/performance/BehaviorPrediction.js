@@ -1,205 +1,319 @@
 import React, { useState, useEffect } from 'react';
 import './BehaviorPrediction.css';
+import { useAuth } from '../../context/AuthContext';
 
 const BehaviorPrediction = () => {
+  const { user } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [employees, setEmployees] = useState([]);
   const [predictionData, setPredictionData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [timeframe, setTimeframe] = useState('3months');
+  const [error, setError] = useState(null);
 
-  // Mock employee data - will be replaced with API call
+  // Fetch real employee data from API
   useEffect(() => {
-    setEmployees([
-      { id: 1, name: 'John Doe', email: 'john@company.com', department: 'Engineering', avatar: '/api/placeholder/40/40' },
-      { id: 2, name: 'Jane Smith', email: 'jane@company.com', department: 'Marketing', avatar: '/api/placeholder/40/40' },
-      { id: 3, name: 'Mike Johnson', email: 'mike@company.com', department: 'Sales', avatar: '/api/placeholder/40/40' },
-      { id: 4, name: 'Sarah Wilson', email: 'sarah@company.com', department: 'HR', avatar: '/api/placeholder/40/40' },
-      { id: 5, name: 'Alex Brown', email: 'alex@company.com', department: 'Support', avatar: '/api/placeholder/40/40' }
-    ]);
+    const fetchEmployees = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/employees', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+
+        const data = await response.json();
+        const formattedEmployees = data.employees.map(emp => ({
+          id: emp.id,
+          name: emp.name,
+          email: emp.email,
+          department: emp.department,
+          avatar: '/api/placeholder/40/40'
+        }));
+
+        setEmployees(formattedEmployees);
+      } catch (err) {
+        console.error('Error fetching employees:', err);
+        setError('Failed to load employees');
+      }
+    };
+
+    fetchEmployees();
   }, []);
+
+  // Calculate prediction data based on real performance metrics
+  const calculatePredictions = async (employeeId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch performance data
+      const perfResponse = await fetch(`http://localhost:5000/api/employees/performance/${employeeId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Fetch task stats
+      const taskResponse = await fetch(`http://localhost:5000/api/tasks/stats/employee/${employeeId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!perfResponse.ok || !taskResponse.ok) {
+        throw new Error('Failed to fetch performance data');
+      }
+
+      const perfData = await perfResponse.json();
+      const taskStats = await taskResponse.json();
+
+      // Calculate performance trend based on actual data
+      const taskCompletionRate = taskStats.completionRate || 0;
+      const attendanceRate = perfData.attendanceRate || 0;
+      const currentScore = Math.round((taskCompletionRate + attendanceRate) / 2);
+      
+      // Determine trend direction
+      let direction = 'stable';
+      let confidence = 75;
+      let predictedScore = currentScore;
+
+      if (taskCompletionRate > 80 && attendanceRate > 90) {
+        direction = 'improving';
+        confidence = 85;
+        predictedScore = Math.min(100, currentScore + 5);
+      } else if (taskCompletionRate < 60 || attendanceRate < 70) {
+        direction = 'declining';
+        confidence = 78;
+        predictedScore = Math.max(0, currentScore - 5);
+      }
+
+      // Build prediction data
+      const predictions = {
+        performanceTrend: {
+          direction,
+          confidence,
+          currentScore,
+          predictedScore,
+          factors: generateFactors(taskStats, perfData)
+        },
+        deadlineLikelihood: {
+          overall: taskCompletionRate,
+          upcoming: generateUpcomingTasks(taskStats)
+        },
+        consistency: {
+          score: Math.round((perfData.onTimeRate * 100) || 75),
+          trend: direction,
+          patterns: {
+            punctuality: Math.round((perfData.onTimeRate * 100) || 85),
+            taskCompletion: taskStats.completionRate || 0,
+            qualityMaintenance: Math.round((perfData.taskQualityScore || 75)),
+            communicationFrequency: Math.round((perfData.peerReviewScore || 75))
+          }
+        },
+        motivation: {
+          level: Math.round((currentScore * 0.9) || 75),
+          trend: direction === 'improving' ? 'increasing' : direction === 'declining' ? 'decreasing' : 'stable',
+          indicators: {
+            initiativeTaking: Math.round((perfData.managerRating || 75)),
+            learningEngagement: Math.round((perfData.trainingHoursCompleted > 0 ? 80 : 60)),
+            teamParticipation: Math.round((perfData.peerReviewScore || 75)),
+            feedbackReceptiveness: Math.round((perfData.managerRating || 75))
+          }
+        },
+        milestones: {
+          achievementProbability: taskStats.completionRate || 70,
+          upcoming: generateMilestones(perfData, taskStats)
+        },
+        riskFactors: generateRiskFactors(perfData, taskStats),
+        recommendations: generateRecommendations(perfData, taskStats, direction)
+      };
+
+      return predictions;
+    } catch (err) {
+      console.error('Error calculating predictions:', err);
+      throw err;
+    }
+  };
+
+  // Helper function to generate factors
+  const generateFactors = (taskStats, perfData) => {
+    const factors = [];
+    
+    if (taskStats.completionRate > 80) {
+      factors.push('Consistent task completion');
+    }
+    if (perfData.trainingHoursCompleted > 0) {
+      factors.push('Skill development');
+    }
+    if (perfData.peerReviewScore > 75) {
+      factors.push('Team collaboration');
+    }
+    if (perfData.attendanceRate > 0.9) {
+      factors.push('Strong attendance');
+    }
+    
+    return factors.length > 0 ? factors : ['Performance tracking in progress'];
+  };
+
+  // Helper function to generate upcoming tasks
+  const generateUpcomingTasks = (taskStats) => {
+    const upcoming = [];
+    const baseDate = new Date();
+    
+    if (taskStats.pending > 0) {
+      upcoming.push({
+        task: `${taskStats.pending} Pending Task${taskStats.pending > 1 ? 's' : ''}`,
+        deadline: new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        probability: Math.max(50, 100 - (taskStats.pending * 10)),
+        risk: taskStats.pending > 3 ? 'high' : taskStats.pending > 1 ? 'medium' : 'low'
+      });
+    }
+    
+    if (taskStats.inProgress > 0) {
+      upcoming.push({
+        task: `${taskStats.inProgress} In-Progress Task${taskStats.inProgress > 1 ? 's' : ''}`,
+        deadline: new Date(baseDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        probability: 75,
+        risk: 'medium'
+      });
+    }
+    
+    if (taskStats.overdue > 0) {
+      upcoming.push({
+        task: `${taskStats.overdue} Overdue Task${taskStats.overdue > 1 ? 's' : ''}`,
+        deadline: new Date().toISOString().split('T')[0],
+        probability: 40,
+        risk: 'high'
+      });
+    }
+
+    return upcoming.length > 0 ? upcoming : [
+      {
+        task: 'No active tasks',
+        deadline: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        probability: 100,
+        risk: 'low'
+      }
+    ];
+  };
+
+  // Helper function to generate milestones
+  const generateMilestones = (perfData, taskStats) => {
+    const milestones = [];
+    
+    if (taskStats.completionRate > 80) {
+      milestones.push({
+        milestone: 'Performance Excellence',
+        probability: Math.min(95, taskStats.completionRate + 10),
+        timeframe: '3 months',
+        factors: ['Current trajectory', 'Consistent performance']
+      });
+    }
+    
+    if (perfData.trainingHoursCompleted > 0) {
+      milestones.push({
+        milestone: 'Skill Certification',
+        probability: 75,
+        timeframe: '6 months',
+        factors: ['Training progress', 'Learning commitment']
+      });
+    }
+    
+    milestones.push({
+      milestone: 'Career Advancement',
+      probability: Math.max(50, taskStats.completionRate - 10),
+      timeframe: '12 months',
+      factors: ['Performance metrics', 'Experience level']
+    });
+
+    return milestones;
+  };
+
+  // Helper function to generate risk factors
+  const generateRiskFactors = (perfData, taskStats) => {
+    const risks = [];
+    
+    if (taskStats.overdue > 0) {
+      risks.push({
+        factor: 'Overdue Tasks',
+        impact: 'high',
+        probability: Math.min(95, taskStats.overdue * 20)
+      });
+    }
+    
+    if (taskStats.pending > 3) {
+      risks.push({
+        factor: 'High Workload',
+        impact: 'medium',
+        probability: 60
+      });
+    }
+    
+    if (perfData.attendanceRate < 0.8) {
+      risks.push({
+        factor: 'Attendance Issues',
+        impact: 'medium',
+        probability: 50
+      });
+    }
+
+    return risks.length > 0 ? risks : [
+      {
+        factor: 'No significant risks identified',
+        impact: 'low',
+        probability: 10
+      }
+    ];
+  };
+
+  // Helper function to generate recommendations
+  const generateRecommendations = (perfData, taskStats, direction) => {
+    const recommendations = [];
+    
+    if (direction === 'improving') {
+      recommendations.push('Continue current performance trajectory');
+      recommendations.push('Consider advanced skill development');
+      recommendations.push('Prepare for increased responsibilities');
+    } else if (direction === 'declining') {
+      recommendations.push('Schedule performance review meeting');
+      recommendations.push('Identify and address challenges');
+      recommendations.push('Provide additional support and resources');
+    } else {
+      recommendations.push('Maintain current performance level');
+      recommendations.push('Explore growth opportunities');
+    }
+    
+    if (taskStats.overdue > 0) {
+      recommendations.push('Focus on completing overdue tasks');
+    }
+    
+    if (perfData.trainingHoursCompleted === 0) {
+      recommendations.push('Encourage professional development');
+    }
+
+    return recommendations;
+  };
 
   // Generate prediction data when employee is selected
   useEffect(() => {
     if (selectedEmployee) {
       setLoading(true);
+      setError(null);
       
-      // Simulate API call with realistic prediction data
-      setTimeout(() => {
-        const mockPredictions = {
-          1: { // John Doe
-            performanceTrend: {
-              direction: 'improving',
-              confidence: 87,
-              currentScore: 92,
-              predictedScore: 95,
-              factors: ['Consistent task completion', 'Skill development', 'Team collaboration']
-            },
-            deadlineLikelihood: {
-              overall: 89,
-              upcoming: [
-                { task: 'Q4 System Upgrade', deadline: '2024-12-15', probability: 92, risk: 'low' },
-                { task: 'API Documentation', deadline: '2024-11-30', probability: 85, risk: 'medium' },
-                { task: 'Code Review Process', deadline: '2024-12-01', probability: 94, risk: 'low' }
-              ]
-            },
-            consistency: {
-              score: 91,
-              trend: 'stable',
-              patterns: {
-                punctuality: 95,
-                taskCompletion: 89,
-                qualityMaintenance: 93,
-                communicationFrequency: 87
-              }
-            },
-            motivation: {
-              level: 88,
-              trend: 'increasing',
-              indicators: {
-                initiativeTaking: 92,
-                learningEngagement: 85,
-                teamParticipation: 90,
-                feedbackReceptiveness: 86
-              }
-            },
-            milestones: {
-              achievementProbability: 91,
-              upcoming: [
-                { milestone: 'Senior Developer Promotion', probability: 89, timeframe: '6 months', factors: ['Technical skills', 'Leadership potential'] },
-                { milestone: 'Project Lead Assignment', probability: 94, timeframe: '3 months', factors: ['Current performance', 'Team feedback'] },
-                { milestone: 'Certification Completion', probability: 78, timeframe: '4 months', factors: ['Study consistency', 'Time management'] }
-              ]
-            },
-            riskFactors: [
-              { factor: 'Workload Increase', impact: 'medium', probability: 35 },
-              { factor: 'Skill Gap in New Tech', impact: 'low', probability: 25 }
-            ],
-            recommendations: [
-              'Continue current performance trajectory',
-              'Consider advanced technical training',
-              'Prepare for leadership responsibilities',
-              'Monitor workload to prevent burnout'
-            ]
-          },
-          2: { // Jane Smith
-            performanceTrend: {
-              direction: 'stable',
-              confidence: 82,
-              currentScore: 85,
-              predictedScore: 86,
-              factors: ['Steady performance', 'Good team dynamics', 'Consistent output']
-            },
-            deadlineLikelihood: {
-              overall: 83,
-              upcoming: [
-                { task: 'Campaign Launch', deadline: '2024-11-25', probability: 88, risk: 'low' },
-                { task: 'Brand Guidelines Update', deadline: '2024-12-10', probability: 79, risk: 'medium' },
-                { task: 'Market Research Report', deadline: '2024-12-05', probability: 85, risk: 'medium' }
-              ]
-            },
-            consistency: {
-              score: 84,
-              trend: 'stable',
-              patterns: {
-                punctuality: 88,
-                taskCompletion: 82,
-                qualityMaintenance: 86,
-                communicationFrequency: 81
-              }
-            },
-            motivation: {
-              level: 79,
-              trend: 'stable',
-              indicators: {
-                initiativeTaking: 75,
-                learningEngagement: 82,
-                teamParticipation: 80,
-                feedbackReceptiveness: 79
-              }
-            },
-            milestones: {
-              achievementProbability: 82,
-              upcoming: [
-                { milestone: 'Marketing Manager Role', probability: 76, timeframe: '8 months', factors: ['Leadership development', 'Strategic thinking'] },
-                { milestone: 'Digital Marketing Certification', probability: 89, timeframe: '2 months', factors: ['Current progress', 'Dedication'] },
-                { milestone: 'Team Lead Assignment', probability: 71, timeframe: '6 months', factors: ['Management skills', 'Team dynamics'] }
-              ]
-            },
-            riskFactors: [
-              { factor: 'Creative Block', impact: 'medium', probability: 28 },
-              { factor: 'Market Changes', impact: 'low', probability: 40 }
-            ],
-            recommendations: [
-              'Focus on leadership skill development',
-              'Increase initiative-taking opportunities',
-              'Consider mentorship programs',
-              'Explore creative development workshops'
-            ]
-          },
-          3: { // Mike Johnson
-            performanceTrend: {
-              direction: 'declining',
-              confidence: 78,
-              currentScore: 72,
-              predictedScore: 68,
-              factors: ['Missed deadlines', 'Decreased engagement', 'Quality concerns']
-            },
-            deadlineLikelihood: {
-              overall: 65,
-              upcoming: [
-                { task: 'Client Presentation', deadline: '2024-11-28', probability: 71, risk: 'high' },
-                { task: 'Sales Report Q4', deadline: '2024-12-15', probability: 58, risk: 'high' },
-                { task: 'Lead Follow-up', deadline: '2024-11-22', probability: 69, risk: 'medium' }
-              ]
-            },
-            consistency: {
-              score: 68,
-              trend: 'declining',
-              patterns: {
-                punctuality: 72,
-                taskCompletion: 65,
-                qualityMaintenance: 70,
-                communicationFrequency: 64
-              }
-            },
-            motivation: {
-              level: 61,
-              trend: 'decreasing',
-              indicators: {
-                initiativeTaking: 58,
-                learningEngagement: 62,
-                teamParticipation: 64,
-                feedbackReceptiveness: 60
-              }
-            },
-            milestones: {
-              achievementProbability: 58,
-              upcoming: [
-                { milestone: 'Sales Target Achievement', probability: 52, timeframe: '2 months', factors: ['Current trajectory', 'Market conditions'] },
-                { milestone: 'Client Retention Goal', probability: 64, timeframe: '4 months', factors: ['Relationship management', 'Service quality'] },
-                { milestone: 'Performance Improvement', probability: 71, timeframe: '3 months', factors: ['Support provided', 'Personal commitment'] }
-              ]
-            },
-            riskFactors: [
-              { factor: 'Performance Decline', impact: 'high', probability: 72 },
-              { factor: 'Team Morale Impact', impact: 'medium', probability: 45 },
-              { factor: 'Client Relationship Risk', impact: 'high', probability: 38 }
-            ],
-            recommendations: [
-              'Immediate performance intervention required',
-              'Schedule one-on-one coaching sessions',
-              'Identify and address underlying issues',
-              'Provide additional training and support',
-              'Consider workload redistribution'
-            ]
-          }
-        };
-
-        const selectedEmpId = parseInt(selectedEmployee);
-        setPredictionData(mockPredictions[selectedEmpId] || mockPredictions[1]);
-        setLoading(false);
-      }, 1500);
+      calculatePredictions(selectedEmployee)
+        .then(predictions => {
+          setPredictionData(predictions);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          setError('Failed to load predictions');
+          setLoading(false);
+        });
     }
   }, [selectedEmployee, timeframe]);
 
@@ -244,31 +358,50 @@ const BehaviorPrediction = () => {
           <p>Select an employee to view AI-powered performance predictions and behavioral insights</p>
         </div>
 
+        {error && (
+          <div style={{
+            padding: '16px',
+            margin: '16px 0',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '8px',
+            color: '#991b1b'
+          }}>
+            {error}
+          </div>
+        )}
+
         <div className="employee-selection">
           <div className="selection-card">
             <div className="selection-icon">👥</div>
             <h3>Choose Employee for Analysis</h3>
             <p>Get intelligent predictions about future performance, engagement, and milestone achievements</p>
             
-            <div className="employee-grid">
-              {employees.map(employee => (
-                <div 
-                  key={employee.id} 
-                  className="employee-card"
-                  onClick={() => setSelectedEmployee(employee.id.toString())}
-                >
-                  <div className="employee-avatar">
-                    <img src={employee.avatar} alt={employee.name} />
+            {employees.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
+                Loading employees...
+              </p>
+            ) : (
+              <div className="employee-grid">
+                {employees.map(employee => (
+                  <div 
+                    key={employee.id} 
+                    className="employee-card"
+                    onClick={() => setSelectedEmployee(employee.id.toString())}
+                  >
+                    <div className="employee-avatar">
+                      <img src={employee.avatar} alt={employee.name} />
+                    </div>
+                    <div className="employee-info">
+                      <h4>{employee.name}</h4>
+                      <p>{employee.department}</p>
+                      <span className="employee-email">{employee.email}</span>
+                    </div>
+                    <div className="select-arrow">→</div>
                   </div>
-                  <div className="employee-info">
-                    <h4>{employee.name}</h4>
-                    <p>{employee.department}</p>
-                    <span className="employee-email">{employee.email}</span>
-                  </div>
-                  <div className="select-arrow">→</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

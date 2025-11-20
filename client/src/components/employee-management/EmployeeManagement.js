@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Sidebar } from '../dashboard/HRDashboard';
 import EmployeeDatabaseManagement from './EmployeeDatabaseManagement';
 import EmployeeClassification from './EmployeeClassification';
+import EmployeePerformanceOverview from './EmployeePerformanceOverview';
 import './EmployeeManagement.css';
 
 const EmployeeManagement = () => {
-  const [activeTab, setActiveTab] = useState('database');
+  const [activeTab, setActiveTab] = useState('performance');
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -18,6 +19,13 @@ const EmployeeManagement = () => {
         <div className="management-header">
           <h1>Employee Management</h1>
           <div className="tab-navigation">
+            <button
+              className={`tab-button ${activeTab === 'performance' ? 'active' : ''}`}
+              onClick={() => handleTabChange('performance')}
+            >
+              <i className="fas fa-chart-line"></i>
+              Performance Overview
+            </button>
             <button
               className={`tab-button ${activeTab === 'database' ? 'active' : ''}`}
               onClick={() => handleTabChange('database')}
@@ -36,6 +44,11 @@ const EmployeeManagement = () => {
         </div>
 
         <div className="tab-content">
+          {activeTab === 'performance' && (
+            <div className="tab-panel">
+              <EmployeePerformanceOverview />
+            </div>
+          )}
           {activeTab === 'database' && (
             <div className="tab-panel">
               <EmployeeDatabaseManagement />

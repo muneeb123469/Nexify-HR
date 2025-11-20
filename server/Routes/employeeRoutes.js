@@ -2,10 +2,18 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const {
+  getEmployeePerformanceData,
+  getAllEmployeesPerformanceData,
+  updateEmployeeWorkMode,
+  updateEmployeePerformanceMetrics
+} = require('../controllers/employeeController');
 
 // Get all employees
-router.get('/employees', auth, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    console.log('GET /employees - User:', req.user?.role, req.user?.email);
+    
     // Only HR can access employee data
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -16,37 +24,77 @@ router.get('/employees', auth, async (req, res) => {
       .populate('manager', 'username email')
       .sort({ createdAt: -1 });
 
+    console.log(`Found ${employees.length} employees`);
+
     res.json({
       success: true,
-      employees: employees.map(emp => ({
-        id: emp._id,
-        employeeId: emp.employeeId,
-        name: emp.username,
-        email: emp.email,
-        department: emp.department,
-        role: emp.jobTitle,
-        category: emp.category,
-        level: emp.level,
-        skills: emp.skills || [],
-        projects: emp.projects || [],
-        phone: emp.phone,
-        status: emp.status,
-        employeeStatus: emp.employeeStatus,
-        hireDate: emp.hireDate,
-        salary: emp.salary,
-        manager: emp.manager,
-        lastModified: emp.updatedAt,
-        createdAt: emp.createdAt
-      }))
+      employees: employees.map(emp => {
+        try {
+          return {
+            id: emp._id,
+            employeeId: emp.employeeId,
+            name: emp.username,
+            email: emp.email,
+            department: emp.department,
+            role: emp.jobTitle,
+            category: emp.category,
+            level: emp.level,
+            skills: emp.skills || [],
+            projects: emp.projects || [],
+            phone: emp.phone,
+            status: emp.status,
+            employeeStatus: emp.employeeStatus,
+            hireDate: emp.hireDate,
+            salary: emp.salary,
+            workMode: emp.workMode || 'Office',
+            manager: emp.manager,
+            lastModified: emp.updatedAt,
+            createdAt: emp.createdAt,
+            // Performance-related calculated fields (with error handling)
+            yearsInCompany: typeof emp.getYearsInCompany === 'function' ? emp.getYearsInCompany() : 0,
+            yearsInRole: typeof emp.getYearsInRole === 'function' ? emp.getYearsInRole() : 0,
+            salaryBand: typeof emp.getSalaryBand === 'function' ? emp.getSalaryBand() : 'Low'
+          };
+        } catch (empError) {
+          console.error('Error processing employee:', emp._id, empError);
+          return {
+            id: emp._id,
+            employeeId: emp.employeeId,
+            name: emp.username,
+            email: emp.email,
+            department: emp.department,
+            role: emp.jobTitle,
+            category: emp.category,
+            level: emp.level,
+            skills: emp.skills || [],
+            projects: emp.projects || [],
+            phone: emp.phone,
+            status: emp.status,
+            employeeStatus: emp.employeeStatus,
+            hireDate: emp.hireDate,
+            salary: emp.salary,
+            workMode: emp.workMode || 'Office',
+            manager: emp.manager,
+            lastModified: emp.updatedAt,
+            createdAt: emp.createdAt,
+            yearsInCompany: 0,
+            yearsInRole: 0,
+            salaryBand: 'Low'
+          };
+        }
+      })
     });
   } catch (error) {
     console.error('Error fetching employees:', error);
-    res.status(500).json({ message: 'Error fetching employees' });
+    res.status(500).json({ 
+      message: 'Error fetching employees',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
 // Get single employee
-router.get('/employees/:id', auth, async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -78,9 +126,14 @@ router.get('/employees/:id', auth, async (req, res) => {
         employeeStatus: employee.employeeStatus,
         hireDate: employee.hireDate,
         salary: employee.salary,
+        workMode: employee.workMode || 'Office',
         manager: employee.manager,
         lastModified: employee.updatedAt,
-        createdAt: employee.createdAt
+        createdAt: employee.createdAt,
+        // Performance-related calculated fields
+        yearsInCompany: employee.getYearsInCompany ? employee.getYearsInCompany() : 0,
+        yearsInRole: employee.getYearsInRole ? employee.getYearsInRole() : 0,
+        salaryBand: employee.getSalaryBand ? employee.getSalaryBand() : 'Low'
       }
     });
   } catch (error) {
@@ -90,13 +143,13 @@ router.get('/employees/:id', auth, async (req, res) => {
 });
 
 // Create new employee
-router.post('/employees', auth, async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
     }
 
-    const { name, email, department, jobTitle, phone, hireDate, salary, managerId, employeeStatus } = req.body;
+    const { name, email, department, jobTitle, phone, hireDate, salary, managerId, employeeStatus, workMode } = req.body;
 
     // Validate required fields
     if (!name || !email || !department || !jobTitle || !employeeStatus) {
@@ -133,7 +186,8 @@ router.post('/employees', auth, async (req, res) => {
       salary: salary ? parseFloat(salary) : null,
       manager: managerId || null,
       status: 'Active',
-      employeeStatus
+      employeeStatus,
+      workMode: workMode || 'Office' // Default to Office if not specified
     });
 
     await employee.save();
@@ -196,13 +250,13 @@ router.post('/employees', auth, async (req, res) => {
 });
 
 // Update employee
-router.put('/employees/:id', auth, async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
     }
 
-    const { name, email, department, jobTitle, phone, status, hireDate, salary, managerId, employeeStatus } = req.body;
+    const { name, email, department, jobTitle, phone, status, hireDate, salary, managerId, employeeStatus, workMode } = req.body;
 
     const employee = await User.findById(req.params.id);
     if (!employee || employee.role !== 'employee') {
@@ -239,6 +293,7 @@ router.put('/employees/:id', auth, async (req, res) => {
     if (salary !== undefined) employee.salary = salary ? parseFloat(salary) : null;
     if (managerId !== undefined) employee.manager = managerId || null;
     if (employeeStatus) employee.employeeStatus = employeeStatus;
+    if (workMode) employee.workMode = workMode;
 
     await employee.save();
 
@@ -268,7 +323,7 @@ router.put('/employees/:id', auth, async (req, res) => {
 });
 
 // Delete employee (soft delete by changing status)
-router.delete('/employees/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -324,7 +379,7 @@ router.get('/managers', auth, async (req, res) => {
 });
 
 // Add skill to employee
-router.post('/employees/:id/skills', auth, async (req, res) => {
+router.post('/:id/skills', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -362,7 +417,7 @@ router.post('/employees/:id/skills', auth, async (req, res) => {
 });
 
 // Add project to employee
-router.post('/employees/:id/projects', auth, async (req, res) => {
+router.post('/:id/projects', auth, async (req, res) => {
   try {
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -398,6 +453,37 @@ router.post('/employees/:id/projects', auth, async (req, res) => {
     res.status(500).json({ message: 'Error adding project' });
   }
 });
+
+// ===== TEST ROUTES =====
+// Simple test route to verify the server is working (no auth required)
+router.get('/test', (req, res) => {
+  res.json({ message: 'Employee routes are working!', timestamp: new Date().toISOString() });
+});
+
+// Test route with auth
+router.get('/test-auth', auth, (req, res) => {
+  res.json({ 
+    message: 'Employee routes with auth are working!', 
+    user: { id: req.user._id, role: req.user.role, email: req.user.email },
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// ===== PERFORMANCE ANALYTICS ROUTES =====
+
+// Get performance data for all employees
+router.get('/performance', auth, getAllEmployeesPerformanceData);
+
+// Get performance data for a specific employee
+router.get('/performance/:employeeId', auth, getEmployeePerformanceData);
+
+// Update employee work mode
+router.patch('/:employeeId/work-mode', auth, updateEmployeeWorkMode);
+
+// Update employee performance metrics
+router.patch('/:employeeId/performance-metrics', auth, updateEmployeePerformanceMetrics);
+
+// ===== ADMIN ROUTES =====
 
 // Fix employee IDs (admin endpoint)
 router.post('/fix-employee-ids', auth, async (req, res) => {

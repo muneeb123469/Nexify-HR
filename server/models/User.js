@@ -98,6 +98,91 @@ const userSchema = new mongoose.Schema({
   salary: {
     type: Number
   },
+  // Work Mode for HR Performance Model
+  workMode: {
+    type: String,
+    enum: ['Online', 'Hybrid', 'Office'],
+    default: 'Office'
+  },
+  // Job History for YearsInRole calculation
+  jobHistory: [{
+    jobTitle: {
+      type: String,
+      required: true
+    },
+    startDate: {
+      type: Date,
+      required: true
+    },
+    endDate: {
+      type: Date,
+      default: null // null means current role
+    },
+    department: {
+      type: String
+    }
+  }],
+  // Additional fields needed for HR Performance Model
+  attendanceRate: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 1 // Stored as decimal (0.85 = 85%)
+  },
+  onTimeRate: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 1 // Stored as decimal (0.90 = 90%)
+  },
+  avgLateMinutes: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  avgWorkHours: {
+    type: Number,
+    default: 8,
+    min: 0
+  },
+  monthlyHoursWorked: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  taskQualityScore: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  peerReviewScore: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  managerRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  trainingHoursCompleted: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  promotionsLast3Years: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  disciplinaryActions: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   manager: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -121,9 +206,35 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Pre-save middleware to update updatedAt
+// Pre-save middleware to update updatedAt and job history
 userSchema.pre('save', function(next) {
   this.updatedAt = new Date();
+  
+  // If jobTitle changed and this is an employee, update job history
+  if (this.role === 'employee' && this.isModified('jobTitle') && this.jobTitle) {
+    // End the current role if exists
+    if (this.jobHistory && this.jobHistory.length > 0) {
+      const currentRole = this.jobHistory.find(job => !job.endDate);
+      if (currentRole && currentRole.jobTitle !== this.jobTitle) {
+        currentRole.endDate = new Date();
+      }
+    }
+    
+    // Add new role if it's different from the last one
+    const lastJob = this.jobHistory && this.jobHistory.length > 0 
+      ? this.jobHistory[this.jobHistory.length - 1] 
+      : null;
+    
+    if (!lastJob || lastJob.jobTitle !== this.jobTitle) {
+      if (!this.jobHistory) this.jobHistory = [];
+      this.jobHistory.push({
+        jobTitle: this.jobTitle,
+        startDate: new Date(),
+        department: this.department
+      });
+    }
+  }
+  
   next();
 });
 
@@ -187,6 +298,36 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     console.error('Error comparing passwords:', error);
     throw error;
   }
+};
+
+// Method to calculate years in company
+userSchema.methods.getYearsInCompany = function() {
+  if (!this.hireDate) return 0;
+  const diffTime = Math.abs(new Date() - this.hireDate);
+  const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+  return Math.round(diffYears * 100) / 100; // Round to 2 decimal places
+};
+
+// Method to calculate years in current role
+userSchema.methods.getYearsInRole = function() {
+  if (!this.jobHistory || this.jobHistory.length === 0) {
+    return this.getYearsInCompany(); // Fallback to company years if no job history
+  }
+  
+  const currentRole = this.jobHistory.find(job => !job.endDate);
+  if (!currentRole) return 0;
+  
+  const diffTime = Math.abs(new Date() - currentRole.startDate);
+  const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+  return Math.round(diffYears * 100) / 100; // Round to 2 decimal places
+};
+
+// Method to get salary band
+userSchema.methods.getSalaryBand = function() {
+  if (!this.salary) return 'Low';
+  if (this.salary < 50000) return 'Low';
+  if (this.salary >= 50000 && this.salary < 100000) return 'Medium';
+  return 'High';
 };
 
 // Method to get user data without password

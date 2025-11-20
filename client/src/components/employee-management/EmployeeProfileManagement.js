@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PerformanceAnalytics from './PerformanceAnalytics';
 import './EmployeeProfileManagement.css';
 
 const EmployeeProfileManagement = () => {
@@ -185,6 +186,12 @@ const EmployeeProfileManagement = () => {
               >
                 Bank Details
               </button>
+              <button
+                className={`tab ${activeTab === 'performance' ? 'active' : ''}`}
+                onClick={() => setActiveTab('performance')}
+              >
+                Performance Analytics
+              </button>
             </div>
 
             <div className="tab-content">
@@ -296,6 +303,10 @@ const EmployeeProfileManagement = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'performance' && (
+                <PerformanceAnalytics employeeId={selectedEmployee.id} />
               )}
             </div>
           </div>

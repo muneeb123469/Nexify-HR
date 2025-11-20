@@ -24,7 +24,8 @@ const EmployeeDatabaseManagement = () => {
     salary: '',
     managerId: '',
     status: 'Active',
-    employeeStatus: ''
+    employeeStatus: '',
+    workMode: 'Office'
   });
 
   // Fetch employees and managers on component mount
@@ -77,7 +78,8 @@ const EmployeeDatabaseManagement = () => {
       salary: '',
       managerId: '',
       status: 'Active',
-      employeeStatus: ''
+      employeeStatus: '',
+      workMode: 'Office'
     });
     setShowAddForm(true);
     setShowEditForm(false);
@@ -96,7 +98,8 @@ const EmployeeDatabaseManagement = () => {
       salary: employee.salary || '',
       managerId: employee.manager?._id || '',
       status: employee.status,
-      employeeStatus: employee.employeeStatus || ''
+      employeeStatus: employee.employeeStatus || '',
+      workMode: employee.workMode || 'Office'
     });
     setShowEditForm(true);
     setShowAddForm(false);
@@ -130,7 +133,8 @@ const EmployeeDatabaseManagement = () => {
         hireDate: newEmployee.hireDate,
         salary: newEmployee.salary ? parseFloat(newEmployee.salary) : null,
         managerId: newEmployee.managerId || null,
-        employeeStatus: newEmployee.employeeStatus
+        employeeStatus: newEmployee.employeeStatus,
+        workMode: newEmployee.workMode
       };
 
       const response = await employeeApi.createEmployee(employeeData);
@@ -147,7 +151,8 @@ const EmployeeDatabaseManagement = () => {
           salary: '',
           managerId: '',
           status: 'Active',
-          employeeStatus: ''
+          employeeStatus: '',
+          workMode: 'Office'
         });
         setNotification({
           type: 'success',
@@ -178,7 +183,8 @@ const EmployeeDatabaseManagement = () => {
         hireDate: newEmployee.hireDate,
         salary: newEmployee.salary ? parseFloat(newEmployee.salary) : null,
         managerId: newEmployee.managerId || null,
-        employeeStatus: newEmployee.employeeStatus
+        employeeStatus: newEmployee.employeeStatus,
+        workMode: newEmployee.workMode
       };
 
       const response = await employeeApi.updateEmployee(selectedEmployee.id, employeeData);
@@ -296,6 +302,7 @@ const EmployeeDatabaseManagement = () => {
                 <th>Name</th>
                 <th>Department</th>
                 <th>Role</th>
+                <th>Work Mode</th>
                 <th>Employee Type</th>
                 <th>Status</th>
                 <th>Last Modified</th>
@@ -305,7 +312,7 @@ const EmployeeDatabaseManagement = () => {
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="no-data">
+                  <td colSpan="9" className="no-data">
                     {searchTerm ? 'No employees found matching your search.' : 'No employees found. Add some employees to get started.'}
                   </td>
                 </tr>
@@ -316,6 +323,11 @@ const EmployeeDatabaseManagement = () => {
                     <td>{employee.name}</td>
                     <td>{employee.department || 'N/A'}</td>
                     <td>{employee.role || 'N/A'}</td>
+                    <td>
+                      <span className={`work-mode-badge ${(employee.workMode || 'Office').toLowerCase()}`}>
+                        {employee.workMode || 'Office'}
+                      </span>
+                    </td>
                     <td>{employee.employeeStatus || 'Not specified'}</td>
                     <td>
                       <span className={`status-badge ${employee.status.toLowerCase()}`}>
@@ -473,6 +485,18 @@ const EmployeeDatabaseManagement = () => {
                       <option value="Intern">Intern</option>
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label>Work Mode</label>
+                    <select
+                      name="workMode"
+                      value={newEmployee.workMode}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Office">Office</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="Online">Online</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="form-actions">
                   <button type="submit" className="submit-button">
@@ -620,6 +644,20 @@ const EmployeeDatabaseManagement = () => {
                       <option value="Part-time employee">Part-time employee</option>
                       <option value="Contract-based employee">Contract-based employee</option>
                       <option value="Intern">Intern</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Work Mode</label>
+                    <select
+                      name="workMode"
+                      value={newEmployee.workMode}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Office">Office</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="Online">Online</option>
                     </select>
                   </div>
                 </div>

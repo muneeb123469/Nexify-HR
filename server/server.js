@@ -37,7 +37,13 @@ app.use('/api/admin', require('./Routes/adminRoutes'));
 app.use('/api/interviews', require('./Routes/interviewRoutes'));
 app.use('/api/meetings', require('./Routes/meetingRoutes'));
 app.use('/api/users', require('./Routes/userRoutes'));
-app.use('/api', require('./Routes/employeeRoutes'));
+// Debug middleware to log all requests
+app.use('/api/employees', (req, res, next) => {
+  console.log(`Employee API Request: ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
+
+app.use('/api/employees', require('./Routes/employeeRoutes'));
 app.use('/api', require('./Routes/attendanceRoutes'));
 app.use('/api/leave', require('./Routes/leaveRoutes'));
 app.use('/api/locations', require('./Routes/locationRoutes'));

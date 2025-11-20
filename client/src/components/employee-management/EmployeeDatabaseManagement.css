@@ -785,3 +785,27 @@ tbody tr:hover {
   th:nth-child(8),
   td:nth-child(8) { min-width: 160px; }
 }
+/
+* Work Mode Badges */
+.work-mode-badge {
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.work-mode-badge.office {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.work-mode-badge.hybrid {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.work-mode-badge.online {
+  background: #e3f2fd;
+  color: #1976d2;
+}
