@@ -33,7 +33,7 @@ const formatTime = (timeString) => {
 // Generate interview email HTML template
 const generateInterviewEmailHTML = (interviewDetails) => {
   const { candidateName, candidateEmail, position, department, date, time, type, location, instructions } = interviewDetails;
-  
+
   return `
     <!DOCTYPE html>
     <html>
@@ -130,7 +130,7 @@ const generateInterviewEmailHTML = (interviewDetails) => {
 const sendInterviewEmail = async (interviewDetails) => {
   try {
     const transporter = createTransporter();
-    
+
     const mailOptions = {
       from: {
         name: 'HR Department',
@@ -169,22 +169,22 @@ hamad1919ahmad@gmail.com
     };
 
     const result = await transporter.sendMail(mailOptions);
-    
+
     console.log('Interview email sent successfully:', {
       messageId: result.messageId,
       to: interviewDetails.candidateEmail,
       subject: mailOptions.subject
     });
-    
+
     return {
       success: true,
       messageId: result.messageId,
       message: 'Interview invitation sent successfully'
     };
-    
+
   } catch (error) {
     console.error('Error sending interview email:', error);
-    
+
     return {
       success: false,
       error: error.message,
@@ -240,7 +240,7 @@ module.exports = {
               <p>We are pleased to offer you the position of <strong>${offer.position}</strong> in our organization.</p>
               <div class="row"><span class="label">Salary:</span> ${offer.salary}</div>
               <div class="row"><span class="label">Start Date:</span> ${formatDate(offer.startDate)}</div>
-              ${offer.benefits?.length ? `<div class="row"><span class="label">Benefits:</span><ul>${offer.benefits.map(b=>`<li>${b}</li>`).join('')}</ul></div>` : ''}
+              ${offer.benefits?.length ? `<div class="row"><span class="label">Benefits:</span><ul>${offer.benefits.map(b => `<li>${b}</li>`).join('')}</ul></div>` : ''}
               ${offer.additionalNotes ? `<div class="row"><span class="label">Notes:</span> ${offer.additionalNotes}</div>` : ''}
               <p>Please reply to confirm acceptance. We look forward to working with you.</p>
               <p>Best regards,<br/>HR Department</p>
@@ -254,7 +254,7 @@ module.exports = {
         to: offer.candidateEmail,
         subject,
         html,
-        text: `Dear ${offer.candidateName},\n\nWe are pleased to offer you the position of ${offer.position}.\nSalary: ${offer.salary}\nStart Date: ${formatDate(offer.startDate)}\nBenefits: ${(offer.benefits||[]).join(', ')}\n${offer.additionalNotes ? `Notes: ${offer.additionalNotes}\n` : ''}\nPlease reply to confirm.\n\nBest regards,\nHR Department`
+        text: `Dear ${offer.candidateName},\n\nWe are pleased to offer you the position of ${offer.position}.\nSalary: ${offer.salary}\nStart Date: ${formatDate(offer.startDate)}\nBenefits: ${(offer.benefits || []).join(', ')}\n${offer.additionalNotes ? `Notes: ${offer.additionalNotes}\n` : ''}\nPlease reply to confirm.\n\nBest regards,\nHR Department`
       });
 
       return { success: true, messageId: mail.messageId };
@@ -264,5 +264,63 @@ module.exports = {
   },
   testEmailConnection,
   formatDate,
-  formatTime
+  formatTime,
+  // Payslip email sender
+  async sendPayslipEmail(payslipData) {
+    try {
+      const { generatePayslipEmail } = require('../utils/payslipEmailTemplate');
+      const transporter = createTransporter();
+
+      const subject = `Payslip - ${new Date(payslipData.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+      const html = generatePayslipEmail(payslipData);
+
+      const mailOptions = {
+        from: {
+          name: 'HR Department - Payroll',
+          address: 'hamad1919ahmad@gmail.com'
+        },
+        to: payslipData.employeeEmail,
+        subject: subject,
+        html: html,
+        // Plain text fallback
+        text: `
+Dear ${payslipData.employeeName},
+
+Please find your payslip for ${new Date(payslipData.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} attached below.
+
+Employee ID: ${payslipData.employeeId}
+Position: ${payslipData.position}
+Net Salary: $${payslipData.salaryDetails.netSalary.toLocaleString()}
+
+If you have any questions, please contact HR.
+
+Best regards,
+HR Department
+        `
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+
+      console.log('Payslip email sent successfully:', {
+        messageId: result.messageId,
+        to: payslipData.employeeEmail,
+        month: payslipData.month
+      });
+
+      return {
+        success: true,
+        messageId: result.messageId,
+        message: 'Payslip sent successfully'
+      };
+
+    } catch (error) {
+      console.error('Error sending payslip email:', error);
+
+      return {
+        success: false,
+        error: error.message,
+        message: 'Failed to send payslip'
+      };
+    }
+  }
 };

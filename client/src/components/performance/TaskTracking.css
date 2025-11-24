@@ -614,46 +614,122 @@
   font-size: 1rem;
 }
 
-/* Status Actions */
-.status-actions h4 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
+/* Points Assignment */
+.points-assignment {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.status-buttons {
+.points-input-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.status-btn {
+.points-input-group label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.points-input {
   padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  transition: border-color 0.2s ease;
+}
+
+.points-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.points-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.assign-points-btn {
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  color: white;
 }
 
-.status-btn.pending {
-  background: #f59e0b;
-}
-
-.status-btn.in-progress {
-  background: #3b82f6;
-}
-
-.status-btn.completed {
-  background: #10b981;
-}
-
-.status-btn:hover {
+.assign-points-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.assign-points-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.points-message {
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.points-message.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.points-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.points-info {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.points-not-available {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.points-not-available p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.current-points {
+  padding: 1rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.current-points strong {
+  font-size: 1.5rem;
+  color: #667eea;
+  display: block;
+  margin-top: 0.5rem;
 }
 
 /* Responsive Design */

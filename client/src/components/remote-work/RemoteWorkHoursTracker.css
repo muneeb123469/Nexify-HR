@@ -17,6 +17,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -392,6 +393,7 @@
     transform: translateY(-20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -639,12 +641,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.1) 100%);
   animation: shimmer 2s infinite;
 }
 
@@ -652,6 +652,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -753,6 +754,7 @@ button:active {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -761,7 +763,8 @@ button:active {
 
 /* Cross-browser compatibility fixes */
 .tracker-content {
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling on iOS */
 }
 
 /* Firefox specific fixes */
@@ -769,14 +772,14 @@ button:active {
   .progress-bar {
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
   }
-  
+
   button {
     padding: 0.75rem 1.5rem;
   }
 }
 
 /* Safari specific fixes */
-@media not all and (min-resolution:.001dpcm) { 
+@media not all and (min-resolution:.001dpcm) {
   @supports (-webkit-appearance:none) {
     .date-picker {
       -webkit-appearance: none;
@@ -788,16 +791,15 @@ button:active {
 /* Edge specific fixes */
 @supports (-ms-ime-align: auto) {
   .progress-bar {
-    background-image: linear-gradient(
-      90deg,
-      var(--success-color) 0%,
-      var(--success-color) 100%
-    );
+    background-image: linear-gradient(90deg,
+        var(--success-color) 0%,
+        var(--success-color) 100%);
   }
 }
 
 /* Print styles */
 @media print {
+
   .tracker-header,
   .tracking-controls,
   .mobile-fab {
@@ -808,4 +810,4 @@ button:active {
   .reporting-section {
     break-inside: avoid;
   }
-} 
+}

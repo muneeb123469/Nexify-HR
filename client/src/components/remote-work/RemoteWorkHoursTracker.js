@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './RemoteWorkHoursTracker.css';
-import { 
-  FaClock, 
-  FaCalendarAlt, 
-  FaUserTie, 
-  FaBuilding, 
+import {
+  FaClock,
+  FaCalendarAlt,
+  FaUserTie,
+  FaBuilding,
   FaFileAlt,
   FaPlay,
   FaPause,
@@ -14,20 +14,20 @@ import {
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 
 const RemoteWorkHoursTracker = () => {
   const { user } = useAuth();
-  
+
   // Determine which sidebar to use based on user role
   const SidebarComponent = user?.role === 'hr' ? Sidebar : EmployerSideBar;
-  const [isAdmin, setIsAdmin] = useState(false);
   const [notification, setNotification] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isTracking, setIsTracking] = useState(false);
   const [currentSession, setCurrentSession] = useState(null);
   const [totalHours, setTotalHours] = useState(0);
   const [sessionStatus, setSessionStatus] = useState('inactive');
-  
+
   // Admin reporting states
   const [reportType, setReportType] = useState('daily');
   const [dateRange, setDateRange] = useState({
@@ -50,6 +50,11 @@ const RemoteWorkHoursTracker = () => {
   // Add session progress tracking
   const [sessionProgress, setSessionProgress] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [employeeSessions, setEmployeeSessions] = useState([]);
+  const [allSessions, setAllSessions] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [reportData, setReportData] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
 
   // Handle window resize for mobile detection
   useEffect(() => {
@@ -60,66 +65,95 @@ const RemoteWorkHoursTracker = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Check authentication on component mount
+  // Load active session and sessions on component mount
   useEffect(() => {
-    // Replace with your actual authentication check
-    const checkAuth = async () => {
-      try {
-        // Simulate authentication check
-        const isAuth = true; // Replace with actual auth check
-        setIsAuthenticated(isAuth);
-      } catch (error) {
-        console.error('Authentication error:', error);
-        setNotification({
-          type: 'error',
-          message: 'Authentication failed. Please log in again.'
-        });
-      }
-    };
-    checkAuth();
-  }, []);
-
-  // Sample data - replace with actual data from your backend
-  const employees = [
-    {
-      id: 1,
-      name: 'John Doe',
-      department: 'Engineering',
-      workHours: {
-        '2024-03-20': {
-          loginTime: '09:00',
-          logoutTime: '17:30',
-          breaks: [
-            { start: '12:00', end: '13:00', duration: 60 }
-          ],
-          totalHours: 7.5,
-          productiveHours: 6.5
-        }
-      }
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      department: 'Design',
-      workHours: {
-        '2024-03-20': {
-          loginTime: '08:45',
-          logoutTime: '17:15',
-          breaks: [
-            { start: '12:00', end: '13:00', duration: 60 },
-            { start: '15:00', end: '15:15', duration: 15 }
-          ],
-          totalHours: 7.5,
-          productiveHours: 6.25
-        }
+    if (user) {
+      setIsAuthenticated(true);
+      loadActiveSession();
+      if (user.role === 'hr') {
+        loadEmployees();
+        loadAllSessions();
+      } else {
+        loadEmployeeSessions();
       }
     }
-  ];
+  }, [user]);
+
+  // Reload sessions when date changes
+  useEffect(() => {
+    if (user?.role === 'hr') {
+      loadAllSessions();
+    } else if (user) {
+      loadEmployeeSessions();
+    }
+  }, [selectedDate]);
+
+  // Load active session for employee
+  const loadActiveSession = async () => {
+    try {
+      const response = await api.get('/work-sessions/active');
+      if (response.data.session) {
+        const session = response.data.session;
+        setCurrentSession({
+          id: session._id,
+          startTime: new Date(session.startTime).toLocaleTimeString(),
+          breaks: session.breaks.map(b => ({
+            start: new Date(b.startTime).toLocaleTimeString(),
+            end: b.endTime ? new Date(b.endTime).toLocaleTimeString() : null,
+            duration: b.duration
+          })),
+          currentBreak: session.currentBreak ? new Date(session.currentBreak).toLocaleTimeString() : null
+        });
+        setIsTracking(true);
+        setSessionStatus(session.status);
+      }
+    } catch (error) {
+      console.error('Error loading active session:', error);
+    }
+  };
+
+  // Load employee sessions
+  const loadEmployeeSessions = async () => {
+    try {
+      const response = await api.get('/work-sessions/my-sessions', {
+        params: { date: selectedDate }
+      });
+      setEmployeeSessions(response.data.sessions || []);
+    } catch (error) {
+      console.error('Error loading employee sessions:', error);
+    }
+  };
+
+  // Load all sessions for HR
+  const loadAllSessions = async () => {
+    try {
+      const response = await api.get('/work-sessions/all', {
+        params: { date: selectedDate }
+      });
+      setAllSessions(response.data.sessions || []);
+    } catch (error) {
+      console.error('Error loading all sessions:', error);
+    }
+  };
+
+  // Load employees for HR dashboard
+  const loadEmployees = async () => {
+    try {
+      const response = await api.get('/users/employees');
+      if (response.data.success) {
+        setEmployees(response.data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
+
+
 
   // Calculate total hours worked
   const calculateTotalHours = (startTime, endTime, breaks) => {
     if (!startTime || !endTime) return 0;
-    
+
     const start = new Date(`2000-01-01T${startTime}`);
     const end = new Date(`2000-01-01T${endTime}`);
     const totalMinutes = (end - start) / (1000 * 60);
@@ -162,7 +196,7 @@ const RemoteWorkHoursTracker = () => {
     return () => clearInterval(interval);
   }, [isTracking, currentSession]);
 
-  const handleStartTracking = () => {
+  const handleStartTracking = async () => {
     if (isTracking) {
       setNotification({
         type: 'error',
@@ -171,20 +205,31 @@ const RemoteWorkHoursTracker = () => {
       return;
     }
 
-    const now = new Date();
-    setCurrentSession({
-      startTime: now.toLocaleTimeString(),
-      breaks: []
-    });
-    setIsTracking(true);
-    setSessionStatus('active');
-    setNotification({
-      type: 'success',
-      message: 'Work hours tracking started'
-    });
+    try {
+      const response = await api.post('/work-sessions/start');
+      const session = response.data.session;
+
+      setCurrentSession({
+        id: session._id,
+        startTime: new Date(session.startTime).toLocaleTimeString(),
+        breaks: []
+      });
+      setIsTracking(true);
+      setSessionStatus('active');
+      setNotification({
+        type: 'success',
+        message: 'Work hours tracking started'
+      });
+    } catch (error) {
+      console.error('Error starting tracking:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to start tracking'
+      });
+    }
   };
 
-  const handleEndTracking = () => {
+  const handleEndTracking = async () => {
     if (!currentSession) {
       setNotification({
         type: 'error',
@@ -193,44 +238,35 @@ const RemoteWorkHoursTracker = () => {
       return;
     }
 
-    const now = new Date();
-    const endTime = now.toLocaleTimeString();
-    
-    // Validate session duration
-    const start = new Date(`2000-01-01T${currentSession.startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-    const totalMinutes = (end - start) / (1000 * 60);
-    
-    if (totalMinutes < 1) {
+    try {
+      const response = await api.put(`/work-sessions/${currentSession.id}/end`);
+      const session = response.data.session;
+
+      setTotalHours(session.totalHours);
+      setNotification({
+        type: 'success',
+        message: `Work hours tracking ended. Total: ${session.totalHours}h, Productive: ${session.productiveHours}h`
+      });
+      setIsTracking(false);
+      setSessionStatus('completed');
+      setCurrentSession(null);
+
+      // Reload sessions
+      if (user.role === 'hr') {
+        loadAllSessions();
+      } else {
+        loadEmployeeSessions();
+      }
+    } catch (error) {
+      console.error('Error ending tracking:', error);
       setNotification({
         type: 'error',
-        message: 'Session duration is too short. Please ensure you have worked for at least 1 minute.'
+        message: error.response?.data?.message || 'Failed to end tracking'
       });
-      return;
     }
-
-    const breakMinutes = currentSession.breaks.reduce((total, b) => total + b.duration, 0);
-    const productiveMinutes = totalMinutes - breakMinutes;
-    
-    if (productiveMinutes < 0) {
-      setNotification({
-        type: 'error',
-        message: 'Invalid session: Break duration exceeds total session duration'
-      });
-      return;
-    }
-
-    setTotalHours(calculateTotalHours(currentSession.startTime, endTime, currentSession.breaks));
-    setNotification({
-      type: 'success',
-      message: 'Work hours tracking ended'
-    });
-    setIsTracking(false);
-    setSessionStatus('completed');
-    setCurrentSession(null);
   };
 
-  const handleBreak = () => {
+  const handleBreak = async () => {
     if (!isTracking || !currentSession) {
       setNotification({
         type: 'error',
@@ -247,21 +283,29 @@ const RemoteWorkHoursTracker = () => {
       return;
     }
 
-    const now = new Date();
-    const breakStart = now.toLocaleTimeString();
-    
-    setCurrentSession(prev => ({
-      ...prev,
-      currentBreak: breakStart
-    }));
-    setSessionStatus('on-break');
-    setNotification({
-      type: 'success',
-      message: 'Break started'
-    });
+    try {
+      const response = await api.put(`/work-sessions/${currentSession.id}/break/start`);
+      const session = response.data.session;
+
+      setCurrentSession(prev => ({
+        ...prev,
+        currentBreak: new Date(session.currentBreak).toLocaleTimeString()
+      }));
+      setSessionStatus('on-break');
+      setNotification({
+        type: 'success',
+        message: 'Break started'
+      });
+    } catch (error) {
+      console.error('Error starting break:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to start break'
+      });
+    }
   };
 
-  const handleEndBreak = () => {
+  const handleEndBreak = async () => {
     if (!isTracking || !currentSession || !currentSession.currentBreak) {
       setNotification({
         type: 'error',
@@ -270,62 +314,74 @@ const RemoteWorkHoursTracker = () => {
       return;
     }
 
-    const now = new Date();
-    const breakEnd = now.toLocaleTimeString();
-    
-    // Calculate break duration
-    const start = new Date(`2000-01-01T${currentSession.currentBreak}`);
-    const end = new Date(`2000-01-01T${breakEnd}`);
-    const duration = Math.round((end - start) / (1000 * 60));
+    try {
+      const response = await api.put(`/work-sessions/${currentSession.id}/break/end`);
+      const session = response.data.session;
 
-    if (duration < 1) {
+      setCurrentSession(prev => ({
+        ...prev,
+        breaks: session.breaks.map(b => ({
+          start: new Date(b.startTime).toLocaleTimeString(),
+          end: new Date(b.endTime).toLocaleTimeString(),
+          duration: b.duration
+        })),
+        currentBreak: null
+      }));
+      setSessionStatus('active');
+      setNotification({
+        type: 'success',
+        message: 'Break ended'
+      });
+    } catch (error) {
+      console.error('Error ending break:', error);
       setNotification({
         type: 'error',
-        message: 'Break duration is too short. Please ensure you have taken a break of at least 1 minute.'
+        message: error.response?.data?.message || 'Failed to end break'
       });
-      return;
     }
-
-    setCurrentSession(prev => ({
-      ...prev,
-      breaks: [...prev.breaks, { start: prev.currentBreak, end: breakEnd, duration }],
-      currentBreak: null
-    }));
-    setSessionStatus('active');
-    setNotification({
-      type: 'success',
-      message: 'Break ended'
-    });
   };
 
-  const generateReport = () => {
-    // Filter employees based on selected criteria
-    const filteredEmployees = employees.filter(employee => {
-      const departmentMatch = selectedDepartment === 'all' || employee.department === selectedDepartment;
-      const employeeMatch = selectedEmployee === 'all' || employee.id === parseInt(selectedEmployee);
-      return departmentMatch && employeeMatch;
-    });
+  const generateReport = async () => {
+    try {
+      setLoadingReport(true);
 
-    // Generate report data
-    const reportData = filteredEmployees.map(employee => ({
-      name: employee.name,
-      department: employee.department,
-      workHours: employee.workHours[selectedDate] || {
-        loginTime: 'N/A',
-        logoutTime: 'N/A',
-        totalHours: 0,
-        productiveHours: 0,
-        breaks: []
+      // Build query parameters
+      const params = {
+        startDate: dateRange.start,
+        endDate: dateRange.end
+      };
+
+      if (selectedDepartment !== 'all') {
+        params.department = selectedDepartment;
       }
-    }));
 
-    setNotification({
-      type: 'success',
-      message: 'Report generated successfully'
-    });
+      if (selectedEmployee !== 'all') {
+        params.employeeId = selectedEmployee;
+      }
 
-    // Here you would typically send this data to your backend or export it
-    console.log('Report Data:', reportData);
+      const response = await api.get('/work-sessions/report', { params });
+
+      setReportData(response.data);
+      setNotification({
+        type: 'success',
+        message: `Report generated successfully! Total Sessions: ${response.data.summary.totalSessions}, Total Hours: ${response.data.summary.totalHours.toFixed(2)}h`
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to generate report'
+      });
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  // Helper function to get employee session for selected date
+  const getEmployeeSession = (employeeId) => {
+    return allSessions.find(session =>
+      session.employeeId === employeeId || session.employeeId._id === employeeId
+    );
   };
 
   const departments = [...new Set(employees.map(emp => emp.department))];
@@ -348,276 +404,81 @@ const RemoteWorkHoursTracker = () => {
       <div className="remote-work-hours-tracker">
         <div className="tracker-header">
           <h1>Remote Work Hours Tracker</h1>
-        <div className="header-actions">
-          <div className="date-picker-wrapper">
-            <FaCalendarAlt className="icon" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="date-picker"
-            />
-          </div>
-          <button
-            className="admin-toggle"
-            onClick={() => setIsAdmin(!isAdmin)}
-          >
-            <FaUserTie className="icon" />
-            {isAdmin ? 'Employee View' : 'Admin View'}
-          </button>
-        </div>
-      </div>
-
-      {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
-        </div>
-      )}
-
-      <div className="tracker-content">
-        {!isAdmin ? (
-          <div className="employee-dashboard">
-            <div className={`work-hours-summary ${isWorkHoursCollapsed ? 'collapsed' : ''}`}>
-              <div 
-                className="section-header"
-                onClick={() => setIsWorkHoursCollapsed(!isWorkHoursCollapsed)}
-              >
-                <h2>Today's Work Hours</h2>
-                <span className="collapse-icon">
-                  {isWorkHoursCollapsed ? '▼' : '▲'}
-                </span>
-              </div>
-              {!isWorkHoursCollapsed && (
-                <>
-                  <div className="session-status">
-                    <span className={`status-indicator ${sessionStatus}`}></span>
-                    <span className="status-text">
-                      {sessionStatus === 'active' ? 'Tracking Active' :
-                       sessionStatus === 'on-break' ? 'On Break' :
-                       sessionStatus === 'completed' ? 'Session Completed' :
-                       'No Active Session'}
-                    </span>
-                  </div>
-                  {currentSession && (
-                    <div className="session-progress">
-                      <div 
-                        className="progress-bar"
-                        style={{ width: `${sessionProgress}%` }}
-                      ></div>
-                      <span className="progress-text">{sessionProgress.toFixed(1)}% of workday</span>
-                    </div>
-                  )}
-                  {currentSession ? (
-                    <div className="current-session-details">
-                      <div className="session-info">
-                        <span>
-                          <FaClock className="icon" />
-                          Start Time: {currentSession.startTime}
-                        </span>
-                        <span>
-                          <FaPlay className="icon" />
-                          Status: {currentSession.currentBreak ? 'On Break' : 'Working'}
-                        </span>
-                        <span>
-                          <FaCheck className="icon" />
-                          Total Hours: {totalHours}
-                        </span>
-                      </div>
-                      {currentSession.breaks.length > 0 && (
-                        <div className="breaks-list">
-                          <h3>
-                            <FaPause className="icon" />
-                            Breaks
-                          </h3>
-                          {currentSession.breaks.map((break_, index) => (
-                            <div key={index} className="break-item">
-                              <span>{break_.start} - {break_.end}</span>
-                              <span>{break_.duration} minutes</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="no-tracking-message">No active tracking session</p>
-                  )}
-                </>
-              )}
+          <div className="header-actions">
+            <div className="date-picker-wrapper">
+              {/* <FaCalendarAlt className="icon" /> */}
+              {/* <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="date-picker"
+              /> */}
             </div>
+          </div>
+        </div>
 
-            <div className="tracking-controls">
-              {!isTracking ? (
-                <button
-                  className={`start-tracking-button ${isMobile ? 'mobile-fab' : ''}`}
-                  onClick={handleStartTracking}
+        {notification && (
+          <div className={`notification ${notification.type}`}>
+            {notification.message}
+          </div>
+        )}
+
+        <div className="tracker-content">
+          {user?.role !== 'hr' ? (
+            <div className="employee-dashboard">
+              <div className={`work - hours - summary ${isWorkHoursCollapsed ? 'collapsed' : ''}`}>
+                <div
+                  className="section-header"
+                  onClick={() => setIsWorkHoursCollapsed(!isWorkHoursCollapsed)}
                 >
-                  <FaPlay className="icon" />
-                  Start Tracking
-                </button>
-              ) : (
-                <div className="tracking-actions">
-                  <div className="current-session">
-                    <span>
-                      <FaClock className="icon" />
-                      Started at: {currentSession?.startTime}
-                    </span>
-                    {currentSession?.currentBreak && (
-                      <span>
-                        <FaPause className="icon" />
-                        On break since: {currentSession.currentBreak}
+                  <h2>Today's Work Hours</h2>
+                  <span className="collapse-icon">
+                    {isWorkHoursCollapsed ? '▼' : '▲'}
+                  </span>
+                </div>
+                {!isWorkHoursCollapsed && (
+                  <>
+                    <div className="session-status">
+                      <span className={`status - indicator ${sessionStatus}`}></span>
+                      <span className="status-text">
+                        {sessionStatus === 'active' ? 'Tracking Active' :
+                          sessionStatus === 'on-break' ? 'On Break' :
+                            sessionStatus === 'completed' ? 'Session Completed' :
+                              'No Active Session'}
                       </span>
-                    )}
-                  </div>
-                  <div className="action-buttons">
-                    {!currentSession?.currentBreak ? (
-                      <button
-                        className="break-button"
-                        onClick={handleBreak}
-                      >
-                        <FaPause className="icon" />
-                        Take Break
-                      </button>
-                    ) : (
-                      <button
-                        className="end-break-button"
-                        onClick={handleEndBreak}
-                      >
-                        <FaPlay className="icon" />
-                        End Break
-                      </button>
-                    )}
-                    <button
-                      className="end-tracking-button"
-                      onClick={handleEndTracking}
-                    >
-                      <FaStop className="icon" />
-                      End Tracking
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="admin-dashboard">
-            <div className={`reporting-section ${isReportingCollapsed ? 'collapsed' : ''}`}>
-              <div 
-                className="section-header"
-                onClick={() => setIsReportingCollapsed(!isReportingCollapsed)}
-              >
-                <h2>
-                  <FaFileAlt className="icon" />
-                  Generate Reports
-                </h2>
-                <span className="collapse-icon">
-                  {isReportingCollapsed ? '▼' : '▲'}
-                </span>
-              </div>
-              {!isReportingCollapsed && (
-                <div className="report-filters">
-                  <div className="filter-group">
-                    <label>
-                      <FaFileAlt className="icon" />
-                      Report Type
-                    </label>
-                    <select 
-                      value={reportType} 
-                      onChange={(e) => setReportType(e.target.value)}
-                    >
-                      <option value="daily">Daily Report</option>
-                      <option value="weekly">Weekly Report</option>
-                      <option value="monthly">Monthly Report</option>
-                    </select>
-                  </div>
-
-                  <div className="filter-group">
-                    <label>
-                      <FaCalendarAlt className="icon" />
-                      Date Range
-                    </label>
-                    <div className="date-range-inputs">
-                      <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      />
-                      <span>to</span>
-                      <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      />
                     </div>
-                  </div>
-
-                  <div className="filter-group">
-                    <label>
-                      <FaBuilding className="icon" />
-                      Department
-                    </label>
-                    <select 
-                      value={selectedDepartment} 
-                      onChange={(e) => setSelectedDepartment(e.target.value)}
-                    >
-                      <option value="all">All Departments</option>
-                      {departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="filter-group">
-                    <label>
-                      <FaUserTie className="icon" />
-                      Employee
-                    </label>
-                    <select 
-                      value={selectedEmployee} 
-                      onChange={(e) => setSelectedEmployee(e.target.value)}
-                    >
-                      <option value="all">All Employees</option>
-                      {employees
-                        .filter(emp => selectedDepartment === 'all' || emp.department === selectedDepartment)
-                        .map(emp => (
-                          <option key={emp.id} value={emp.id}>{emp.name}</option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <button
-                    className="generate-report-button"
-                    onClick={generateReport}
-                  >
-                    <FaFileAlt className="icon" />
-                    Generate Report
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="employees-list">
-              <h2>Employee Work Hours</h2>
-              <div className="employees-grid">
-                {employees.map(employee => (
-                  <div key={employee.id} className="employee-card">
-                    <div className="employee-info">
-                      <h3>{employee.name}</h3>
-                      <span>{employee.department}</span>
-                    </div>
-                    {employee.workHours[selectedDate] && (
-                      <div className="work-hours-details">
-                        <div className="hours-info">
-                          <span>Login: {employee.workHours[selectedDate].loginTime}</span>
-                          <span>Logout: {employee.workHours[selectedDate].logoutTime}</span>
+                    {currentSession && (
+                      <div className="session-progress">
+                        <div
+                          className="progress-bar"
+                          style={{ width: `${sessionProgress} % ` }}
+                        ></div>
+                        <span className="progress-text">{sessionProgress.toFixed(1)}% of workday</span>
+                      </div>
+                    )}
+                    {currentSession ? (
+                      <div className="current-session-details">
+                        <div className="session-info">
+                          <span>
+                            <FaClock className="icon" />
+                            Start Time: {currentSession.startTime}
+                          </span>
+                          <span>
+                            <FaPlay className="icon" />
+                            Status: {currentSession.currentBreak ? 'On Break' : 'Working'}
+                          </span>
+                          <span>
+                            <FaCheck className="icon" />
+                            Total Hours: {totalHours}
+                          </span>
                         </div>
-                        <div className="hours-summary">
-                          <span>Total Hours: {employee.workHours[selectedDate].totalHours}</span>
-                          <span>Productive Hours: {employee.workHours[selectedDate].productiveHours}</span>
-                        </div>
-                        {employee.workHours[selectedDate].breaks.length > 0 && (
+                        {currentSession.breaks.length > 0 && (
                           <div className="breaks-list">
-                            <h4>Breaks</h4>
-                            {employee.workHours[selectedDate].breaks.map((break_, index) => (
+                            <h3>
+                              <FaPause className="icon" />
+                              Breaks
+                            </h3>
+                            {currentSession.breaks.map((break_, index) => (
                               <div key={index} className="break-item">
                                 <span>{break_.start} - {break_.end}</span>
                                 <span>{break_.duration} minutes</span>
@@ -626,14 +487,209 @@ const RemoteWorkHoursTracker = () => {
                           </div>
                         )}
                       </div>
+                    ) : (
+                      <p className="no-tracking-message">No active tracking session</p>
                     )}
+                  </>
+                )}
+              </div>
+
+              <div className="tracking-controls">
+                {!isTracking ? (
+                  <button
+                    className={`start - tracking - button ${isMobile ? 'mobile-fab' : ''}`}
+                    onClick={handleStartTracking}
+                  >
+                    <FaPlay className="icon" />
+                    Start Tracking
+                  </button>
+                ) : (
+                  <div className="tracking-actions">
+                    <div className="current-session">
+                      <span>
+                        <FaClock className="icon" />
+                        Started at: {currentSession?.startTime}
+                      </span>
+                      {currentSession?.currentBreak && (
+                        <span>
+                          <FaPause className="icon" />
+                          On break since: {currentSession.currentBreak}
+                        </span>
+                      )}
+                    </div>
+                    <div className="action-buttons">
+                      {!currentSession?.currentBreak ? (
+                        <button
+                          className="break-button"
+                          onClick={handleBreak}
+                        >
+                          <FaPause className="icon" />
+                          Take Break
+                        </button>
+                      ) : (
+                        <button
+                          className="end-break-button"
+                          onClick={handleEndBreak}
+                        >
+                          <FaPlay className="icon" />
+                          End Break
+                        </button>
+                      )}
+                      <button
+                        className="end-tracking-button"
+                        onClick={handleEndTracking}
+                      >
+                        <FaStop className="icon" />
+                        End Tracking
+                      </button>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="admin-dashboard">
+              <div className={`reporting - section ${isReportingCollapsed ? 'collapsed' : ''}`}>
+                <div
+                  className="section-header"
+                  onClick={() => setIsReportingCollapsed(!isReportingCollapsed)}
+                >
+                  <h2>
+                    <FaFileAlt className="icon" />
+                    Generate Reports
+                  </h2>
+                  <span className="collapse-icon">
+                    {isReportingCollapsed ? '▼' : '▲'}
+                  </span>
+                </div>
+                {!isReportingCollapsed && (
+                  <div className="report-filters">
+                    <div className="filter-group">
+                      <label>
+                        <FaFileAlt className="icon" />
+                        Report Type
+                      </label>
+                      <select
+                        value={reportType}
+                        onChange={(e) => setReportType(e.target.value)}
+                      >
+                        <option value="daily">Daily Report</option>
+                        <option value="weekly">Weekly Report</option>
+                        <option value="monthly">Monthly Report</option>
+                      </select>
+                    </div>
+
+                    <div className="filter-group">
+                      <label>
+                        <FaCalendarAlt className="icon" />
+                        Date Range
+                      </label>
+                      <div className="date-range-inputs">
+                        <input
+                          type="date"
+                          value={dateRange.start}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                        />
+                        <span>to</span>
+                        <input
+                          type="date"
+                          value={dateRange.end}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="filter-group">
+                      <label>
+                        <FaBuilding className="icon" />
+                        Department
+                      </label>
+                      <select
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                      >
+                        <option value="all">All Departments</option>
+                        {departments.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="filter-group">
+                      <label>
+                        <FaUserTie className="icon" />
+                        Employee
+                      </label>
+                      <select
+                        value={selectedEmployee}
+                        onChange={(e) => setSelectedEmployee(e.target.value)}
+                      >
+                        <option value="all">All Employees</option>
+                        {employees
+                          .filter(emp => selectedDepartment === 'all' || emp.department === selectedDepartment)
+                          .map(emp => (
+                            <option key={emp._id} value={emp._id}>{emp.username}</option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <button
+                      className="generate-report-button"
+                      onClick={generateReport}
+                    >
+                      <FaFileAlt className="icon" />
+                      Generate Report
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="employees-list">
+                <h2>Employee Work Hours</h2>
+                <div className="employees-grid">
+                  {employees.map(employee => {
+                    const session = getEmployeeSession(employee._id);
+                    return (
+                      <div key={employee._id} className="employee-card">
+                        <div className="employee-info">
+                          <h3>{employee.username}</h3>
+                          <span>{employee.department || 'No Department'}</span>
+                        </div>
+                        {session ? (
+                          <div className="work-hours-details">
+                            <div className="hours-info">
+                              <span>Login: {new Date(session.startTime).toLocaleTimeString()}</span>
+                              <span>Logout: {session.endTime ? new Date(session.endTime).toLocaleTimeString() : 'In Progress'}</span>
+                            </div>
+                            <div className="hours-summary">
+                              <span>Total Hours: {session.totalHours || 0}h</span>
+                              <span>Productive Hours: {session.productiveHours || 0}h</span>
+                            </div>
+                            {session.breaks && session.breaks.length > 0 && (
+                              <div className="breaks-list">
+                                <h4>Breaks</h4>
+                                {session.breaks.map((break_, index) => (
+                                  <div key={index} className="break-item">
+                                    <span>{new Date(break_.startTime).toLocaleTimeString()} - {break_.endTime ? new Date(break_.endTime).toLocaleTimeString() : 'Ongoing'}</span>
+                                    <span>{break_.duration} minutes</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="no-session">
+                            <p>No work session for this date</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

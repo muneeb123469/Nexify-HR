@@ -382,12 +382,12 @@ export const Sidebar = () => (
           <span>Payslip Generation</span>
         </NavLink>
       </MenuItem>
-      <MenuItem>
+      {/* <MenuItem>
         <NavLink to="/employee/payroll-tax" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-percentage"></i>
           <span>Payroll Tax</span>
         </NavLink>
-      </MenuItem>
+      </MenuItem> */}
 
       {/* Remote Work Section */}
       <MenuItem>
@@ -492,11 +492,11 @@ const ApprovalTable = ({ approvals }) => (
 
 const AttendanceChart = ({ attendanceData, currentMonth }) => {
   const COLORS = ['#00A3B5', '#FFB400', '#FF5A5A', '#8CE0C9'];
-  
+
   const totalPresent = attendanceData.reduce((sum, day) => sum + (day.present || 0), 0);
   const totalDays = attendanceData.length;
   const presentPercentage = Math.round((totalPresent / totalDays) * 100);
-  
+
   const pieData = [
     { name: 'Present', value: presentPercentage },
     { name: 'Absent', value: 100 - presentPercentage }
@@ -510,7 +510,7 @@ const AttendanceChart = ({ attendanceData, currentMonth }) => {
           <span className="active">MONTHLY</span>
         </div>
       </div>
-      
+
       <div className="charts-container">
         <div className="pie-chart">
           <ResponsiveContainer width="100%" height={200}>
@@ -534,7 +534,7 @@ const AttendanceChart = ({ attendanceData, currentMonth }) => {
             <div className="percentage">{presentPercentage}%</div>
           </div>
         </div>
-        
+
         <div className="line-chart">
           <div className="month-selector">
             <button className="prev-month"><i className="fas fa-chevron-left"></i></button>
@@ -583,16 +583,16 @@ const Calendar = ({ month, year }) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
   const today = new Date();
-  
+
   const days = [];
   for (let i = 0; i < firstDay; i++) {
     days.push({ day: '', empty: true });
   }
-  
+
   for (let i = 1; i <= daysInMonth; i++) {
     days.push({ day: i, empty: false });
   }
-  
+
   const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -617,8 +617,8 @@ const Calendar = ({ month, year }) => {
         </div>
         <div className="days">
           {days.map((day, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`day ${day.empty ? 'empty' : ''} ${(!day.empty && day.day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? 'today' : ''}`}
             >
               {day.day}
@@ -736,7 +736,7 @@ const WellnessMonitoring = () => {
     return (
       <div className="star-rating">
         {[...Array(5)].map((_, index) => (
-          <i 
+          <i
             key={index}
             className={`fas fa-star ${index < Math.floor(rating) ? 'filled' : index < rating ? 'half-filled' : ''}`}
           />
@@ -758,14 +758,14 @@ const WellnessMonitoring = () => {
             <i className="fas fa-shield-alt"></i>
           </div>
         </div>
-        
+
         <div className="filter-controls">
           <div className="filter-group">
             <label>
               <i className="fas fa-calendar"></i>
               Time Period
             </label>
-            <select 
+            <select
               value={filters.timePeriod}
               onChange={(e) => handleFilterChange('timePeriod', e.target.value)}
             >
@@ -782,7 +782,7 @@ const WellnessMonitoring = () => {
               <i className="fas fa-list"></i>
               Program Type
             </label>
-            <select 
+            <select
               value={filters.programType}
               onChange={(e) => handleFilterChange('programType', e.target.value)}
             >
@@ -799,7 +799,7 @@ const WellnessMonitoring = () => {
               <i className="fas fa-users"></i>
               Department
             </label>
-            <select 
+            <select
               value={filters.department}
               onChange={(e) => handleFilterChange('department', e.target.value)}
             >
@@ -858,11 +858,11 @@ const WellnessMonitoring = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="enrolled" 
-                stroke="#4C9F9F" 
-                strokeWidth={2} 
+              <Line
+                type="monotone"
+                dataKey="enrolled"
+                stroke="#4C9F9F"
+                strokeWidth={2}
                 dot={{ fill: '#4C9F9F' }}
               />
             </LineChart>
@@ -906,16 +906,16 @@ const WellnessMonitoring = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="feedback-themes">
             <div className="theme-section positive">
               <h4>Positive Themes</h4>
               <div className="theme-cloud">
                 {wellnessData.feedbackData.commonThemes.positive.map((theme, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="theme-tag"
-                    style={{ 
+                    style={{
                       fontSize: `${Math.max(0.8, theme.count / 10)}rem`,
                       opacity: Math.max(0.6, theme.count / 35)
                     }}
@@ -925,15 +925,15 @@ const WellnessMonitoring = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="theme-section negative">
               <h4>Areas for Improvement</h4>
               <div className="theme-cloud">
                 {wellnessData.feedbackData.commonThemes.negative.map((theme, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="theme-tag"
-                    style={{ 
+                    style={{
                       fontSize: `${Math.max(0.8, theme.count / 10)}rem`,
                       opacity: Math.max(0.6, theme.count / 35)
                     }}
@@ -949,7 +949,7 @@ const WellnessMonitoring = () => {
 
       <div className="compliance-section">
         <h3>Compliance & Engagement Tracking</h3>
-        
+
         <div className="compliance-grid">
           <div className="compliance-overview">
             <h4>Mandatory Program Compliance</h4>
@@ -963,12 +963,12 @@ const WellnessMonitoring = () => {
                     </span>
                   </div>
                   <div className="progress-bar">
-                    <div 
+                    <div
                       className="progress-fill"
-                      style={{ 
+                      style={{
                         width: `${(program.achieved / program.target) * 100}%`,
-                        backgroundColor: program.achieved >= 90 ? '#4CAF50' : 
-                                       program.achieved >= 80 ? '#FFB400' : '#FF5A5A'
+                        backgroundColor: program.achieved >= 90 ? '#4CAF50' :
+                          program.achieved >= 80 ? '#FFB400' : '#FF5A5A'
                       }}
                     />
                   </div>
@@ -986,26 +986,26 @@ const WellnessMonitoring = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="mentalHealth" 
-                  name="Mental Health" 
-                  stroke="#4C9F9F" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="mentalHealth"
+                  name="Mental Health"
+                  stroke="#4C9F9F"
+                  strokeWidth={2}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="wellness" 
-                  name="Wellness" 
-                  stroke="#2C3E50" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="wellness"
+                  name="Wellness"
+                  stroke="#2C3E50"
+                  strokeWidth={2}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="fitness" 
-                  name="Fitness" 
-                  stroke="#A5D8D0" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="fitness"
+                  name="Fitness"
+                  stroke="#A5D8D0"
+                  strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -1020,9 +1020,9 @@ const WellnessMonitoring = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar 
-                  dataKey="usage" 
-                  name="Utilization Rate" 
+                <Bar
+                  dataKey="usage"
+                  name="Utilization Rate"
                   fill="#4C9F9F"
                   radius={[4, 4, 0, 0]}
                 />
@@ -1102,14 +1102,14 @@ const PayrollOverview = () => {
             Payroll Overview
           </h2>
           <div className="date-range-picker">
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
             />
             <span>to</span>
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
             />
@@ -1175,7 +1175,7 @@ const PayrollOverview = () => {
                     <span className="compliance-name">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                     <span className="compliance-date">Last Updated: {value.lastUpdated}</span>
                   </div>
-                  <div 
+                  <div
                     className="compliance-status"
                     style={{ backgroundColor: getComplianceStatusColor(value.status) }}
                   >
@@ -1195,26 +1195,26 @@ const PayrollOverview = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="baseSalary" 
-                  name="Base Salary" 
-                  stroke="#4C9F9F" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="baseSalary"
+                  name="Base Salary"
+                  stroke="#4C9F9F"
+                  strokeWidth={2}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="bonuses" 
-                  name="Bonuses" 
-                  stroke="#2C3E50" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="bonuses"
+                  name="Bonuses"
+                  stroke="#2C3E50"
+                  strokeWidth={2}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="deductions" 
-                  name="Deductions" 
-                  stroke="#A5D8D0" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="deductions"
+                  name="Deductions"
+                  stroke="#A5D8D0"
+                  strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -1229,9 +1229,9 @@ const PayrollOverview = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar 
-                  dataKey="avgSalary" 
-                  name="Average Salary" 
+                <Bar
+                  dataKey="avgSalary"
+                  name="Average Salary"
                   fill="#4C9F9F"
                   radius={[4, 4, 0, 0]}
                 />
@@ -1337,7 +1337,7 @@ const RemoteWorkManagement = () => {
     return (
       <div className="star-rating">
         {[...Array(5)].map((_, index) => (
-          <i 
+          <i
             key={index}
             className={`fas fa-star ${index < Math.floor(rating) ? 'filled' : index < rating ? 'half-filled' : ''}`}
           />
@@ -1414,17 +1414,17 @@ const RemoteWorkManagement = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar 
-                dataKey="hours" 
-                name="Hours Worked" 
+              <Bar
+                dataKey="hours"
+                name="Hours Worked"
                 fill="#4C9F9F"
                 radius={[4, 4, 0, 0]}
               />
-              <Line 
-                type="monotone" 
-                dataKey="target" 
-                name="Target Hours" 
-                stroke="#2C3E50" 
+              <Line
+                type="monotone"
+                dataKey="target"
+                name="Target Hours"
+                stroke="#2C3E50"
                 strokeWidth={2}
                 dot={false}
               />
@@ -1441,17 +1441,17 @@ const RemoteWorkManagement = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar 
-                dataKey="hours" 
-                name="Hours Spent" 
+              <Bar
+                dataKey="hours"
+                name="Hours Spent"
                 fill="#4C9F9F"
                 radius={[4, 4, 0, 0]}
               />
-              <Line 
-                type="monotone" 
-                dataKey="target" 
-                name="Target Hours" 
-                stroke="#2C3E50" 
+              <Line
+                type="monotone"
+                dataKey="target"
+                name="Target Hours"
+                stroke="#2C3E50"
                 strokeWidth={2}
                 dot={false}
               />
@@ -1518,7 +1518,7 @@ const Dashboard = () => {
   const [approvals, setApprovals] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const loadApprovals = async () => {
       try {
@@ -1531,8 +1531,8 @@ const Dashboard = () => {
           const yyyy = dt.getFullYear();
           return `${mm}/${dd}/${yyyy}`;
         };
-        const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const daysBetween = (a, b) => Math.max(0, Math.round((b - a) / (1000*60*60*24)));
+        const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const daysBetween = (a, b) => Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
         const today = new Date();
         const mapped = data.slice(0, 6).map(app => {
           const created = new Date(app.createdAt);
@@ -1552,7 +1552,7 @@ const Dashboard = () => {
         setApprovals([]);
       }
     };
-    
+
     const generateAttendanceData = () => {
       const data = [];
       for (let i = 1; i <= 30; i++) {
@@ -1571,7 +1571,7 @@ const Dashboard = () => {
     setAttendanceData(generateAttendanceData());
     setLoading(false);
   }, []);
-  
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -1595,8 +1595,8 @@ const Dashboard = () => {
           <RemoteWorkManagement />
         </GridItem>
         <GridItem className="attendance">
-          <AttendanceChart 
-            attendanceData={attendanceData} 
+          <AttendanceChart
+            attendanceData={attendanceData}
             currentMonth="Sep"
           />
         </GridItem>
@@ -1622,7 +1622,7 @@ const HRDashboard = () => {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        
+
         {/* Recruitment Routes */}
         <Route path="/hr/job-postings" element={<JobPostingsDashboard />} />
         <Route path="/hr/candidate-applications" element={<CandidateApplicationManagement />} />
@@ -1631,16 +1631,16 @@ const HRDashboard = () => {
         <Route path="/meetings" element={<Meeting />} />
         <Route path="/hr/interview-feedback" element={<InterviewFeedbackRecording />} />
         <Route path="/hr/offer-letters" element={<OfferLetterGeneration />} />
-        
+
         {/* Employee Management Routes */}
         <Route path="/employee/database" element={<EmployeeDatabaseManagement />} />
         <Route path="/employee/classification" element={<EmployeeClassification />} />
-              
+
         {/* Payroll Routes */}
         <Route path="/payroll/salary-calculation" element={<SalaryCalculation />} />
         <Route path="/payroll/payslip-generation" element={<PayslipGeneration />} />
         <Route path="/employee/payroll-tax" element={<PayrollTaxManagement />} />
-        
+
         {/* Additional Feature Routes */}
         <Route path="/remote-work/wellness-fitness" element={<WellnessFitnessDashboard />} />
         <Route path="/remote-work/hours-tracker" element={<RemoteWorkHoursTracker />} />

@@ -32,8 +32,8 @@ router.post('/assign', verifyToken, isHROrAdmin, async (req, res) => {
 
     // Validate required fields
     if (!employeeId || !title || !description || !priority || !category || !taskType || !dueDate || !estimatedHours) {
-      return res.status(400).json({ 
-        message: 'Please provide all required fields: employeeId, title, description, priority, category, taskType, dueDate, estimatedHours' 
+      return res.status(400).json({
+        message: 'Please provide all required fields: employeeId, title, description, priority, category, taskType, dueDate, estimatedHours'
       });
     }
 
@@ -75,9 +75,9 @@ router.post('/assign', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error assigning task:', error);
-    res.status(500).json({ 
-      message: 'Error assigning task', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error assigning task',
+      error: error.message
     });
   }
 });
@@ -108,9 +108,9 @@ router.get('/employee/:employeeId', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching employee tasks:', error);
-    res.status(500).json({ 
-      message: 'Error fetching tasks', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching tasks',
+      error: error.message
     });
   }
 });
@@ -123,15 +123,15 @@ router.get('/my-tasks', verifyToken, async (req, res) => {
     const { status, priority, category, search } = req.query;
 
     const filters = { employeeId: req.user._id, isActive: true };
-    
+
     if (status && status !== 'all') {
       filters.status = status;
     }
-    
+
     if (priority && priority !== 'all') {
       filters.priority = priority;
     }
-    
+
     if (category && category !== 'all') {
       filters.category = category;
     }
@@ -141,7 +141,7 @@ router.get('/my-tasks', verifyToken, async (req, res) => {
     // Apply search filter if provided
     if (search) {
       const searchLower = search.toLowerCase();
-      tasks = tasks.filter(task => 
+      tasks = tasks.filter(task =>
         task.title.toLowerCase().includes(searchLower) ||
         task.description.toLowerCase().includes(searchLower)
       );
@@ -153,9 +153,9 @@ router.get('/my-tasks', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching my tasks:', error);
-    res.status(500).json({ 
-      message: 'Error fetching tasks', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching tasks',
+      error: error.message
     });
   }
 });
@@ -179,9 +179,9 @@ router.get('/assigned-by-me', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching assigned tasks:', error);
-    res.status(500).json({ 
-      message: 'Error fetching tasks', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching tasks',
+      error: error.message
     });
   }
 });
@@ -194,19 +194,19 @@ router.get('/all', verifyToken, isHROrAdmin, async (req, res) => {
     const { status, priority, employeeId, category } = req.query;
 
     const filters = { isActive: true };
-    
+
     if (status && status !== 'all') {
       filters.status = status;
     }
-    
+
     if (priority && priority !== 'all') {
       filters.priority = priority;
     }
-    
+
     if (category && category !== 'all') {
       filters.category = category;
     }
-    
+
     if (employeeId) {
       filters.employeeId = employeeId;
     }
@@ -222,9 +222,9 @@ router.get('/all', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching all tasks:', error);
-    res.status(500).json({ 
-      message: 'Error fetching tasks', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching tasks',
+      error: error.message
     });
   }
 });
@@ -234,12 +234,12 @@ router.get('/all', verifyToken, isHROrAdmin, async (req, res) => {
 // @access  Private (HR/Admin)
 router.get('/employees/list', verifyToken, isHROrAdmin, async (req, res) => {
   try {
-    const employees = await User.find({ 
+    const employees = await User.find({
       role: 'employee',
       status: { $ne: 'Terminated' }
     })
-    .select('username email department jobTitle')
-    .sort({ username: 1 });
+      .select('username email department jobTitle')
+      .sort({ username: 1 });
 
     console.log('Fetched employees for task assignment:', employees.length, 'employees');
     console.log('Sample employee:', employees[0]);
@@ -250,9 +250,9 @@ router.get('/employees/list', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching employees:', error);
-    res.status(500).json({ 
-      message: 'Error fetching employees', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching employees',
+      error: error.message
     });
   }
 });
@@ -274,9 +274,9 @@ router.get('/stats/employee/:employeeId', verifyToken, async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error('Error fetching employee stats:', error);
-    res.status(500).json({ 
-      message: 'Error fetching statistics', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching statistics',
+      error: error.message
     });
   }
 });
@@ -307,9 +307,9 @@ router.get('/:taskId', verifyToken, async (req, res) => {
     res.json(task);
   } catch (error) {
     console.error('Error fetching task:', error);
-    res.status(500).json({ 
-      message: 'Error fetching task', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching task',
+      error: error.message
     });
   }
 });
@@ -341,7 +341,7 @@ router.put('/:taskId/status', verifyToken, async (req, res) => {
     }
 
     task.status = status;
-    
+
     if (status === 'completed') {
       task.completedDate = new Date();
       task.progress = 100;
@@ -355,9 +355,9 @@ router.put('/:taskId/status', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating task status:', error);
-    res.status(500).json({ 
-      message: 'Error updating task status', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error updating task status',
+      error: error.message
     });
   }
 });
@@ -385,7 +385,7 @@ router.put('/:taskId/progress', verifyToken, async (req, res) => {
     }
 
     task.progress = progress;
-    
+
     if (progress === 100 && task.status !== 'completed') {
       task.status = 'completed';
       task.completedDate = new Date();
@@ -399,9 +399,9 @@ router.put('/:taskId/progress', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating task progress:', error);
-    res.status(500).json({ 
-      message: 'Error updating task progress', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error updating task progress',
+      error: error.message
     });
   }
 });
@@ -432,9 +432,9 @@ router.put('/:taskId/milestone/:milestoneId', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating milestone:', error);
-    res.status(500).json({ 
-      message: 'Error updating milestone', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error updating milestone',
+      error: error.message
     });
   }
 });
@@ -482,9 +482,9 @@ router.post('/:taskId/comment', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding comment:', error);
-    res.status(500).json({ 
-      message: 'Error adding comment', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error adding comment',
+      error: error.message
     });
   }
 });
@@ -531,9 +531,9 @@ router.put('/:taskId', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating task:', error);
-    res.status(500).json({ 
-      message: 'Error updating task', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error updating task',
+      error: error.message
     });
   }
 });
@@ -557,9 +557,54 @@ router.delete('/:taskId', verifyToken, isHROrAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting task:', error);
-    res.status(500).json({ 
-      message: 'Error deleting task', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error deleting task',
+      error: error.message
+    });
+  }
+});
+
+// @route   PUT /api/tasks/:taskId/assign-points
+// @desc    Assign points to a completed task (HR/Admin only)
+// @access  Private (HR/Admin)
+router.put('/:taskId/assign-points', verifyToken, isHROrAdmin, async (req, res) => {
+  try {
+    const { points } = req.body;
+
+    // Validate points
+    if (points === undefined || points < 0) {
+      return res.status(400).json({ message: 'Points must be a positive number' });
+    }
+
+    const task = await Task.findById(req.params.taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Check if task is completed
+    if (task.status !== 'completed') {
+      return res.status(400).json({
+        message: 'Points can only be assigned to completed tasks'
+      });
+    }
+
+    // Assign points
+    task.points = points;
+    task.pointsAssignedBy = req.user._id;
+    task.pointsAssignedDate = new Date();
+
+    await task.save();
+
+    res.json({
+      message: 'Points assigned successfully',
+      task
+    });
+  } catch (error) {
+    console.error('Error assigning points:', error);
+    res.status(500).json({
+      message: 'Error assigning points',
+      error: error.message
     });
   }
 });

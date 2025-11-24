@@ -185,6 +185,20 @@ const taskSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+
+  // Performance Points
+  points: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  pointsAssignedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  pointsAssignedDate: {
+    type: Date
   }
 }, {
   timestamps: true

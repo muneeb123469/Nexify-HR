@@ -16,6 +16,9 @@ const TaskTracking = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [points, setPoints] = useState(0);
+  const [assigningPoints, setAssigningPoints] = useState(false);
+  const [pointsMessage, setPointsMessage] = useState({ type: '', text: '' });
 
   // Fetch tasks and employees from backend
   useEffect(() => {
@@ -49,6 +52,9 @@ const TaskTracking = () => {
         estimatedHours: task.estimatedHours,
         actualHours: 0, // This field doesn't exist in backend yet
         progress: task.progress,
+        points: task.points || 0,
+        pointsAssignedBy: task.pointsAssignedBy,
+        pointsAssignedDate: task.pointsAssignedDate,
         milestones: task.milestones.map(m => ({
           id: m._id,
           title: m.title,
@@ -138,33 +144,42 @@ const TaskTracking = () => {
 
   const openTaskModal = (task) => {
     setSelectedTask(task);
+    setPoints(task.points || 0);
+    setPointsMessage({ type: '', text: '' });
     setShowTaskModal(true);
   };
 
   const closeTaskModal = () => {
     setSelectedTask(null);
     setShowTaskModal(false);
+    setPoints(0);
+    setPointsMessage({ type: '', text: '' });
   };
 
-  const updateTaskStatus = async (taskId, newStatus) => {
+  const assignPoints = async () => {
     try {
-      // Convert status format back to backend format (e.g., 'in-progress' to 'in_progress')
-      const backendStatus = newStatus.replace('-', '_');
+      setAssigningPoints(true);
+      setPointsMessage({ type: '', text: '' });
 
-      await api.put(`/tasks/${taskId}/status`, { status: backendStatus });
+      await api.put(`/tasks/${selectedTask.id}/assign-points`, { points });
 
       // Update local state
       setTasks(prev => prev.map(task =>
-        task.id === taskId ? { ...task, status: newStatus } : task
+        task.id === selectedTask.id ? { ...task, points, pointsAssignedDate: new Date() } : task
       ));
 
-      // Update selected task if it's the one being updated
-      if (selectedTask && selectedTask.id === taskId) {
-        setSelectedTask(prev => ({ ...prev, status: newStatus }));
-      }
+      // Update selected task
+      setSelectedTask(prev => ({ ...prev, points, pointsAssignedDate: new Date() }));
+
+      setPointsMessage({ type: 'success', text: `Successfully assigned ${points} points!` });
+      setAssigningPoints(false);
     } catch (err) {
-      console.error('Error updating task status:', err);
-      alert('Failed to update task status');
+      console.error('Error assigning points:', err);
+      setPointsMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to assign points'
+      });
+      setAssigningPoints(false);
     }
   };
 
@@ -495,28 +510,50 @@ const TaskTracking = () => {
                     </div>
                   </div>
 
-                  <div className="status-actions">
-                    <h4>Update Status</h4>
-                    <div className="status-buttons">
-                      <button
-                        className="status-btn pending"
-                        onClick={() => updateTaskStatus(selectedTask.id, 'pending')}
-                      >
-                        Pending
-                      </button>
-                      <button
-                        className="status-btn in-progress"
-                        onClick={() => updateTaskStatus(selectedTask.id, 'in-progress')}
-                      >
-                        In Progress
-                      </button>
-                      <button
-                        className="status-btn completed"
-                        onClick={() => updateTaskStatus(selectedTask.id, 'completed')}
-                      >
-                        Completed
-                      </button>
-                    </div>
+                  {/* Points Assignment Section - Only for Completed Tasks */}
+                  <div className="info-card">
+                    <h4>Performance Points</h4>
+                    {selectedTask.status === 'completed' ? (
+                      <div className="points-assignment">
+                        <div className="points-input-group">
+                          <label>Assign Points:</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={points}
+                            onChange={(e) => setPoints(Math.max(0, parseInt(e.target.value) || 0))}
+                            className="points-input"
+                            disabled={assigningPoints}
+                          />
+                        </div>
+                        <button
+                          className="assign-points-btn"
+                          onClick={assignPoints}
+                          disabled={assigningPoints}
+                        >
+                          {assigningPoints ? 'Assigning...' : 'Assign Points'}
+                        </button>
+                        {pointsMessage.text && (
+                          <div className={`points-message ${pointsMessage.type}`}>
+                            {pointsMessage.text}
+                          </div>
+                        )}
+                        {selectedTask.pointsAssignedDate && (
+                          <div className="points-info">
+                            <small>
+                              Last updated: {new Date(selectedTask.pointsAssignedDate).toLocaleDateString()}
+                            </small>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="points-not-available">
+                        <p>Points can only be assigned to completed tasks.</p>
+                        <div className="current-points">
+                          Current Points: <strong>{selectedTask.points}</strong>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

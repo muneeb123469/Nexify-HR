@@ -138,7 +138,7 @@ const EmployeeDatabaseManagement = () => {
       };
 
       const response = await employeeApi.createEmployee(employeeData);
-      
+
       if (response.success) {
         setShowAddForm(false);
         setNewEmployee({
@@ -188,7 +188,7 @@ const EmployeeDatabaseManagement = () => {
       };
 
       const response = await employeeApi.updateEmployee(selectedEmployee.id, employeeData);
-      
+
       if (response.success) {
         setShowEditForm(false);
         setSelectedEmployee(null);
@@ -212,7 +212,7 @@ const EmployeeDatabaseManagement = () => {
     if (window.confirm('Are you sure you want to terminate this employee?')) {
       try {
         const response = await employeeApi.deleteEmployee(employeeId);
-        
+
         if (response.success) {
           setNotification({
             type: 'success',
@@ -265,8 +265,8 @@ const EmployeeDatabaseManagement = () => {
 
   return (
     <div className="employee-database-management">
-        <div className="database-header">
-          <h1>Employee Database Management</h1>
+      <div className="database-header">
+        <h1>Employee Database Management</h1>
         <div className="header-actions">
           <input
             type="text"
@@ -284,7 +284,7 @@ const EmployeeDatabaseManagement = () => {
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
-          <button 
+          <button
             className="notification-close"
             onClick={() => setNotification(null)}
           >
@@ -450,7 +450,7 @@ const EmployeeDatabaseManagement = () => {
                       name="salary"
                       value={newEmployee.salary}
                       onChange={handleInputChange}
-                      placeholder="Monthly salary"
+                      placeholder="Salary per hour"
                     />
                   </div>
                   <div className="form-group">
