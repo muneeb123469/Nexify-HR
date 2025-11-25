@@ -74,7 +74,8 @@ HEADINGS = [
     "experience", "work experience", "professional experience", "employment",
     "education", "academic background", "qualifications",
     "skills", "technical skills", "core competencies", "expertise",
-    "projects", "certifications", "certificates", "licenses",
+    "projects", "personal projects", "academic projects",
+    "certifications", "certificates", "licenses",
     "summary", "profile", "objective", "about", "overview"
 ]
 
@@ -546,16 +547,65 @@ def clean_skill_name(skill):
     return clean
 
 def split_sections(text):
-    """Rough section splitter by heading keywords."""
-    sections, current = {}, "summary"
-    sections[current] = []
+    """Improved section splitter that properly separates sections by headings."""
+    sections = {}
+    current_section = "summary"
+    current_lines = []
+    
     for line in text.splitlines():
-        l = line.strip().lower()
-        if any(h in l for h in HEADINGS if len(l) <= 60):
-            current = next((h for h in HEADINGS if h in l), current)
-            sections.setdefault(current, [])
-        sections[current].append(line)
-    return {k: "\n".join(v).strip() for k, v in sections.items()}
+        line_stripped = line.strip()
+        line_lower = line_stripped.lower()
+        
+        # Skip empty lines
+        if not line_stripped:
+            current_lines.append(line)
+            continue
+        
+        # Check if this line is a section heading
+        # A section heading is typically: short, matches a known heading, and often standalone
+        is_heading = False
+        matched_heading = None
+        
+        if len(line_stripped) <= 60:  # Headings are usually short
+            # Check for exact matches first
+            if line_lower in HEADINGS:
+                is_heading = True
+                matched_heading = line_lower
+            else:
+                # Check if line contains any heading keywords
+                for heading in HEADINGS:
+                    # Must be a substantial match - not just a word in a sentence
+                    if heading in line_lower:
+                        # Additional validation: check if it's likely a heading
+                        # Headings usually don't have much other text
+                        words_in_line = len(line_lower.split())
+                        words_in_heading = len(heading.split())
+                        
+                        # If the line is mostly just the heading (within 2-3 extra words)
+                        if words_in_line <= words_in_heading + 3:
+                            is_heading = True
+                            matched_heading = heading
+                            break
+        
+        if is_heading and matched_heading:
+            # Save the previous section
+            if current_lines:
+                sections[current_section] = "\n".join(current_lines).strip()
+            
+            # Start new section
+            current_section = matched_heading
+            current_lines = []
+            logger.debug(f"Found section heading: '{matched_heading}' from line: '{line_stripped}'")
+        else:
+            # Add line to current section
+            current_lines.append(line)
+    
+    # Save the last section
+    if current_lines:
+        sections[current_section] = "\n".join(current_lines).strip()
+    
+    logger.info(f"Sections detected: {list(sections.keys())}")
+    return sections
 
 def extract_summary(text, sections):
     """Safe summary: never treat phone/email lines as summary; return None if not found."""
@@ -856,6 +906,8 @@ def clean_field_name(field_text):
 def extract_experience(sec_text):
     """
     Completely rewritten experience extraction following education section logic.
+    Now includes date extraction and bullet point preservation.
+    Stops at section boundaries like 'Projects'.
     """
     items = []
     if not sec_text:
@@ -870,9 +922,21 @@ def extract_experience(sec_text):
     
     logger.debug(f"Experience section after normalization: {lines}")
     
+    # Define section boundaries that should stop experience extraction
+    section_boundaries = [
+        'projects', 'personal projects', 'academic projects',
+        'certifications', 'certificates', 'education',
+        'skills', 'summary', 'objective'
+    ]
+    
     i = 0
     while i < len(lines):
         current_line = lines[i].strip()
+        
+        # Check if we've hit a section boundary
+        if current_line.lower() in section_boundaries:
+            logger.debug(f"Hit section boundary at line {i}: '{current_line}' - stopping experience extraction")
+            break
 
         if should_skip_experience_line(current_line):
             i += 1
@@ -884,8 +948,9 @@ def extract_experience(sec_text):
 
             j = i + 1
             lines_processed = 0
-            max_lookahead = 6  # More lines than education since experience can have descriptions
+            max_lookahead = 20  # Increased to capture all bullet points
             description_lines = []
+            dates_extracted = False
 
             while j < len(lines) and lines_processed < max_lookahead:
                 next_line = lines[j].strip()
@@ -895,28 +960,56 @@ def extract_experience(sec_text):
                     lines_processed += 1
                     continue
                 
+                # Check if we've hit a section boundary within the lookahead
+                if next_line.lower() in section_boundaries:
+                    logger.debug(f"Hit section boundary in lookahead at line {j}: '{next_line}'")
+                    break
+                
                 # If we hit another experience header, stop processing for the current entry
                 if is_experience_header_line(next_line):
                     break
 
-                # Check for location
-                location = extract_location_from_line(next_line)
-                if location and entry["location"] is None:
-                    entry["location"] = location
-                    logger.debug(f"Found location in line {j}: '{location}'")
+                # Try to extract dates if we haven't found them yet
+                if not dates_extracted:
+                    start_date, end_date = extract_experience_dates(next_line)
+                    if start_date or end_date:
+                        entry["startDate"] = start_date
+                        entry["endDate"] = end_date
+                        dates_extracted = True
+                        logger.debug(f"Found dates in line {j}: start='{start_date}', end='{end_date}'")
+                        j += 1
+                        lines_processed += 1
+                        continue
 
-                # If line doesn't contain location, treat as description
-                if not location:
-                    # Skip if it's just repeating the title or company
-                    if (next_line != entry.get("title") and 
-                        next_line != entry.get("company") and
-                        not is_redundant_line(next_line, entry)):
-                        description_lines.append(next_line)
+                # Check for location (only if dates have been extracted or we're past the first few lines)
+                if lines_processed > 2 or dates_extracted:
+                    location = extract_location_from_line(next_line)
+                    if location and entry["location"] is None:
+                        entry["location"] = location
+                        logger.debug(f"Found location in line {j}: '{location}'")
+                        j += 1
+                        lines_processed += 1
+                        continue
+
+                # If line doesn't contain dates or location, treat as description
+                # Skip if it's just repeating the title or company
+                if (next_line != entry.get("title") and 
+                    next_line != entry.get("company") and
+                    not is_redundant_line(next_line, entry)):
+                    
+                    # Clean up bullet points and preserve them
+                    cleaned_line = next_line.lstrip('•-*').strip()
+                    if cleaned_line:
+                        # If line starts with bullet, preserve it
+                        if next_line.startswith(('•', '-', '*')):
+                            description_lines.append('• ' + cleaned_line)
+                        else:
+                            description_lines.append(cleaned_line)
                 
                 j += 1
                 lines_processed += 1
 
-            # Set description if we found any
+            # Set description if we found any, joining with newlines to preserve structure
             if description_lines:
                 entry["description"] = '\n'.join(description_lines)
 
@@ -976,6 +1069,14 @@ def should_skip_experience_line(line):
     if line.lower().strip() in skip_headers:
         return True
 
+    # Stop processing if we hit the Projects section
+    projects_headers = [
+        'projects', 'personal projects', 'academic projects',
+        'project experience', 'key projects'
+    ]
+    if line.lower().strip() in projects_headers:
+        return True
+
     if is_personal_name(line):
         return True
 
@@ -1031,6 +1132,8 @@ def create_experience_entry(header_text):
         "company": None,
         "title": None,
         "location": None,
+        "startDate": None,
+        "endDate": None,
         "description": None
     }
     
@@ -1047,20 +1150,28 @@ def parse_title_company(text):
         return None, None
     
     # Remove dates first to avoid confusion
-    clean_text = re.sub(r'\b\d{4}\s*[-â€"â€"]\s*(\d{4}|present|current)\b', '', text, flags=re.IGNORECASE)
+    clean_text = re.sub(r'\b\d{4}\s*[-–—]\s*(\d{4}|present|current)\b', '', text, flags=re.IGNORECASE)
     month_pattern = r'\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{4}\b'
     clean_text = re.sub(month_pattern, '', clean_text, flags=re.IGNORECASE)
     clean_text = ' '.join(clean_text.split()).strip()
     
-    # Pattern 1: "Job Title at Company Name"
-    match = re.search(r'^(.+?)\s+(?:at|@)\s+(.+?)(?:\s*[|\-â€"â€"]|$)', clean_text, re.IGNORECASE)
+    # Pattern 1: "Job Title (Company Name)" - PRIMARY PATTERN
+    # Example: "Full Stack Developer Intern (Octaloop Technologies)"
+    match = re.search(r'^(.+?)\s*\(([^)]+)\)\s*$', clean_text)
     if match:
         title = match.group(1).strip()
         company = match.group(2).strip()
         return clean_title_name(title), clean_company_name(company)
     
-    # Pattern 2: "Company | Job Title" or "Job Title | Company"
-    separators = ['|', 'â€"', 'â€"', '-']
+    # Pattern 2: "Job Title at Company Name"
+    match = re.search(r'^(.+?)\s+(?:at|@)\s+(.+?)(?:\s*[|\-–—]|$)', clean_text, re.IGNORECASE)
+    if match:
+        title = match.group(1).strip()
+        company = match.group(2).strip()
+        return clean_title_name(title), clean_company_name(company)
+    
+    # Pattern 3: "Company | Job Title" or "Job Title | Company"
+    separators = ['|', '–', '—', '-']
     for sep in separators:
         if sep in clean_text:
             parts = [part.strip() for part in clean_text.split(sep, 1)]
@@ -1082,7 +1193,7 @@ def parse_title_company(text):
                     # Default: assume first part is title, second is company
                     return clean_title_name(part1), clean_company_name(part2)
     
-    # Pattern 3: Single line - try to determine if it's a title or company
+    # Pattern 4: Single line - try to determine if it's a title or company
     title_indicators = ['engineer', 'developer', 'manager', 'analyst', 'intern', 'assistant', 'head', 'lead']
     if any(word in clean_text.lower() for word in title_indicators):
         return clean_title_name(clean_text), None
@@ -1100,6 +1211,39 @@ def clean_company_name(company):
     if not company:
         return None
     return ' '.join(company.split()).strip()
+
+def extract_experience_dates(line):
+    """Extract start and end dates from experience text"""
+    if not line:
+        return None, None
+    
+    # Pattern 1: Month Year - Month Year or Month Year - Present
+    # Examples: "Jan 2023 - Present", "January 2023 - Dec 2024"
+    month_pattern = r'((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4})'
+    range_match = re.search(rf'{month_pattern}\s*[-–—]\s*(?:((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{{4}})|(present|current))', line, re.IGNORECASE)
+    if range_match:
+        start = range_match.group(1)
+        end = range_match.group(2) if range_match.group(2) else 'Present'
+        return normalize_date(start), normalize_date(end)
+    
+    # Pattern 2: YYYY - YYYY or YYYY - Present
+    # Examples: "2023 - 2024", "2023 - Present"
+    year_range = re.search(r'(\d{4})\s*[-–—]\s*(?:(\d{4})|(present|current))', line, re.IGNORECASE)
+    if year_range:
+        start = year_range.group(1)
+        end = year_range.group(2) if year_range.group(2) else 'Present'
+        return start, end
+    
+    # Pattern 3: Single Month Year (assume as end date, start unknown)
+    single_month = re.search(month_pattern, line, re.IGNORECASE)
+    if single_month:
+        return None, normalize_date(single_month.group(1))
+    
+    # Pattern 4: Just "Present" or "Current" (ongoing role)
+    if re.search(r'\b(present|current)\b', line, re.IGNORECASE):
+        return None, 'Present'
+    
+    return None, None
 
 def extract_location_from_line(line):
     """Extract location information from a line"""
@@ -1207,6 +1351,12 @@ def main():
             )
             logger.debug(f"Experience extraction: {len(exp)} entries found")
 
+            # Extract projects (can reuse experience extraction logic)
+            proj = extract_experience(
+                sections.get("projects", "") or sections.get("personal projects", "") or ""
+            )
+            logger.debug(f"Projects extraction: {len(proj)} entries found")
+
             summary = extract_summary(text, sections)
             certs = extract_certifications(sections)
 
@@ -1263,9 +1413,24 @@ def main():
                 "company": clean_text_field(exp_item.get('company'), 200),
                 "title": clean_text_field(exp_item.get('title'), 200),
                 "location": clean_text_field(exp_item.get('location'), 200),
+                "startDate": exp_item.get('startDate'),
+                "endDate": exp_item.get('endDate'),
                 "description": clean_text_field(exp_item.get('description'), 2000)
             }
             formatted_experience.append(formatted_exp)
+
+        # Format projects entries (same structure as experience)
+        formatted_projects = []
+        for proj_item in proj:
+            formatted_proj = {
+                "company": clean_text_field(proj_item.get('company'), 200),
+                "title": clean_text_field(proj_item.get('title'), 200),
+                "location": clean_text_field(proj_item.get('location'), 200),
+                "startDate": proj_item.get('startDate'),
+                "endDate": proj_item.get('endDate'),
+                "description": clean_text_field(proj_item.get('description'), 2000)
+            }
+            formatted_projects.append(formatted_proj)
 
         result = {
             "name": clean_text_field(name, 100),
@@ -1277,6 +1442,7 @@ def main():
             "summary": clean_text_field(summary, 1000),
             "education": formatted_education,
             "experience": formatted_experience,
+            "projects": formatted_projects,  # NEW: Projects as separate field
             "certifications": certs,
             "languages": [],  # Not currently extracted
             "rawText": text[:200000],  # cap raw text size

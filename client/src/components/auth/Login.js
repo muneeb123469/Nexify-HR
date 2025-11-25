@@ -26,8 +26,7 @@ const Login = () => {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    role: 'applicant'
+    password: ''
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -48,8 +47,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const userData = await login(formData.email, formData.password, formData.role);
-      
+      const userData = await login(formData.email, formData.password);
+
       switch (userData.role) {
         case 'hr':
           navigate('/dashboard');
@@ -130,23 +129,6 @@ const Login = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </PasswordToggle>
             </PasswordInput>
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="role">Role</Label>
-            <Select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            >
-              <option value="applicant">Applicant</option>
-              <option value="hr">HR</option>
-              <option value="employee">Employee</option>
-              <option value="admin">Admin</option>
-            </Select>
           </FormGroup>
 
           <ForgotPasswordLink href="/forgot-password">

@@ -397,6 +397,12 @@ export const Sidebar = () => (
         </NavLink>
       </MenuItem>
       <MenuItem>
+        <NavLink to="/hr/wellness-management" className={({ isActive }) => isActive ? "active" : ""}>
+          <i className="fas fa-user-md"></i>
+          <span>Wellness Management</span>
+        </NavLink>
+      </MenuItem>
+      <MenuItem>
         <NavLink to="/remote-work/hours-tracker" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-clock"></i>
           <span>Hours Tracker</span>

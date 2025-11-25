@@ -1,0 +1,591 @@
+/* HR Wellness Management Styles */
+
+.hr-wellness-management {
+    max-width: 1400px;
+    margin-left: 20%;
+    padding: 2rem;
+    font-family: 'Poppins', sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+.management-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.management-header h1 {
+    margin: 0 0 0.5rem;
+    color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.management-header p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 1rem;
+}
+
+.notification {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.management-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.management-tabs button {
+    flex: 1;
+    min-width: 200px;
+    padding: 1rem 1.5rem;
+    border: none;
+    background: white;
+    color: #7f8c8d;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.management-tabs button:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.management-tabs button.active {
+    background: #4a90e2;
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.management-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-description {
+    color: #7f8c8d;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.add-btn {
+    padding: 0.75rem 1.5rem;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.add-btn:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+}
+
+/* Tips Management */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tip-item {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.tip-item:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.15);
+}
+
+.tip-day-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4a90e2;
+    margin-bottom: 0.75rem;
+}
+
+.tip-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tip-display p {
+    flex: 1;
+    margin: 0;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.tip-edit-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+}
+
+.tip-edit-form textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.tip-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn,
+.save-btn,
+.cancel-btn,
+.delete-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.edit-btn {
+    background: #4a90e2;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #357abd;
+    transform: translateY(-1px);
+}
+
+.save-btn {
+    background: #27ae60;
+    color: white;
+}
+
+.save-btn:hover {
+    background: #229954;
+    transform: translateY(-1px);
+}
+
+.cancel-btn {
+    background: #95a5a6;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #7f8c8d;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+/* Resource & Guideline Forms */
+.resource-form,
+.guideline-form {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.resource-form h3,
+.guideline-form h3 {
+    margin: 0 0 1.5rem;
+    color: #2c3e50;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* Resource & Guideline Lists */
+.resources-list,
+.guidelines-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.resource-item,
+.guideline-item {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.resource-item:hover,
+.guideline-item:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.15);
+}
+
+.resource-header,
+.guideline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.resource-header h3,
+.guideline-header h3 {
+    margin: 0 0 0.5rem;
+    color: #2c3e50;
+    font-size: 1.2rem;
+}
+
+.resource-actions,
+.guideline-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.resource-item p,
+.guideline-item p {
+    color: #7f8c8d;
+    line-height: 1.6;
+    margin: 0.5rem 0;
+}
+
+.guideline-preview {
+    color: #7f8c8d;
+    line-height: 1.6;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.badge.helpline {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge.therapy {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge.crisis-support {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge.self-help {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge.workplace-safety {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.badge.anti-discrimination {
+    background: #e0f2f1;
+    color: #00695c;
+}
+
+.badge.harassment-policy {
+    background: #fce4ec;
+    color: #880e4f;
+}
+
+.badge.general-compliance {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.badge.general,
+.badge.wellness-program {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.order-badge {
+    background: #e0e0e0;
+    color: #333;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Feedback Management */
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.feedback-item {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.feedback-item:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.15);
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.feedback-date {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-left: 1rem;
+}
+
+.feedback-text {
+    color: #2c3e50;
+    line-height: 1.6;
+    margin: 0.5rem 0;
+}
+
+.review-notes {
+    background: #e8f4f8;
+    border-left: 4px solid #4a90e2;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.status-dropdown {
+    padding: 0.5rem 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.status-dropdown:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.no-data {
+    text-align: center;
+    color: #7f8c8d;
+    padding: 2rem;
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hr-wellness-management {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .management-tabs {
+        flex-direction: column;
+    }
+
+    .management-tabs button {
+        min-width: 100%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group.full-width {
+        grid-column: 1;
+    }
+
+    .resource-header,
+    .guideline-header,
+    .feedback-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .resource-actions,
+    .guideline-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .resource-actions button,
+    .guideline-actions button {
+        width: 100%;
+    }
+}

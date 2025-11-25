@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       axios.interceptors.response.eject(responseInterceptor);
     };
   }, []);
-  const login = async (email, password, role) => {
+  const login = async (email, password) => {
     try {
       setError(null);
 
@@ -84,14 +84,12 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Attempting login:', {
         email: trimmedEmail,
-        role,
         hasPassword: !!password
       });
 
       const response = await axios.post(`${API_URL}/auth/login`, {
         email: trimmedEmail,
-        password,
-        role
+        password
       });
 
       if (response.data.token && response.data.user) {

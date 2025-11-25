@@ -234,26 +234,6 @@ const Signup = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="role">Role</Label>
-            <InputIcon>
-              <FaUser />
-            </InputIcon>
-            <Select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            >
-              <option value="applicant">Applicant</option>
-              <option value="hr">HR</option>
-              <option value="employee">Employee</option>
-              <option value="admin">Admin</option>
-            </Select>
-          </FormGroup>
-
-          <FormGroup>
             <Label htmlFor="company">Company</Label>
             <InputIcon>
               <FaBuilding />

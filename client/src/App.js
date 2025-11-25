@@ -47,6 +47,7 @@ import PersonalInformationManagement from './components/self-service/PersonalInf
 // Remote Work & Performance Management Components
 import WellnessFitnessDashboard from './components/remote-work/WellnessFitnessDashboard';
 import RemoteWorkHoursTracker from './components/remote-work/RemoteWorkHoursTracker';
+import HRWellnessManagement from './components/wellness/HRWellnessManagement';
 
 // Leave and Attendance Components
 import LeaveRequest from './components/leave/LeaveRequest';
@@ -87,8 +88,8 @@ const App = () => {
               <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/applicant-dashboard" element={<ApplicantDashboard />} />
-              <Route path='/user-roles' element={<UserRoles/>}/>
-              <Route path='/two-factor-authentication' element={<TwoFactorAuthentication/>}/>
+              <Route path='/user-roles' element={<UserRoles />} />
+              <Route path='/two-factor-authentication' element={<TwoFactorAuthentication />} />
               <Route path="/applicant-dashboard/interviews" element={<InterviewHistory />} />
               <Route path="/applicant-dashboard/resume-parsing" element={<ResumeParsingInterface />} />
               <Route path="/meetings/:receiverId" element={<Meeting />} />
@@ -121,6 +122,7 @@ const App = () => {
               {/* Remote Work & Performance Management Routes */}
               <Route path="/remote-work/wellness-fitness" element={<WellnessFitnessDashboard />} />
               <Route path="/remote-work/hours-tracker" element={<RemoteWorkHoursTracker />} />
+              <Route path="/hr/wellness-management" element={<HRWellnessManagement />} />
 
               {/* Leave and Attendance Routes */}
               <Route path="/employee/leave-request" element={<LeaveManagement />} />

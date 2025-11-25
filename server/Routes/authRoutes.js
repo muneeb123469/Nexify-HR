@@ -7,11 +7,11 @@ const User = require('../models/User');
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    const { username, email, password } = req.body;
 
     // Validate required fields
     if (!username || !email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Please provide all required fields',
         missing: {
           username: !username,
@@ -38,7 +38,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       $or: [
         { email: email.toLowerCase() },
         { username: username.toLowerCase() }
@@ -54,19 +54,14 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Validate role - only allow applicant or hr
-    const validRoles = ['hr', 'applicant'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ message: 'Invalid role. Only applicant or HR roles are allowed.' });
-    }
-
     // Create new user with plain text password
+    // All new users are automatically assigned the 'applicant' role
     const user = new User({
       username: username.toLowerCase(),
       email: email.toLowerCase(),
       password,
-      role: role || 'applicant',
-      isPending: role === 'hr' // Set pending status for HR registrations
+      role: 'applicant',
+      isPending: false // Applicants don't need approval
     });
 
     // Save user
@@ -89,12 +84,10 @@ router.post('/register', async (req, res) => {
           console.error('JWT Sign Error:', err);
           return res.status(500).json({ message: 'Error generating token' });
         }
-        
+
         // Send response with token and user data
         res.status(201).json({
-          message: role === 'hr' ? 
-            'HR registration successful. Your account is pending approval.' : 
-            'Registration successful',
+          message: 'Registration successful',
           token,
           user: {
             id: user.id,
@@ -108,7 +101,7 @@ router.post('/register', async (req, res) => {
     );
   } catch (err) {
     console.error('Registration Error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Server error during registration',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
@@ -118,8 +111,8 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-    console.log('Login attempt:', { email, role });
+    const { email, password } = req.body;
+    console.log('Login attempt:', { email });
 
     // Validate required fields
     if (!email || !password) {
@@ -133,7 +126,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('User found:', { 
+    console.log('User found:', {
       id: user._id,
       email: user.email,
       role: user.role,
@@ -143,14 +136,14 @@ router.post('/login', async (req, res) => {
 
     // Check if HR account is pending
     if (user.role === 'hr' && user.isPending) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Your HR account is pending verification. Please wait for admin approval before logging in.'
       });
     }
 
     // Check if HR account was rejected
     if (user.role === 'hr' && !user.isPending && !user.approved) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Your HR account has been rejected. Please contact the administrator for more information.'
       });
     }
@@ -165,17 +158,6 @@ router.post('/login', async (req, res) => {
     } catch (error) {
       console.error('Password comparison error:', error);
       return res.status(500).json({ message: 'Error validating credentials' });
-    }
-
-    // Validate role if provided
-    if (role && role !== user.role) {
-      console.log('Role mismatch:', { 
-        provided: role, 
-        actual: user.role 
-      });
-      return res.status(403).json({ 
-        message: `This account is registered as ${user.role}. Please select the correct role.` 
-      });
     }
 
     // Create JWT token
@@ -223,7 +205,7 @@ router.post('/create-test-hr', async (req, res) => {
     // Check if test HR user already exists
     const existingHR = await User.findOne({ email: 'hr@test.com' });
     if (existingHR) {
-      return res.json({ 
+      return res.json({
         message: 'Test HR user already exists',
         email: 'hr@test.com',
         password: 'hr123456'
@@ -243,7 +225,7 @@ router.post('/create-test-hr', async (req, res) => {
 
     await testHR.save();
 
-    res.json({ 
+    res.json({
       message: 'Test HR user created successfully',
       email: 'hr@test.com',
       password: 'hr123456',
