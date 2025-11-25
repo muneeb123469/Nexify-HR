@@ -5,6 +5,7 @@ import { JobProvider } from './context/JobContext';
 import { ApplicationProvider } from './context/ApplicationContext';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
+import ForgotPassword from './components/auth/ForgotPassword';
 import JobList from './components/jobs/JobList';
 import JobForm from './components/jobs/JobForm';
 import JobDetails from './components/jobs/JobDetails';
@@ -74,7 +75,9 @@ const App = () => {
           <ApplicationProvider>
             <Routes>
               <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/register" element={<Register />} />
               <Route path="/jobs" element={<JobList />} />
               <Route path="/jobs/new" element={<JobForm />} />

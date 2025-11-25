@@ -107,12 +107,12 @@ const NewEmployeeProfile = () => {
     <div className="new-employee-profile">
       <div className="profile-header">
         <h1>Create New Employee Profile</h1>
-        <div className="step-indicator">
+        {/* <div className="step-indicator">
           <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>Personal Info</div>
           <div className={`step ${currentStep >= 2 ? 'active' : ''}`}>Employment Info</div>
           <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>Documents</div>
           <div className={`step ${currentStep >= 4 ? 'active' : ''}`}>Bank Details</div>
-        </div>
+        </div> */}
       </div>
 
       {notification && (

@@ -390,12 +390,12 @@ export const Sidebar = () => (
       </MenuItem> */}
 
       {/* Remote Work Section */}
-      <MenuItem>
+      {/* <MenuItem>
         <NavLink to="/remote-work/wellness-fitness" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-heartbeat"></i>
           <span>Wellness & Fitness</span>
         </NavLink>
-      </MenuItem>
+      </MenuItem> */}
       <MenuItem>
         <NavLink to="/hr/wellness-management" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-user-md"></i>
@@ -410,12 +410,12 @@ export const Sidebar = () => (
       </MenuItem>
 
       {/* Settings */}
-      <MenuItem>
+      {/* <MenuItem>
         <NavLink to="/settings" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-cog"></i>
           <span>System Settings</span>
         </NavLink>
-      </MenuItem>
+      </MenuItem> */}
     </SidebarMenu>
     <LogoutContainer>
       <LogoutButton>

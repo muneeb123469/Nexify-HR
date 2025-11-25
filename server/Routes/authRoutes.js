@@ -237,4 +237,136 @@ router.post('/create-test-hr', async (req, res) => {
   }
 });
 
+// ========== Forgot Password Routes ==========
+
+// Step 1: Request password reset code
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email address' });
+    }
+
+    // Generate and store verification code
+    const { storeVerificationCode } = require('../utils/verificationCodes');
+    const result = storeVerificationCode(email);
+
+    if (!result.success) {
+      return res.status(429).json({ message: result.error });
+    }
+
+    // Send verification code via email
+    const { sendPasswordResetEmail } = require('../services/emailService');
+    const emailResult = await sendPasswordResetEmail(email, result.code);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        message: 'Failed to send verification code. Please try again later.',
+        error: emailResult.error
+      });
+    }
+
+    // Calculate expiry time for frontend display
+    const expiresInMinutes = Math.ceil((result.expiresAt - Date.now()) / 1000 / 60);
+
+    res.json({
+      message: 'Verification code sent to your email',
+      expiresInMinutes,
+      email: email.toLowerCase()
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
+// Step 2: Verify reset code
+router.post('/verify-reset-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    // Validate inputs
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Email and verification code are required' });
+    }
+
+    // Verify the code
+    const { verifyCode } = require('../utils/verificationCodes');
+    const result = verifyCode(email, code);
+
+    if (!result.valid) {
+      return res.status(400).json({ message: result.error });
+    }
+
+    res.json({
+      message: 'Code verified successfully',
+      valid: true,
+      email: email.toLowerCase()
+    });
+
+  } catch (error) {
+    console.error('Verify code error:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
+// Step 3: Reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Validate inputs
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: 'Email and new password are required' });
+    }
+
+    // Validate password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Check if code was verified
+    const { hasVerifiedCode, clearVerificationCode } = require('../utils/verificationCodes');
+    if (!hasVerifiedCode(email)) {
+      return res.status(403).json({
+        message: 'Please verify your code before resetting password'
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      clearVerificationCode(email);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update password (plain text as per user requirement)
+    user.password = newPassword;
+    await user.save();
+
+    // Clear the verification code
+    clearVerificationCode(email);
+
+    console.log(`Password reset successful for: ${email}`);
+
+    res.json({
+      message: 'Password reset successfully. You can now login with your new password.',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
 module.exports = router;

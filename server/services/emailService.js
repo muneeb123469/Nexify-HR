@@ -322,5 +322,50 @@ HR Department
         message: 'Failed to send payslip'
       };
     }
+  },
+  // Password reset email sender
+  async sendPasswordResetEmail(email, code) {
+    try {
+      const { generatePasswordResetEmailHTML, generatePasswordResetEmailText } = require('../utils/forgotPasswordEmailTemplate');
+      const transporter = createTransporter();
+
+      const subject = 'Password Reset Verification Code';
+      const html = generatePasswordResetEmailHTML(code, 15); // 15 minutes expiry
+      const text = generatePasswordResetEmailText(code, 15);
+
+      const mailOptions = {
+        from: {
+          name: 'Security Team',
+          address: 'hamad1919ahmad@gmail.com'
+        },
+        to: email,
+        subject: subject,
+        html: html,
+        text: text
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+
+      console.log('Password reset email sent successfully:', {
+        messageId: result.messageId,
+        to: email
+      });
+
+      return {
+        success: true,
+        messageId: result.messageId,
+        message: 'Verification code sent successfully'
+      };
+
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+
+      return {
+        success: false,
+        error: error.message,
+        message: 'Failed to send verification code'
+      };
+    }
   }
 };
+

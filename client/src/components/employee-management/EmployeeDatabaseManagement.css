@@ -762,31 +762,47 @@ tbody tr:hover {
 
   /* Adjust min-widths for laptop screens */
   th:nth-child(1),
-  td:nth-child(1) { min-width: 60px; }
+  td:nth-child(1) {
+    min-width: 60px;
+  }
 
   th:nth-child(2),
-  td:nth-child(2) { min-width: 100px; }
+  td:nth-child(2) {
+    min-width: 100px;
+  }
 
   th:nth-child(3),
-  td:nth-child(3) { min-width: 80px; }
+  td:nth-child(3) {
+    min-width: 80px;
+  }
 
   th:nth-child(4),
-  td:nth-child(4) { min-width: 100px; }
+  td:nth-child(4) {
+    min-width: 100px;
+  }
 
   th:nth-child(5),
-  td:nth-child(5) { min-width: 120px; }
+  td:nth-child(5) {
+    min-width: 120px;
+  }
 
   th:nth-child(6),
-  td:nth-child(6) { min-width: 60px; }
+  td:nth-child(6) {
+    min-width: 60px;
+  }
 
   th:nth-child(7),
-  td:nth-child(7) { min-width: 80px; }
+  td:nth-child(7) {
+    min-width: 80px;
+  }
 
   th:nth-child(8),
-  td:nth-child(8) { min-width: 160px; }
+  td:nth-child(8) {
+    min-width: 160px;
+  }
 }
-/
-* Work Mode Badges */
+
+/* Work Mode Badges */
 .work-mode-badge {
   padding: 4px 12px;
   border-radius: 15px;
@@ -808,4 +824,28 @@ tbody tr:hover {
 .work-mode-badge.online {
   background: #e3f2fd;
   color: #1976d2;
+}
+
+/* Reactivate Button */
+.reactivate-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reactivate-button:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

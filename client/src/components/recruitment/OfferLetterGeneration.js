@@ -31,7 +31,7 @@ const OfferLetterGeneration = () => {
         throw new Error('Failed to fetch shortlisted candidates');
       }
       const applications = await response.json();
-      
+
       // Transform applications to match the expected format
       const candidates = applications.map(app => ({
         id: app._id,
@@ -43,7 +43,7 @@ const OfferLetterGeneration = () => {
         offerDetails: app.offerDetails || null,
         applicationId: app._id
       }));
-      
+
       setShortlistedCandidates(candidates);
     } catch (err) {
       setError(err.message);
@@ -126,7 +126,6 @@ const OfferLetterGeneration = () => {
     'Health Insurance',
     'Dental Insurance',
     'Vision Insurance',
-    '401(k)',
     'Stock Options',
     'Paid Time Off',
     'Remote Work',
@@ -141,139 +140,139 @@ const OfferLetterGeneration = () => {
           <h1>Offer Letter Generation and Sending</h1>
         </div>
 
-      <div className="offer-content">
-        <div className="candidates-section">
-          <h2>Shortlisted Candidates</h2>
-          <div className="candidates-list">
-            {shortlistedCandidates.map(candidate => (
-              <div
-                key={candidate.id}
-                className={`candidate-card ${selectedCandidate?.id === candidate.id ? 'selected' : ''}`}
-                onClick={() => handleCandidateSelect(candidate)}
-              >
-                <div className="candidate-info">
-                  <h3>{candidate.name}</h3>
-                  <p className="position">{candidate.position}</p>
-                  <div className="contact-info">
-                    <p>{candidate.email}</p>
-                    <p>{candidate.phone}</p>
+        <div className="offer-content">
+          <div className="candidates-section">
+            <h2>Shortlisted Candidates</h2>
+            <div className="candidates-list">
+              {shortlistedCandidates.map(candidate => (
+                <div
+                  key={candidate.id}
+                  className={`candidate-card ${selectedCandidate?.id === candidate.id ? 'selected' : ''}`}
+                  onClick={() => handleCandidateSelect(candidate)}
+                >
+                  <div className="candidate-info">
+                    <h3>{candidate.name}</h3>
+                    <p className="position">{candidate.position}</p>
+                    <div className="contact-info">
+                      <p>{candidate.email}</p>
+                      <p>{candidate.phone}</p>
+                    </div>
+                    <span className={`status ${candidate.status}`}>
+                      {candidate.status === 'offer_sent' ? 'Offer Sent' : 'Pending Offer'}
+                    </span>
                   </div>
-                  <span className={`status ${candidate.status}`}>
-                    {candidate.status === 'offer_sent' ? 'Offer Sent' : 'Pending Offer'}
-                  </span>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="offer-section">
+            {selectedCandidate ? (
+              <div className="offer-form">
+                <h2>Generate Offer Letter for {selectedCandidate.name}</h2>
+                <p className="position">{selectedCandidate.position}</p>
+
+                <div className="offer-details">
+                  <div className="form-group">
+                    <label>Salary</label>
+                    <input
+                      type="text"
+                      value={offerDetails.salary}
+                      onChange={(e) => handleOfferDetailChange('salary', e.target.value)}
+                      placeholder="Enter salary amount"
+                      className="salary-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Start Date</label>
+                    <input
+                      type="date"
+                      value={offerDetails.startDate}
+                      onChange={(e) => handleOfferDetailChange('startDate', e.target.value)}
+                      className="date-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Benefits</label>
+                    <div className="benefits-grid">
+                      {availableBenefits.map(benefit => (
+                        <label key={benefit} className="benefit-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={offerDetails.benefits.includes(benefit)}
+                            onChange={() => handleBenefitToggle(benefit)}
+                          />
+                          <span>{benefit}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Additional Notes</label>
+                    <textarea
+                      value={offerDetails.additionalNotes}
+                      onChange={(e) => handleOfferDetailChange('additionalNotes', e.target.value)}
+                      placeholder="Enter any additional notes or terms..."
+                      className="notes-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="offer-preview" ref={previewRef}>
+                  <h3>Offer Letter Preview</h3>
+                  <div className="preview-content">
+                    <p>Dear {selectedCandidate.name},</p>
+                    <p>We are pleased to offer you the position of {selectedCandidate.position} at our company.</p>
+                    <p>Salary: {offerDetails.salary}</p>
+                    <p>Start Date: {offerDetails.startDate}</p>
+                    <p>Benefits:</p>
+                    <ul>
+                      {offerDetails.benefits.map(benefit => (
+                        <li key={benefit}>{benefit}</li>
+                      ))}
+                    </ul>
+                    {offerDetails.additionalNotes && (
+                      <div className="additional-notes">
+                        <p>Additional Notes:</p>
+                        <p>{offerDetails.additionalNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  className="send-offer-button"
+                  onClick={handleSendOffer}
+                  disabled={sending || !offerDetails.salary || !offerDetails.startDate || offerDetails.benefits.length === 0}
+                >
+                  {sending ? 'Sending...' : 'Send Offer Letter'}
+                </button>
+
+                <button
+                  className="send-offer-button"
+                  onClick={handleDownloadPdf}
+                  disabled={!selectedCandidate}
+                  style={{ backgroundColor: '#3182ce', marginLeft: '0.5rem' }}
+                >
+                  Download PDF
+                </button>
+
+                {offerSent && (
+                  <div className="offer-sent-notification">
+                    Offer letter has been sent successfully!
+                  </div>
+                )}
               </div>
-            ))}
+            ) : (
+              <div className="no-candidate-selected">
+                <p>Select a candidate to generate an offer letter</p>
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="offer-section">
-          {selectedCandidate ? (
-            <div className="offer-form">
-              <h2>Generate Offer Letter for {selectedCandidate.name}</h2>
-              <p className="position">{selectedCandidate.position}</p>
-
-              <div className="offer-details">
-                <div className="form-group">
-                  <label>Salary</label>
-                  <input
-                    type="text"
-                    value={offerDetails.salary}
-                    onChange={(e) => handleOfferDetailChange('salary', e.target.value)}
-                    placeholder="Enter salary amount"
-                    className="salary-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    value={offerDetails.startDate}
-                    onChange={(e) => handleOfferDetailChange('startDate', e.target.value)}
-                    className="date-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Benefits</label>
-                  <div className="benefits-grid">
-                    {availableBenefits.map(benefit => (
-                      <label key={benefit} className="benefit-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={offerDetails.benefits.includes(benefit)}
-                          onChange={() => handleBenefitToggle(benefit)}
-                        />
-                        <span>{benefit}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Additional Notes</label>
-                  <textarea
-                    value={offerDetails.additionalNotes}
-                    onChange={(e) => handleOfferDetailChange('additionalNotes', e.target.value)}
-                    placeholder="Enter any additional notes or terms..."
-                    className="notes-input"
-                  />
-                </div>
-              </div>
-
-              <div className="offer-preview" ref={previewRef}>
-                <h3>Offer Letter Preview</h3>
-                <div className="preview-content">
-                  <p>Dear {selectedCandidate.name},</p>
-                  <p>We are pleased to offer you the position of {selectedCandidate.position} at our company.</p>
-                  <p>Salary: {offerDetails.salary}</p>
-                  <p>Start Date: {offerDetails.startDate}</p>
-                  <p>Benefits:</p>
-                  <ul>
-                    {offerDetails.benefits.map(benefit => (
-                      <li key={benefit}>{benefit}</li>
-                    ))}
-                  </ul>
-                  {offerDetails.additionalNotes && (
-                    <div className="additional-notes">
-                      <p>Additional Notes:</p>
-                      <p>{offerDetails.additionalNotes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <button
-                className="send-offer-button"
-                onClick={handleSendOffer}
-                disabled={sending || !offerDetails.salary || !offerDetails.startDate || offerDetails.benefits.length === 0}
-              >
-                {sending ? 'Sending...' : 'Send Offer Letter'}
-              </button>
-
-              <button
-                className="send-offer-button"
-                onClick={handleDownloadPdf}
-                disabled={!selectedCandidate}
-                style={{ backgroundColor: '#3182ce', marginLeft: '0.5rem' }}
-              >
-                Download PDF
-              </button>
-
-              {offerSent && (
-                <div className="offer-sent-notification">
-                  Offer letter has been sent successfully!
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="no-candidate-selected">
-              <p>Select a candidate to generate an offer letter</p>
-            </div>
-          )}
-        </div>
-      </div>
       </div>
     </>
   );

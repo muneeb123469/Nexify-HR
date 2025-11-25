@@ -3,8 +3,15 @@ import axios from 'axios';
 import { FaLightbulb, FaPhoneAlt, FaComments, FaGavel, FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from 'react-icons/fa';
 import './HRWellnessManagement.css';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { AdminSidebar } from '../dashboard/AdminDashboard';
+import { useAuth } from '../../context/AuthContext';
 
 const HRWellnessManagement = () => {
+    const { user } = useAuth();
+
+    // Determine which sidebar to use based on user role
+    const SidebarComponent = user?.role === 'admin' ? AdminSidebar : Sidebar;
+
     const [activeTab, setActiveTab] = useState('tips');
     const [notification, setNotification] = useState(null);
 
@@ -250,7 +257,7 @@ const HRWellnessManagement = () => {
 
     return (
         <>
-            <Sidebar />
+            <SidebarComponent />
             <div className="hr-wellness-management">
                 <div className="management-header">
                     <h1>Wellness & Compliance Management</h1>

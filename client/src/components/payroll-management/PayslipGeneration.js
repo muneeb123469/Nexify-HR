@@ -259,7 +259,7 @@ const PayslipGeneration = () => {
               </div>
             )}
 
-            <div className="export-container">
+            {/* <div className="export-container">
               <select
                 value={exportFormat}
                 onChange={(e) => setExportFormat(e.target.value)}
@@ -272,7 +272,7 @@ const PayslipGeneration = () => {
               <button onClick={handleExport} className="export-button">
                 <FaFileExport /> Export Report
               </button>
-            </div>
+            </div> */}
             <button
               onClick={handleSendPayslips}
               disabled={distributionStatus === 'sending' || payslips.length === 0 || payslips.every(p => p.status === 'sent')}

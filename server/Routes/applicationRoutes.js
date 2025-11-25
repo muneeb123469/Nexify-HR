@@ -11,8 +11,6 @@ const { validateApplicationRequest } = require('../utils/validation');
 const { auth } = require('../middleware/auth'); // Authentication middleware
 const { sendOfferEmail } = require('../services/emailService');
 
-// NEW: for writing the sidecar JSON next to the uploaded file
-
 // NEW: helper to write a JSON file beside the uploaded resume
 async function writeParseJson(file, payload, requestId = 'no_reqid') {
   if (!file || !file.path) return; // nothing to write
@@ -48,10 +46,10 @@ router.get('/user', auth, async (req, res) => {
     res.json(applications);
   } catch (error) {
     console.error(`[${requestId}] Error fetching user applications:`, error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error fetching your applications',
       requestId,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -66,17 +64,17 @@ router.get('/', async (req, res) => {
   try {
     // Build query object based on filters
     const query = {};
-    
+
     // Filter by candidate name (case-insensitive partial match)
     if (req.query.candidateName) {
       query.name = { $regex: req.query.candidateName, $options: 'i' };
     }
-    
+
     // Filter by status
     if (req.query.status) {
       query.status = req.query.status;
     }
-      if (req.query.jobId) {
+    if (req.query.jobId) {
       query.job = req.query.jobId;
     }
     console.log(`[${requestId}] Query filters:`, query);
@@ -93,8 +91,8 @@ router.get('/', async (req, res) => {
     // Filter by job title after population (since it's in the populated job object)
     let filteredApplications = applications;
     if (req.query.jobTitle) {
-      filteredApplications = applications.filter(app => 
-        app.job && app.job.title && 
+      filteredApplications = applications.filter(app =>
+        app.job && app.job.title &&
         app.job.title.toLowerCase().includes(req.query.jobTitle.toLowerCase())
       );
     }
@@ -104,10 +102,10 @@ router.get('/', async (req, res) => {
     res.json(filteredApplications);
   } catch (error) {
     console.error(`[${requestId}] Error fetching applications:`, error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error fetching applications',
       requestId,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -330,30 +328,30 @@ router.post('/', auth, upload, async (req, res) => {
 router.get('/download-resume/:applicationId', async (req, res) => {
   try {
     const { applicationId } = req.params;
-    
+
     // Find the application
     const application = await Application.findById(applicationId);
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
-    
+
     if (!application.resume) {
       return res.status(404).json({ message: 'Resume file not found for this application' });
     }
-    
+
     // Construct the full file path
     const filePath = path.join(__dirname, '..', application.resume);
-    
+
     // Check if file exists
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Resume file does not exist on server' });
     }
-    
+
     // Get file stats for proper headers
     const stats = fs.statSync(filePath);
     const fileName = path.basename(application.resume);
     const fileExtension = path.extname(fileName).toLowerCase();
-    
+
     // Set appropriate content type based on file extension
     let contentType = 'application/octet-stream';
     switch (fileExtension) {
@@ -372,28 +370,28 @@ router.get('/download-resume/:applicationId', async (req, res) => {
       default:
         contentType = 'application/octet-stream';
     }
-    
+
     // Set headers for file download
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', stats.size);
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'no-cache');
-    
+
     // Create read stream and pipe to response
     const fileStream = fs.createReadStream(filePath);
-    
+
     fileStream.on('error', (error) => {
       console.error('Error reading file:', error);
       if (!res.headersSent) {
         res.status(500).json({ message: 'Error reading file' });
       }
     });
-    
+
     fileStream.pipe(res);
-    
+
     console.log(`Resume downloaded: ${fileName} for application ${applicationId}`);
-    
+
   } catch (error) {
     console.error('Error downloading resume:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -644,7 +642,7 @@ router.post('/:id/offer', async (req, res) => {
 router.patch('/:id/cancel', auth, async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
-    
+
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }

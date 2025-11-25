@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { AdminSideBar } from '../dashboard/AdminDashboard';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 
@@ -20,7 +21,9 @@ const RemoteWorkHoursTracker = () => {
   const { user } = useAuth();
 
   // Determine which sidebar to use based on user role
-  const SidebarComponent = user?.role === 'hr' ? Sidebar : EmployerSideBar;
+  const SidebarComponent = user?.role === 'hr' ? Sidebar :
+    user?.role === 'admin' ? AdminSideBar :
+      EmployerSideBar;
   const [notification, setNotification] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isTracking, setIsTracking] = useState(false);

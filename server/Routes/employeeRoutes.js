@@ -15,9 +15,9 @@ router.get('/', auth, async (req, res) => {
   try {
     console.log('GET /employees - User:', req.user?.role, req.user?.email);
 
-    // Only HR can access employee data
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    // Only HR and Admin can access employee data
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const employees = await User.find({ role: 'employee' })
@@ -101,8 +101,8 @@ router.get('/ml-prediction/:employeeId', auth, getPredictionForEmployee);
 // Get single employee
 router.get('/:id', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const employee = await User.findById(req.params.id)
@@ -150,8 +150,8 @@ router.get('/:id', auth, async (req, res) => {
 // Create new employee
 router.post('/', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const { name, email, department, jobTitle, phone, hireDate, salary, managerId, employeeStatus, workMode } = req.body;
@@ -257,8 +257,8 @@ router.post('/', auth, async (req, res) => {
 // Update employee
 router.put('/:id', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const { name, email, department, jobTitle, phone, status, hireDate, salary, managerId, employeeStatus, workMode } = req.body;
@@ -330,8 +330,8 @@ router.put('/:id', auth, async (req, res) => {
 // Delete employee (soft delete by changing status)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const employee = await User.findById(req.params.id);
@@ -356,8 +356,8 @@ router.delete('/:id', auth, async (req, res) => {
 // Get managers list (for dropdown)
 router.get('/managers', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const managers = await User.find({
@@ -386,8 +386,8 @@ router.get('/managers', auth, async (req, res) => {
 // Add skill to employee
 router.post('/:id/skills', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const { skill } = req.body;
@@ -424,8 +424,8 @@ router.post('/:id/skills', auth, async (req, res) => {
 // Add project to employee
 router.post('/:id/projects', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     const { project } = req.body;
@@ -456,6 +456,48 @@ router.post('/:id/projects', auth, async (req, res) => {
   } catch (error) {
     console.error('Error adding project:', error);
     res.status(500).json({ message: 'Error adding project' });
+  }
+});
+
+// Change employee password
+router.put('/:id/password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Validation
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+
+    const employee = await User.findById(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Verify current password
+    const isMatch = await employee.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update to new password
+    employee.password = newPassword;
+    await employee.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({
+      message: 'Error changing password',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
@@ -493,8 +535,8 @@ router.patch('/:employeeId/performance-metrics', auth, updateEmployeePerformance
 // Fix employee IDs (admin endpoint)
 router.post('/fix-employee-ids', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'hr') {
-      return res.status(403).json({ message: 'Access denied. HR role required.' });
+    if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. HR or Admin role required.' });
     }
 
     console.log('Starting employee ID fix...');

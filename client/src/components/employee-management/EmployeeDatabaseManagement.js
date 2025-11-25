@@ -231,6 +231,30 @@ const EmployeeDatabaseManagement = () => {
     }
   };
 
+  const handleReactivateEmployee = async (employeeId) => {
+    if (window.confirm('Are you sure you want to reactivate this employee?')) {
+      try {
+        // Update employee status to Active
+        const response = await employeeApi.updateEmployee(employeeId, { status: 'Active' });
+
+        if (response.success) {
+          setNotification({
+            type: 'success',
+            message: 'Employee reactivated successfully!'
+          });
+          // Refresh employee list
+          fetchEmployees();
+        }
+      } catch (error) {
+        console.error('Error reactivating employee:', error);
+        setNotification({
+          type: 'error',
+          message: error.message || 'Failed to reactivate employee'
+        });
+      }
+    }
+  };
+
   // Auto-hide notifications after 5 seconds
   useEffect(() => {
     if (notification) {
@@ -357,6 +381,14 @@ const EmployeeDatabaseManagement = () => {
                             Terminate
                           </button>
                         )}
+                        {employee.status === 'Terminated' && (
+                          <button
+                            onClick={() => handleReactivateEmployee(employee.id)}
+                            className="reactivate-button"
+                          >
+                            Reactivate
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -461,11 +493,9 @@ const EmployeeDatabaseManagement = () => {
                       onChange={handleInputChange}
                     >
                       <option value="">Select Manager</option>
-                      {managers.map(manager => (
-                        <option key={manager.id} value={manager.id}>
-                          {manager.name} - {manager.title}
-                        </option>
-                      ))}
+                      <option value="hamad_ahmad">Hamad Ahmad</option>
+                      <option value="ali_hassan">Ali Hassan</option>
+                      <option value="muneeb_ahmad">Muneeb Ahmad</option>
                     </select>
                   </div>
                 </div>
@@ -624,11 +654,9 @@ const EmployeeDatabaseManagement = () => {
                       onChange={handleInputChange}
                     >
                       <option value="">Select Manager</option>
-                      {managers.map(manager => (
-                        <option key={manager.id} value={manager.id}>
-                          {manager.name} - {manager.title}
-                        </option>
-                      ))}
+                      <option value="hamad_ahmad">Hamad Ahmad</option>
+                      <option value="ali_hassan">Ali Hassan</option>
+                      <option value="muneeb_ahmad">Muneeb Ahmad</option>
                     </select>
                   </div>
                   <div className="form-group">

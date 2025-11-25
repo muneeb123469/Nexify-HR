@@ -89,23 +89,23 @@ const Meeting = () => {
 
   return (
     <>
-    <Sidebar/>
-    <div className="gig-container animate-fade-in">
-      <div className="page-header">
-        <h1>Interview Meetings</h1>
-        <p>View and join scheduled interview meetings</p>
-      </div>
+      <Sidebar />
+      <div className="gig-container animate-fade-in">
+        <div className="page-header">
+          <h1>Interview Meetings</h1>
+          <p>View and join scheduled interview meetings</p>
+        </div>
 
 
 
-      <div className="gig-stats">
-        <p>{meetings.length} meetings found</p>
-      </div>
+        <div className="gig-stats">
+          <p>{meetings.length} meetings found</p>
+        </div>
 
-      <div className="gig-grid">
-        {meetings.map((meeting) => {
-          return (
-            <div key={meeting._id} className="gig-card">
+        <div className="gig-grid">
+          {meetings.map((meeting) => {
+            return (
+              <div key={meeting._id} className="gig-card">
                 <div className="gig-content">
                   <div className="meeting-info">
                     <h3 className="gig-title">Interview Meeting</h3>
@@ -136,9 +136,9 @@ const Meeting = () => {
 
                   <div className="gig-actions">
                     {meeting.hrModeratorUrl && (
-                      <a 
-                        href={meeting.hrModeratorUrl} 
-                        target="_blank" 
+                      <a
+                        href={meeting.hrModeratorUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="action-button primary-button"
                       >
@@ -153,20 +153,20 @@ const Meeting = () => {
                     >
                       <FaVideo className="me-2" /> Applicant Link
                     </a> */}
-                    <button 
+                    {/* <button 
                       onClick={() => copyLink(meeting.hrModeratorUrl || meeting.meetingUrl)}
                       className="action-button"
                     >
                       <FaCopy className="me-2" /> Copy HR Link
-                    </button>
-                    <button 
+                    </button> */}
+                    <button
                       onClick={() => copyLink(meeting.meetingUrl)}
                       className="action-button"
                     >
                       <FaCopy className="me-2" /> Copy Applicant Link
                     </button>
                     {!meeting.interviewConducted && (
-                      <button 
+                      <button
                         onClick={() => markAsConducted(meeting._id)}
                         className="action-button success-button"
                       >
@@ -174,7 +174,7 @@ const Meeting = () => {
                       </button>
                     )}
                     {meeting.interviewConducted && !meeting.hrFeedback && (
-                      <button 
+                      <button
                         onClick={() => handleSubmitFeedback(meeting)}
                         className="action-button feedback-button"
                       >
@@ -189,17 +189,17 @@ const Meeting = () => {
                   </div>
                 </div>
               </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <HRFeedbackModal
-        meeting={selectedMeeting}
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSubmit={submitHRFeedback}
-      />
-    </div>
+        <HRFeedbackModal
+          meeting={selectedMeeting}
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          onSubmit={submitHRFeedback}
+        />
+      </div>
     </>
   );
 };
