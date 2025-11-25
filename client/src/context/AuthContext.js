@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   //   }
   //   setLoading(false);
   // }, []);
-  
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
@@ -199,7 +199,7 @@ export const AuthProvider = ({ children }) => {
       // Decode JWT token to check expiration
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      
+
       if (payload.exp < currentTime) {
         // Token is expired, logout user
         logout();

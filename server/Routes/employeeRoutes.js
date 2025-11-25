@@ -6,14 +6,15 @@ const {
   getEmployeePerformanceData,
   getAllEmployeesPerformanceData,
   updateEmployeeWorkMode,
-  updateEmployeePerformanceMetrics
+  updateEmployeePerformanceMetrics,
+  getPredictionForEmployee
 } = require('../controllers/employeeController');
 
 // Get all employees
 router.get('/', auth, async (req, res) => {
   try {
     console.log('GET /employees - User:', req.user?.role, req.user?.email);
-    
+
     // Only HR can access employee data
     if (req.user.role !== 'hr') {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
@@ -86,12 +87,16 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching employees:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error fetching employees',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
+
+// Get ML predictions for employee (from FastAPI DataModal)
+// MUST be before /:id route to avoid route conflict
+router.get('/ml-prediction/:employeeId', auth, getPredictionForEmployee);
 
 // Get single employee
 router.get('/:id', auth, async (req, res) => {
@@ -153,8 +158,8 @@ router.post('/', auth, async (req, res) => {
 
     // Validate required fields
     if (!name || !email || !department || !jobTitle || !employeeStatus) {
-      return res.status(400).json({ 
-        message: 'Please provide all required fields: name, email, department, jobTitle, employeeStatus' 
+      return res.status(400).json({
+        message: 'Please provide all required fields: name, email, department, jobTitle, employeeStatus'
       });
     }
 
@@ -221,12 +226,12 @@ router.post('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating employee:', error);
-    
+
     // Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       let message = 'Duplicate entry found';
-      
+
       if (field === 'employeeId') {
         message = 'Employee ID already exists. Please try again.';
       } else if (field === 'email') {
@@ -234,15 +239,15 @@ router.post('/', auth, async (req, res) => {
       } else if (field === 'username') {
         message = 'Username already exists';
       }
-      
-      return res.status(400).json({ 
+
+      return res.status(400).json({
         message,
         field,
         duplicateValue: error.keyValue[field]
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       message: 'Error creating employee',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
@@ -265,7 +270,7 @@ router.put('/:id', auth, async (req, res) => {
 
     // Check if email is being changed and if it already exists
     if (email && email.toLowerCase() !== employee.email) {
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         email: email.toLowerCase(),
         _id: { $ne: employee._id }
       });
@@ -355,7 +360,7 @@ router.get('/managers', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied. HR role required.' });
     }
 
-    const managers = await User.find({ 
+    const managers = await User.find({
       $or: [
         { role: 'hr' },
         { role: 'employee', jobTitle: { $regex: /manager|lead|supervisor/i } }
@@ -462,10 +467,10 @@ router.get('/test', (req, res) => {
 
 // Test route with auth
 router.get('/test-auth', auth, (req, res) => {
-  res.json({ 
-    message: 'Employee routes with auth are working!', 
+  res.json({
+    message: 'Employee routes with auth are working!',
     user: { id: req.user._id, role: req.user.role, email: req.user.email },
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -493,19 +498,19 @@ router.post('/fix-employee-ids', auth, async (req, res) => {
     }
 
     console.log('Starting employee ID fix...');
-    
+
     // Find all employees
     const employees = await User.find({ role: 'employee' }).sort({ createdAt: 1 });
-    
+
     // Track used IDs and fix duplicates
     const usedIds = new Set();
     let nextNumber = 1;
     let fixedCount = 0;
-    
+
     for (const employee of employees) {
       let newId;
       let needsUpdate = false;
-      
+
       // If employee has no ID or ID is already used, generate new one
       if (!employee.employeeId || usedIds.has(employee.employeeId)) {
         needsUpdate = true;
@@ -521,9 +526,9 @@ router.post('/fix-employee-ids', auth, async (req, res) => {
           nextNumber = currentNumber + 1;
         }
       }
-      
+
       usedIds.add(newId);
-      
+
       // Update if needed
       if (needsUpdate) {
         await User.updateOne(
@@ -534,7 +539,7 @@ router.post('/fix-employee-ids', auth, async (req, res) => {
         console.log(`Fixed employee ${employee.username}: -> ${newId}`);
       }
     }
-    
+
     res.json({
       success: true,
       message: `Employee ID fix completed. Fixed ${fixedCount} employees.`,

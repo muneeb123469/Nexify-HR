@@ -45,91 +45,101 @@ const BehaviorPrediction = () => {
     fetchEmployees();
   }, []);
 
-  // Calculate prediction data based on real performance metrics
+  // Calculate prediction data based on ML model predictions
   const calculatePredictions = async (employeeId) => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Fetch performance data
-      const perfResponse = await fetch(`http://localhost:5000/api/employees/performance/${employeeId}`, {
+
+      // Call ML prediction endpoint
+      const mlResponse = await fetch(`http://localhost:5000/api/employees/ml-prediction/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      // Fetch task stats
+      if (!mlResponse.ok) {
+        throw new Error('Failed to fetch ML predictions');
+      }
+
+      const mlData = await mlResponse.json();
+      const mlPredictions = mlData.predictions;
+
+      // Fetch task stats and performance data for additional UI context
       const taskResponse = await fetch(`http://localhost:5000/api/tasks/stats/employee/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!perfResponse.ok || !taskResponse.ok) {
-        throw new Error('Failed to fetch performance data');
-      }
+      const perfResponse = await fetch(`http://localhost:5000/api/employees/performance/${employeeId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-      const perfData = await perfResponse.json();
-      const taskStats = await taskResponse.json();
+      const taskStats = taskResponse.ok ? await taskResponse.json() : {};
+      const perfData = perfResponse.ok ? await perfResponse.json() : {};
 
-      // Calculate performance trend based on actual data
-      const taskCompletionRate = taskStats.completionRate || 0;
-      const attendanceRate = perfData.attendanceRate || 0;
-      const currentScore = Math.round((taskCompletionRate + attendanceRate) / 2);
-      
-      // Determine trend direction
+      // Map ML predictions to UI format
+      const performanceScore = mlPredictions.PerformanceScore;
+      const performanceClass = mlPredictions.PerformanceClass; // "Excellent", "Good", "Needs Improvement", "Poor"
+      const recommend = mlPredictions.Recommend; // "Promote", "Retain", "Fire"
+
+      // Determine trend direction based on PerformanceClass
       let direction = 'stable';
-      let confidence = 75;
-      let predictedScore = currentScore;
+      let confidence = 85; // High confidence from ML model
 
-      if (taskCompletionRate > 80 && attendanceRate > 90) {
+      if (performanceClass === 'Excellent' || performanceClass === 'Good') {
         direction = 'improving';
-        confidence = 85;
-        predictedScore = Math.min(100, currentScore + 5);
-      } else if (taskCompletionRate < 60 || attendanceRate < 70) {
+        confidence = 90;
+      } else if (performanceClass === 'Poor') {
         direction = 'declining';
-        confidence = 78;
-        predictedScore = Math.max(0, currentScore - 5);
+        confidence = 88;
       }
 
-      // Build prediction data
+      // Build prediction data using ML predictions
       const predictions = {
         performanceTrend: {
           direction,
           confidence,
-          currentScore,
-          predictedScore,
-          factors: generateFactors(taskStats, perfData)
+          currentScore: Math.round(performanceScore),
+          predictedScore: Math.round(performanceScore),
+          factors: [
+            `ML Model Classification: ${performanceClass}`,
+            `Recommendation: ${recommend}`,
+            ...generateFactors(taskStats, perfData)
+          ]
         },
         deadlineLikelihood: {
-          overall: taskCompletionRate,
+          overall: taskStats.completionRate || Math.round(performanceScore * 0.9),
           upcoming: generateUpcomingTasks(taskStats)
         },
         consistency: {
-          score: Math.round((perfData.onTimeRate * 100) || 75),
+          score: Math.round(performanceScore),
           trend: direction,
           patterns: {
             punctuality: Math.round((perfData.onTimeRate * 100) || 85),
-            taskCompletion: taskStats.completionRate || 0,
-            qualityMaintenance: Math.round((perfData.taskQualityScore || 75)),
-            communicationFrequency: Math.round((perfData.peerReviewScore || 75))
+            taskCompletion: taskStats.completionRate || Math.round(performanceScore * 0.95),
+            qualityMaintenance: Math.round(perfData.taskQualityScore || performanceScore),
+            communicationFrequency: Math.round(perfData.peerReviewScore || performanceScore * 0.9)
           }
         },
         motivation: {
-          level: Math.round((currentScore * 0.9) || 75),
+          level: Math.round(performanceScore * 0.95),
           trend: direction === 'improving' ? 'increasing' : direction === 'declining' ? 'decreasing' : 'stable',
           indicators: {
-            initiativeTaking: Math.round((perfData.managerRating || 75)),
-            learningEngagement: Math.round((perfData.trainingHoursCompleted > 0 ? 80 : 60)),
-            teamParticipation: Math.round((perfData.peerReviewScore || 75)),
-            feedbackReceptiveness: Math.round((perfData.managerRating || 75))
+            initiativeTaking: Math.round(perfData.managerRating || performanceScore * 0.85),
+            learningEngagement: Math.round((perfData.trainingHoursCompleted > 0 ? 85 : 65)),
+            teamParticipation: Math.round(perfData.peerReviewScore || performanceScore * 0.8),
+            feedbackReceptiveness: Math.round(perfData.managerRating || performanceScore * 0.9)
           }
         },
         milestones: {
-          achievementProbability: taskStats.completionRate || 70,
-          upcoming: generateMilestones(perfData, taskStats)
+          achievementProbability: Math.round(performanceScore),
+          upcoming: generateMilestones(perfData, taskStats, performanceClass)
         },
-        riskFactors: generateRiskFactors(perfData, taskStats),
-        recommendations: generateRecommendations(perfData, taskStats, direction)
+        riskFactors: generateRiskFactors(perfData, taskStats, recommend),
+        recommendations: generateRecommendations(perfData, taskStats, direction, recommend, performanceClass)
       };
 
       return predictions;
@@ -142,7 +152,7 @@ const BehaviorPrediction = () => {
   // Helper function to generate factors
   const generateFactors = (taskStats, perfData) => {
     const factors = [];
-    
+
     if (taskStats.completionRate > 80) {
       factors.push('Consistent task completion');
     }
@@ -155,7 +165,7 @@ const BehaviorPrediction = () => {
     if (perfData.attendanceRate > 0.9) {
       factors.push('Strong attendance');
     }
-    
+
     return factors.length > 0 ? factors : ['Performance tracking in progress'];
   };
 
@@ -163,7 +173,7 @@ const BehaviorPrediction = () => {
   const generateUpcomingTasks = (taskStats) => {
     const upcoming = [];
     const baseDate = new Date();
-    
+
     if (taskStats.pending > 0) {
       upcoming.push({
         task: `${taskStats.pending} Pending Task${taskStats.pending > 1 ? 's' : ''}`,
@@ -172,7 +182,7 @@ const BehaviorPrediction = () => {
         risk: taskStats.pending > 3 ? 'high' : taskStats.pending > 1 ? 'medium' : 'low'
       });
     }
-    
+
     if (taskStats.inProgress > 0) {
       upcoming.push({
         task: `${taskStats.inProgress} In-Progress Task${taskStats.inProgress > 1 ? 's' : ''}`,
@@ -181,7 +191,7 @@ const BehaviorPrediction = () => {
         risk: 'medium'
       });
     }
-    
+
     if (taskStats.overdue > 0) {
       upcoming.push({
         task: `${taskStats.overdue} Overdue Task${taskStats.overdue > 1 ? 's' : ''}`,
@@ -202,18 +212,18 @@ const BehaviorPrediction = () => {
   };
 
   // Helper function to generate milestones
-  const generateMilestones = (perfData, taskStats) => {
+  const generateMilestones = (perfData, taskStats, performanceClass) => {
     const milestones = [];
-    
-    if (taskStats.completionRate > 80) {
+
+    if (performanceClass === 'Excellent' || performanceClass === 'Good') {
       milestones.push({
         milestone: 'Performance Excellence',
-        probability: Math.min(95, taskStats.completionRate + 10),
+        probability: performanceClass === 'Excellent' ? 95 : 85,
         timeframe: '3 months',
-        factors: ['Current trajectory', 'Consistent performance']
+        factors: ['ML Model Prediction: ' + performanceClass, 'Consistent performance']
       });
     }
-    
+
     if (perfData.trainingHoursCompleted > 0) {
       milestones.push({
         milestone: 'Skill Certification',
@@ -222,21 +232,30 @@ const BehaviorPrediction = () => {
         factors: ['Training progress', 'Learning commitment']
       });
     }
-    
+
     milestones.push({
       milestone: 'Career Advancement',
-      probability: Math.max(50, taskStats.completionRate - 10),
+      probability: performanceClass === 'Excellent' ? 85 : performanceClass === 'Good' ? 70 : 50,
       timeframe: '12 months',
-      factors: ['Performance metrics', 'Experience level']
+      factors: ['ML Performance Metrics', 'Experience level']
     });
 
     return milestones;
   };
 
   // Helper function to generate risk factors
-  const generateRiskFactors = (perfData, taskStats) => {
+  const generateRiskFactors = (perfData, taskStats, recommend) => {
     const risks = [];
-    
+
+    // High risk if ML recommends "Fire"
+    if (recommend === 'Fire') {
+      risks.push({
+        factor: 'ML Recommendation: Performance Concerns',
+        impact: 'high',
+        probability: 90
+      });
+    }
+
     if (taskStats.overdue > 0) {
       risks.push({
         factor: 'Overdue Tasks',
@@ -244,7 +263,7 @@ const BehaviorPrediction = () => {
         probability: Math.min(95, taskStats.overdue * 20)
       });
     }
-    
+
     if (taskStats.pending > 3) {
       risks.push({
         factor: 'High Workload',
@@ -252,7 +271,7 @@ const BehaviorPrediction = () => {
         probability: 60
       });
     }
-    
+
     if (perfData.attendanceRate < 0.8) {
       risks.push({
         factor: 'Attendance Issues',
@@ -271,26 +290,30 @@ const BehaviorPrediction = () => {
   };
 
   // Helper function to generate recommendations
-  const generateRecommendations = (perfData, taskStats, direction) => {
+  const generateRecommendations = (perfData, taskStats, direction, recommend, performanceClass) => {
     const recommendations = [];
-    
-    if (direction === 'improving') {
+
+    // ML-based recommendations first
+    if (recommend === 'Promote') {
+      recommendations.push(`🎯 ML Recommendation: Strong candidate for promotion (${performanceClass})`);
       recommendations.push('Continue current performance trajectory');
       recommendations.push('Consider advanced skill development');
       recommendations.push('Prepare for increased responsibilities');
-    } else if (direction === 'declining') {
-      recommendations.push('Schedule performance review meeting');
-      recommendations.push('Identify and address challenges');
+    } else if (recommend === 'Fire') {
+      recommendations.push(`⚠️ ML Recommendation: Performance requires immediate attention (${performanceClass})`);
+      recommendations.push('Schedule urgent performance review meeting');
+      recommendations.push('Develop performance improvement plan');
       recommendations.push('Provide additional support and resources');
     } else {
+      recommendations.push(`✓ ML Recommendation: Maintain current role (${performanceClass})`);
       recommendations.push('Maintain current performance level');
       recommendations.push('Explore growth opportunities');
     }
-    
+
     if (taskStats.overdue > 0) {
       recommendations.push('Focus on completing overdue tasks');
     }
-    
+
     if (perfData.trainingHoursCompleted === 0) {
       recommendations.push('Encourage professional development');
     }
@@ -303,7 +326,7 @@ const BehaviorPrediction = () => {
     if (selectedEmployee) {
       setLoading(true);
       setError(null);
-      
+
       calculatePredictions(selectedEmployee)
         .then(predictions => {
           setPredictionData(predictions);
@@ -376,7 +399,7 @@ const BehaviorPrediction = () => {
             <div className="selection-icon">👥</div>
             <h3>Choose Employee for Analysis</h3>
             <p>Get intelligent predictions about future performance, engagement, and milestone achievements</p>
-            
+
             {employees.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
                 Loading employees...
@@ -384,8 +407,8 @@ const BehaviorPrediction = () => {
             ) : (
               <div className="employee-grid">
                 {employees.map(employee => (
-                  <div 
-                    key={employee.id} 
+                  <div
+                    key={employee.id}
                     className="employee-card"
                     onClick={() => setSelectedEmployee(employee.id.toString())}
                   >
@@ -481,7 +504,7 @@ const BehaviorPrediction = () => {
                 <option value="1year">Next Year</option>
               </select>
             </div>
-            <button 
+            <button
               className="change-employee-btn"
               onClick={() => setSelectedEmployee('')}
             >
@@ -489,7 +512,7 @@ const BehaviorPrediction = () => {
             </button>
           </div>
         </div>
-        
+
         <div className="confidence-indicator">
           <div className="confidence-badge" style={{ backgroundColor: confidence.color }}>
             <span className="confidence-level">{confidence.level} Confidence</span>
@@ -504,14 +527,14 @@ const BehaviorPrediction = () => {
         <div className="prediction-section performance-trend">
           <div className="section-header">
             <h3>📈 Performance Trend Prediction</h3>
-            <div 
+            <div
               className="trend-indicator"
               style={{ color: getTrendColor(predictionData?.performanceTrend?.direction) }}
             >
               {getTrendIcon(predictionData?.performanceTrend?.direction)} {predictionData?.performanceTrend?.direction?.toUpperCase()}
             </div>
           </div>
-          
+
           <div className="trend-content">
             <div className="score-comparison">
               <div className="score-item current">
@@ -526,7 +549,7 @@ const BehaviorPrediction = () => {
                 </span>
               </div>
             </div>
-            
+
             <div className="trend-factors">
               <h4>Key Factors:</h4>
               <ul>
@@ -547,7 +570,7 @@ const BehaviorPrediction = () => {
               <span className="likelihood-label">Overall Success Rate</span>
             </div>
           </div>
-          
+
           <div className="upcoming-deadlines">
             <h4>Upcoming Tasks & Probabilities:</h4>
             <div className="deadlines-list">
@@ -559,9 +582,9 @@ const BehaviorPrediction = () => {
                   </div>
                   <div className="probability-info">
                     <div className="probability-bar">
-                      <div 
+                      <div
                         className="probability-fill"
-                        style={{ 
+                        style={{
                           width: `${task.probability}%`,
                           backgroundColor: getRiskColor(task.risk === 'low' ? 'low' : task.risk === 'medium' ? 'medium' : 'high')
                         }}
@@ -581,7 +604,7 @@ const BehaviorPrediction = () => {
           <div className="section-header">
             <h3>🎯 Consistency & Motivation Analysis</h3>
           </div>
-          
+
           <div className="consistency-motivation-grid">
             <div className="consistency-card">
               <h4>Consistency Score</h4>
@@ -595,7 +618,7 @@ const BehaviorPrediction = () => {
                   {getTrendIcon(predictionData?.consistency?.trend)} {predictionData?.consistency?.trend}
                 </span>
               </div>
-              
+
               <div className="pattern-breakdown">
                 <h5>Pattern Analysis:</h5>
                 {Object.entries(predictionData?.consistency?.patterns || {}).map(([key, value]) => (
@@ -622,7 +645,7 @@ const BehaviorPrediction = () => {
                   {getTrendIcon(predictionData?.motivation?.trend)} {predictionData?.motivation?.trend}
                 </span>
               </div>
-              
+
               <div className="indicator-breakdown">
                 <h5>Motivation Indicators:</h5>
                 {Object.entries(predictionData?.motivation?.indicators || {}).map(([key, value]) => (
@@ -648,7 +671,7 @@ const BehaviorPrediction = () => {
               <span className="probability-label">Success Likelihood</span>
             </div>
           </div>
-          
+
           <div className="milestones-list">
             {predictionData?.milestones?.upcoming?.map((milestone, index) => (
               <div key={index} className="milestone-card">
@@ -692,9 +715,9 @@ const BehaviorPrediction = () => {
                   </div>
                   <div className="risk-probability">
                     <div className="risk-bar">
-                      <div 
+                      <div
                         className="risk-fill"
-                        style={{ 
+                        style={{
                           width: `${risk.probability}%`,
                           backgroundColor: getRiskColor(risk.impact === 'high' ? 'high' : risk.impact === 'medium' ? 'medium' : 'low')
                         }}

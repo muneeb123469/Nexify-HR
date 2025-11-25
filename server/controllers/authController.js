@@ -12,6 +12,82 @@ const generateToken = (userId, role) => {
   });
 };
 
+const validateEmail = (email) => {
+  if (!email) {
+    return { isValid: false, error: 'Email is required' };
+  }
+
+  // Check for @ symbol
+  if (!email.includes('@') || email.split('@').length !== 2) {
+    return { isValid: false, error: 'Email must contain exactly one @ symbol' };
+  }
+
+  const [localPart, domainPart] = email.split('@');
+
+  // Check if local part and domain exist
+  if (!localPart || localPart.length === 0) {
+    return { isValid: false, error: 'Email must have a local part before @' };
+  }
+
+  if (!domainPart || domainPart.length === 0) {
+    return { isValid: false, error: 'Email must have a domain part after @' };
+  }
+
+  // Check local part length (max 64 characters)
+  if (localPart.length > 64) {
+    return { isValid: false, error: 'Local part of email cannot exceed 64 characters' };
+  }
+
+  // Check for consecutive periods in local part
+  if (localPart.includes('..')) {
+    return { isValid: false, error: 'Email cannot contain consecutive periods' };
+  }
+
+  // Check local part doesn't start or end with period
+  if (localPart.startsWith('.') || localPart.endsWith('.')) {
+    return { isValid: false, error: 'Local part cannot start or end with a period' };
+  }
+
+  // Check local part contains only valid characters (letters, digits, periods, underscores)
+  if (!/^[a-zA-Z0-9._]+$/.test(localPart)) {
+    return { isValid: false, error: 'Local part can only contain letters, digits, periods, and underscores' };
+  }
+
+  // Check domain format (must have at least one period)
+  if (!domainPart.includes('.')) {
+    return { isValid: false, error: 'Domain must contain at least one period' };
+  }
+
+  const domainParts = domainPart.split('.');
+
+  // Check each domain part
+  for (const part of domainParts) {
+    if (part.length === 0) {
+      return { isValid: false, error: 'Domain cannot have empty parts' };
+    }
+
+    if (part.startsWith('-') || part.endsWith('-')) {
+      return { isValid: false, error: 'Domain parts cannot start or end with hyphen' };
+    }
+
+    if (!/^[a-zA-Z0-9-]+$/.test(part)) {
+      return { isValid: false, error: 'Domain can only contain letters, digits, and hyphens' };
+    }
+  }
+
+  // Check TLD is alphabetic only (last part after final period)
+  const tld = domainParts[domainParts.length - 1];
+  if (!/^[a-zA-Z]+$/.test(tld)) {
+    return { isValid: false, error: 'Top-level domain must contain only letters' };
+  }
+
+  if (tld.length < 2) {
+    return { isValid: false, error: 'Top-level domain must be at least 2 characters' };
+  }
+
+  return { isValid: true };
+};
+
 exports.signup = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
@@ -22,14 +98,9 @@ exports.signup = async (req, res) => {
     }
 
     // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Invalid email format' });
-    }
-
-    // Password length validation
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      return res.status(400).json({ message: emailValidation.error });
     }
 
     // Role validation

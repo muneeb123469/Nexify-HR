@@ -61,6 +61,97 @@ const Register = () => {
     };
   };
 
+  const validateEmail = (email) => {
+    if (!email) {
+      return {
+        isValid: false,
+        criteria: {
+          hasAtSymbol: false,
+          hasLocalPart: false,
+          hasDomain: false,
+          validLocalPartLength: false,
+          noConsecutivePeriods: false,
+          noStartEndPeriod: false,
+          validDomainFormat: false,
+          validTLD: false
+        }
+      };
+    }
+
+    // Check for @ symbol
+    const hasAtSymbol = email.includes('@') && email.split('@').length === 2;
+
+    if (!hasAtSymbol) {
+      return {
+        isValid: false,
+        criteria: {
+          hasAtSymbol: false,
+          hasLocalPart: false,
+          hasDomain: false,
+          validLocalPartLength: false,
+          noConsecutivePeriods: false,
+          noStartEndPeriod: false,
+          validDomainFormat: false,
+          validTLD: false
+        }
+      };
+    }
+
+    const [localPart, domainPart] = email.split('@');
+
+    // Check if local part and domain exist
+    const hasLocalPart = localPart && localPart.length > 0;
+    const hasDomain = domainPart && domainPart.length > 0;
+
+    // Check local part length (max 64 characters)
+    const validLocalPartLength = localPart && localPart.length <= 64;
+
+    // Check for consecutive periods in local part
+    const noConsecutivePeriods = localPart && !localPart.includes('..');
+
+    // Check local part doesn't start or end with period
+    const noStartEndPeriod = localPart && !localPart.startsWith('.') && !localPart.endsWith('.');
+
+    // Check local part contains only valid characters (letters, digits, periods, underscores)
+    const validLocalPartChars = localPart && /^[a-zA-Z0-9._]+$/.test(localPart);
+
+    // Check domain format (must have at least one period, no hyphens at start/end)
+    const hasDomainPeriod = domainPart && domainPart.includes('.');
+    const domainParts = domainPart ? domainPart.split('.') : [];
+
+    // Check domain doesn't start or end with hyphen, and has valid characters
+    const validDomainFormat = domainPart && hasDomainPeriod &&
+      domainParts.every(part => {
+        return part.length > 0 &&
+          !part.startsWith('-') &&
+          !part.endsWith('-') &&
+          /^[a-zA-Z0-9-]+$/.test(part);
+      });
+
+    // Check TLD is alphabetic only (last part after final period)
+    const tld = domainParts.length > 0 ? domainParts[domainParts.length - 1] : '';
+    const validTLD = tld && /^[a-zA-Z]+$/.test(tld) && tld.length >= 2;
+
+    const allValid = hasAtSymbol && hasLocalPart && hasDomain &&
+      validLocalPartLength && noConsecutivePeriods &&
+      noStartEndPeriod && validLocalPartChars &&
+      validDomainFormat && validTLD;
+
+    return {
+      isValid: allValid,
+      criteria: {
+        hasAtSymbol,
+        hasLocalPart,
+        hasDomain,
+        validLocalPartLength,
+        noConsecutivePeriods,
+        noStartEndPeriod,
+        validDomainFormat,
+        validTLD
+      }
+    };
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -76,6 +167,13 @@ const Register = () => {
 
     if (!acceptedTerms) {
       setError('Please accept the terms and conditions');
+      return;
+    }
+
+    // Validate email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -99,7 +197,7 @@ const Register = () => {
         password: formData.password,
         role: formData.role
       });
-      
+
       switch (userData.role) {
         case 'hr':
           navigate('/dashboard');
@@ -124,6 +222,7 @@ const Register = () => {
   };
 
   const passwordValidation = validatePassword(formData.password);
+  const emailValidation = validateEmail(formData.email);
 
   return (
     <AuthContainer>
@@ -179,8 +278,37 @@ const Register = () => {
               required
               disabled={loading}
             />
+            <ValidationMessage>
+              <div>
+                {emailValidation.criteria.hasAtSymbol ? <FaCheck /> : <FaTimes />}
+                Contains @ symbol
+              </div>
+              <div>
+                {emailValidation.criteria.hasLocalPart && emailValidation.criteria.hasDomain ? <FaCheck /> : <FaTimes />}
+                Has local and domain parts
+              </div>
+              <div>
+                {emailValidation.criteria.validLocalPartLength ? <FaCheck /> : <FaTimes />}
+                Local part ≤ 64 characters
+              </div>
+              <div>
+                {emailValidation.criteria.noConsecutivePeriods ? <FaCheck /> : <FaTimes />}
+                No consecutive periods
+              </div>
+              <div>
+                {emailValidation.criteria.noStartEndPeriod ? <FaCheck /> : <FaTimes />}
+                No period at start/end
+              </div>
+              <div>
+                {emailValidation.criteria.validDomainFormat ? <FaCheck /> : <FaTimes />}
+                Valid domain format
+              </div>
+              <div>
+                {emailValidation.criteria.validTLD ? <FaCheck /> : <FaTimes />}
+                Valid TLD (alphabetic only)
+              </div>
+            </ValidationMessage>
           </FormGroup>
-
           <FormGroup>
             <Label htmlFor="password">Password</Label>
             <PasswordInput>
@@ -228,7 +356,6 @@ const Register = () => {
               </div>
             </ValidationMessage>
           </FormGroup>
-
           <FormGroup>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <PasswordInput>
@@ -254,12 +381,8 @@ const Register = () => {
               </PasswordToggle>
             </PasswordInput>
           </FormGroup>
-
           <FormGroup>
             <Label htmlFor="role">Role</Label>
-            <InputIcon>
-              <FaUser />
-            </InputIcon>
             <Select
               id="role"
               name="role"
@@ -274,7 +397,6 @@ const Register = () => {
               <option value="admin">Admin</option>
             </Select>
           </FormGroup>
-
           <CheckboxGroup>
             <Checkbox
               type="checkbox"
@@ -287,7 +409,6 @@ const Register = () => {
               I agree to the Terms & Conditions and Privacy Policy
             </CheckboxLabel>
           </CheckboxGroup>
-
           <Button
             type="submit"
             disabled={loading}
@@ -303,12 +424,10 @@ const Register = () => {
               'Create Account'
             )}
           </Button>
-
-          <Link href="/login">Already have an account? Sign in</Link>
+          <Link href="/">Already have an account? Sign in</Link>
         </Form>
       </FormContainer>
     </AuthContainer>
   );
 };
-
 export default Register; 

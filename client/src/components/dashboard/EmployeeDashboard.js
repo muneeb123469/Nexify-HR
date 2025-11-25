@@ -1416,15 +1416,15 @@ const MobileMenuButton = styled.button`
     display: block;
   }
 `;
-export const EmployerSideBar=()=>{
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export const EmployerSideBar = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  return(
+  return (
     <>
-        <MobileMenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+      <MobileMenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
         <FaThLarge />
       </MobileMenuButton>
-      
+
       <Sidebar className={isSidebarOpen ? 'open' : ''}>
         <div>
           <Logo>
@@ -1466,13 +1466,13 @@ export const EmployerSideBar=()=>{
           Logout
         </LogoutButton>
       </Sidebar>
-      </>)
+    </>)
 }
 const EmployeeDashboard = () => {
 
   return (
     <DashboardContainer>
-     <EmployerSideBar/>
+      <EmployerSideBar />
 
       <MainContent>
         <Header>
@@ -1658,10 +1658,10 @@ const EmployeeDashboard = () => {
             <PayrollCard>
               <CardTitle>
                 <FaMoneyBillWave />
-                Basic Salary
+                Salary
               </CardTitle>
               <CardValue>$4,500.00</CardValue>
-              <CardSubtext>Monthly</CardSubtext>
+              <CardSubtext>Hourly</CardSubtext>
             </PayrollCard>
 
             <PayrollCard>
@@ -1683,7 +1683,7 @@ const EmployeeDashboard = () => {
             </PayrollCard>
           </PayrollGrid>
 
-          <TaxDeductions>
+          {/* <TaxDeductions>
             <TaxHeader>
               <FaPercent />
               Tax Deductions
@@ -1706,7 +1706,7 @@ const EmployeeDashboard = () => {
                 <TaxValue>$25.00</TaxValue>
               </TaxItem>
             </TaxList>
-          </TaxDeductions>
+          </TaxDeductions> */}
         </PayrollOverview>
 
         <PerformanceSection
@@ -1829,194 +1829,7 @@ const EmployeeDashboard = () => {
           </AppraisalHistory>
         </PerformanceSection>
 
-        <SelfServiceSection
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-        >
-          <SectionHeader>
-            <SectionTitle>
-              <FaCog />
-              Self-Service Options
-            </SectionTitle>
-          </SectionHeader>
 
-          <ServiceGrid>
-            <ServiceCard>
-              <ServiceIcon>
-                <FaCalendarAlt />
-              </ServiceIcon>
-              <ServiceTitle>Request Leave</ServiceTitle>
-              <ServiceDescription>
-                Submit and track your time-off requests
-              </ServiceDescription>
-            </ServiceCard>
-
-            <ServiceCard>
-              <ServiceIcon>
-                <FaFileUpload />
-              </ServiceIcon>
-              <ServiceTitle>Upload Documents</ServiceTitle>
-              <ServiceDescription>
-                Submit required documents and certificates
-              </ServiceDescription>
-            </ServiceCard>
-
-            <ServiceCard>
-              <ServiceIcon>
-                <FaUserEdit />
-              </ServiceIcon>
-              <ServiceTitle>Update Profile</ServiceTitle>
-              <ServiceDescription>
-                Manage your personal information
-              </ServiceDescription>
-            </ServiceCard>
-          </ServiceGrid>
-
-          <DocumentSection>
-            <SectionTitle>
-              <FaFileAlt />
-              Required Documents
-            </SectionTitle>
-            <DocumentList>
-              <DocumentItem>
-                <DocumentInfo>
-                  <DocumentIcon>
-                    <FaFileAlt />
-                  </DocumentIcon>
-                  <DocumentDetails>
-                    <DocumentName>Medical Certificate</DocumentName>
-                    <DocumentStatus>Last updated: 2 months ago</DocumentStatus>
-                  </DocumentDetails>
-                </DocumentInfo>
-                <UploadButton>
-                  <FaFileUpload />
-                  Update
-                </UploadButton>
-              </DocumentItem>
-              <DocumentItem>
-                <DocumentInfo>
-                  <DocumentIcon>
-                    <FaFileAlt />
-                  </DocumentIcon>
-                  <DocumentDetails>
-                    <DocumentName>ID Card</DocumentName>
-                    <DocumentStatus>Last updated: 1 year ago</DocumentStatus>
-                  </DocumentDetails>
-                </DocumentInfo>
-                <UploadButton>
-                  <FaFileUpload />
-                  Update
-                </UploadButton>
-              </DocumentItem>
-            </DocumentList>
-          </DocumentSection>
-
-          <ProfileSection>
-            <SectionTitle>
-              <FaUserEdit />
-              Quick Profile Updates
-            </SectionTitle>
-            <ProfileGrid>
-              <ProfileItem>
-                <ProfileIcon>
-                  <FaPhone />
-                </ProfileIcon>
-                <ProfileInfo>
-                  <ProfileLabel>Phone Number</ProfileLabel>
-                  <ProfileValue>+1 (555) 123-4567</ProfileValue>
-                </ProfileInfo>
-              </ProfileItem>
-              <ProfileItem>
-                <ProfileIcon>
-                  <FaEnvelope />
-                </ProfileIcon>
-                <ProfileInfo>
-                  <ProfileLabel>Email Address</ProfileLabel>
-                  <ProfileValue>employee@company.com</ProfileValue>
-                </ProfileInfo>
-              </ProfileItem>
-              <ProfileItem>
-                <ProfileIcon>
-                  <FaMapMarkerAlt />
-                </ProfileIcon>
-                <ProfileInfo>
-                  <ProfileLabel>Address</ProfileLabel>
-                  <ProfileValue>123 Business St, City</ProfileValue>
-                </ProfileInfo>
-              </ProfileItem>
-              <ProfileItem>
-                <ProfileIcon>
-                  <FaPhone />
-                </ProfileIcon>
-                <ProfileInfo>
-                  <ProfileLabel>Emergency Contact</ProfileLabel>
-                  <ProfileValue>+1 (555) 987-6543</ProfileValue>
-                </ProfileInfo>
-              </ProfileItem>
-            </ProfileGrid>
-          </ProfileSection>
-        </SelfServiceSection>
-
-        <QuickActionsSection
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.7 }}
-        >
-          <SectionHeader>
-            <SectionTitle>
-              <FaBolt />
-              Quick Actions & Shortcuts
-            </SectionTitle>
-          </SectionHeader>
-
-          <QuickActionsGrid>
-            <QuickActionCard>
-              <ActionIcon className="action-icon">
-                <FaCalendarAlt />
-              </ActionIcon>
-              <ActionTitle className="action-title">Quick Leave Application</ActionTitle>
-              <ActionDescription className="action-description">
-                Apply for time off with just a few clicks. Fast and easy leave request process.
-              </ActionDescription>
-              <ActionButton className="action-button">
-                <FaPlus />
-                Apply Now
-              </ActionButton>
-              <ActionBadge>Fast Track</ActionBadge>
-            </QuickActionCard>
-
-            <QuickActionCard>
-              <ActionIcon className="action-icon">
-                <FaMoneyBillWave />
-              </ActionIcon>
-              <ActionTitle className="action-title">Payroll Information</ActionTitle>
-              <ActionDescription className="action-description">
-                View your latest payslip, salary details, and tax information in one place.
-              </ActionDescription>
-              <ActionButton className="action-button">
-                <FaDownload />
-                View Details
-              </ActionButton>
-              <ActionBadge>Updated</ActionBadge>
-            </QuickActionCard>
-
-            <QuickActionCard>
-              <ActionIcon className="action-icon">
-                <FaHeartbeat />
-              </ActionIcon>
-              <ActionTitle className="action-title">Wellness Programs</ActionTitle>
-              <ActionDescription className="action-description">
-                Join wellness activities, track your progress, and earn rewards.
-              </ActionDescription>
-              <ActionButton className="action-button">
-                <FaPlus />
-                Join Program
-              </ActionButton>
-              <ActionBadge>New</ActionBadge>
-            </QuickActionCard>
-          </QuickActionsGrid>
-        </QuickActionsSection>
 
         <FeedbackSection
           initial={{ opacity: 0, y: 20 }}

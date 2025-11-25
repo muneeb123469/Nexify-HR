@@ -203,6 +203,38 @@ async function calculateEmployeeSalary(employeeId, month, year) {
             salaryData = calculatePartTimeSalary(hourlyRate, workHoursData.totalHours);
         }
 
+        // Apply manual HR adjustments if they exist
+        if (employee.salaryAdjustments && typeof employee.salaryAdjustments === 'object') {
+            const adjustments = employee.salaryAdjustments;
+
+            // Apply base salary override if set
+            if (adjustments.baseSalaryOverride !== undefined && adjustments.baseSalaryOverride > 0) {
+                salaryData.baseSalary = adjustments.baseSalaryOverride;
+            }
+
+            // Add bonuses if set
+            const bonuses = adjustments.bonuses || 0;
+
+            // Add manual deductions if set
+            const manualDeductions = adjustments.deductions || 0;
+            salaryData.deductions = (salaryData.deductions || 0) + manualDeductions;
+
+            // Recalculate net salary with adjustments
+            salaryData.netSalary = salaryData.baseSalary + bonuses - salaryData.deductions;
+
+            // Store bonuses in salary data for reference
+            salaryData.bonuses = bonuses;
+
+            // Add adjustment notes to details
+            if (adjustments.notes) {
+                salaryData.details = {
+                    ...salaryData.details,
+                    adjustmentNotes: adjustments.notes,
+                    lastAdjusted: adjustments.lastUpdated || new Date()
+                };
+            }
+        }
+
         return {
             employeeId: employee._id,
             employeeName: employee.username,
@@ -549,6 +581,380 @@ router.put('/update/:employeeId', verifyToken, isHROrAdmin, async (req, res) => 
         res.status(500).json({
             success: false,
             message: error.message || 'Error updating employee salary'
+        });
+    }
+});
+
+// ========================================
+// EMPLOYEE-SPECIFIC ENDPOINTS
+// ========================================
+
+// @route   GET /api/salary/my-payroll
+// @desc    Get current employee's latest payroll overview
+// @access  Private (Employee only)
+router.get('/my-payroll', verifyToken, async (req, res) => {
+    try {
+        // Ensure user is an employee
+        if (req.user.role !== 'employee') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Employee role required.'
+            });
+        }
+
+        const employeeId = req.user._id;
+
+        // Get current month/year
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1;
+        const currentYear = currentDate.getFullYear();
+
+        // Try to find salary record for current month
+        let salaryRecord = await Salary.findOne({
+            employeeId,
+            month: currentMonth,
+            year: currentYear
+        });
+
+        // If no record for current month, try to get the most recent one
+        if (!salaryRecord) {
+            salaryRecord = await Salary.findOne({ employeeId })
+                .sort({ year: -1, month: -1 })
+                .limit(1);
+        }
+
+        // If still no record, return default zero values
+        if (!salaryRecord) {
+            return res.json({
+                success: true,
+                data: {
+                    salary: 0,
+                    bonuses: 0,
+                    deductions: 0,
+                    netSalary: 0,
+                    month: currentMonth,
+                    year: currentYear,
+                    hasData: false
+                }
+            });
+        }
+
+        // Return the salary data
+        res.json({
+            success: true,
+            data: {
+                salary: salaryRecord.baseSalary || 0,
+                bonuses: salaryRecord.bonuses || 0,
+                deductions: salaryRecord.deductions || 0,
+                netSalary: salaryRecord.netSalary || 0,
+                month: salaryRecord.month,
+                year: salaryRecord.year,
+                hasData: true
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching employee payroll:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching payroll data'
+        });
+    }
+});
+
+// @route   GET /api/salary/my-payroll/:month/:year
+// @desc    Get employee's payroll for specific month/year
+// @access  Private (Employee only)
+router.get('/my-payroll/:month/:year', verifyToken, async (req, res) => {
+    try {
+        // Ensure user is an employee
+        if (req.user.role !== 'employee') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Employee role required.'
+            });
+        }
+
+        const employeeId = req.user._id;
+        const { month, year } = req.params;
+
+        // Validate month and year
+        const monthNum = parseInt(month);
+        const yearNum = parseInt(year);
+
+        if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid month. Must be between 1 and 12.'
+            });
+        }
+
+        if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid year.'
+            });
+        }
+
+        // Find salary record
+        const salaryRecord = await Salary.findOne({
+            employeeId,
+            month: monthNum,
+            year: yearNum
+        });
+
+        // If no record, return zero values
+        if (!salaryRecord) {
+            return res.json({
+                success: true,
+                data: {
+                    salary: 0,
+                    bonuses: 0,
+                    deductions: 0,
+                    netSalary: 0,
+                    month: monthNum,
+                    year: yearNum,
+                    hasData: false
+                }
+            });
+        }
+
+        // Return the salary data
+        res.json({
+            success: true,
+            data: {
+                salary: salaryRecord.baseSalary || 0,
+                bonuses: salaryRecord.bonuses || 0,
+                deductions: salaryRecord.deductions || 0,
+                netSalary: salaryRecord.netSalary || 0,
+                month: salaryRecord.month,
+                year: salaryRecord.year,
+                hasData: true
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching employee payroll:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching payroll data'
+        });
+    }
+});
+
+// @route   GET /api/salary/my-payslip-details
+// @desc    Get detailed payslip data for modal display
+// @access  Private (Employee only)
+router.get('/my-payslip-details', verifyToken, async (req, res) => {
+    try {
+        // Ensure user is an employee
+        if (req.user.role !== 'employee') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Employee role required.'
+            });
+        }
+
+        const employeeId = req.user._id;
+        const { month, year } = req.query;
+
+        // Default to current month/year if not provided
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1;
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+
+        // Find salary record
+        let salaryRecord = await Salary.findOne({
+            employeeId,
+            month: targetMonth,
+            year: targetYear
+        });
+
+        // If no record for specified month, try to get the most recent one
+        if (!salaryRecord) {
+            salaryRecord = await Salary.findOne({ employeeId })
+                .sort({ year: -1, month: -1 })
+                .limit(1);
+        }
+
+        // Get employee details
+        const employee = await User.findById(employeeId);
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        // If no salary record exists, return default values
+        if (!salaryRecord) {
+            return res.json({
+                success: true,
+                data: {
+                    employeeInfo: {
+                        name: employee.username,
+                        employeeId: employee.employeeId || 'N/A',
+                        position: employee.jobTitle || 'N/A',
+                        department: employee.department || 'N/A',
+                        email: employee.email
+                    },
+                    period: {
+                        month: targetMonth,
+                        year: targetYear,
+                        monthName: new Date(targetYear, targetMonth - 1).toLocaleString('default', { month: 'long' })
+                    },
+                    salaryDetails: {
+                        baseSalary: 0,
+                        bonuses: 0,
+                        deductions: 0,
+                        netSalary: 0
+                    },
+                    workHours: {
+                        attendanceHours: 0,
+                        remoteHours: 0,
+                        totalHours: 0
+                    },
+                    hasData: false
+                }
+            });
+        }
+
+        // Return detailed payslip data
+        res.json({
+            success: true,
+            data: {
+                employeeInfo: {
+                    name: employee.username,
+                    employeeId: employee.employeeId || 'N/A',
+                    position: employee.jobTitle || 'N/A',
+                    department: employee.department || 'N/A',
+                    email: employee.email
+                },
+                period: {
+                    month: salaryRecord.month,
+                    year: salaryRecord.year,
+                    monthName: new Date(salaryRecord.year, salaryRecord.month - 1).toLocaleString('default', { month: 'long' })
+                },
+                salaryDetails: {
+                    baseSalary: salaryRecord.baseSalary || 0,
+                    bonuses: salaryRecord.bonuses || 0,
+                    deductions: salaryRecord.deductions || 0,
+                    netSalary: salaryRecord.netSalary || 0,
+                    hourlyRate: employee.salary || 0
+                },
+                workHours: {
+                    attendanceHours: salaryRecord.workHours?.attendanceHours || 0,
+                    remoteHours: salaryRecord.workHours?.remoteHours || 0,
+                    totalHours: salaryRecord.workHours?.totalHours || 0
+                },
+                hasData: true
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching payslip details:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching payslip details'
+        });
+    }
+});
+
+// @route   POST /api/salary/download-payslip
+// @desc    Generate and download payslip PDF
+// @access  Private (Employee only)
+router.post('/download-payslip', verifyToken, async (req, res) => {
+    try {
+        // Ensure user is an employee
+        if (req.user.role !== 'employee') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Employee role required.'
+            });
+        }
+
+        const employeeId = req.user._id;
+        const { month, year } = req.body;
+
+        // Default to current month/year if not provided
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1;
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+
+        // Get payslip details
+        let salaryRecord = await Salary.findOne({
+            employeeId,
+            month: targetMonth,
+            year: targetYear
+        });
+
+        // If no record for specified month, try to get the most recent one
+        if (!salaryRecord) {
+            salaryRecord = await Salary.findOne({ employeeId })
+                .sort({ year: -1, month: -1 })
+                .limit(1);
+        }
+
+        // Get employee details
+        const employee = await User.findById(employeeId);
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        // Prepare payslip data
+        const payslipData = {
+            employeeInfo: {
+                name: employee.username,
+                employeeId: employee.employeeId || 'N/A',
+                position: employee.jobTitle || 'N/A',
+                department: employee.department || 'N/A',
+                email: employee.email
+            },
+            period: {
+                month: salaryRecord ? salaryRecord.month : targetMonth,
+                year: salaryRecord ? salaryRecord.year : targetYear,
+                monthName: new Date(
+                    salaryRecord ? salaryRecord.year : targetYear,
+                    (salaryRecord ? salaryRecord.month : targetMonth) - 1
+                ).toLocaleString('default', { month: 'long' })
+            },
+            salaryDetails: {
+                baseSalary: salaryRecord ? (salaryRecord.baseSalary || 0) : 0,
+                bonuses: salaryRecord ? (salaryRecord.bonuses || 0) : 0,
+                deductions: salaryRecord ? (salaryRecord.deductions || 0) : 0,
+                netSalary: salaryRecord ? (salaryRecord.netSalary || 0) : 0,
+                hourlyRate: employee.salary || 0
+            },
+            workHours: {
+                attendanceHours: salaryRecord?.workHours?.attendanceHours || 0,
+                remoteHours: salaryRecord?.workHours?.remoteHours || 0,
+                totalHours: salaryRecord?.workHours?.totalHours || 0
+            }
+        };
+
+        // Generate PDF
+        const { generatePayslipPDF } = require('../utils/payslipGenerator');
+        const pdfBuffer = await generatePayslipPDF(payslipData);
+
+        // Set response headers for PDF download
+        const filename = `payslip_${employee.employeeId}_${payslipData.period.monthName}_${payslipData.period.year}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        // Send the PDF
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error generating payslip PDF:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error generating payslip'
         });
     }
 });

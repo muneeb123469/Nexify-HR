@@ -88,7 +88,7 @@ const userSchema = new mongoose.Schema({
   employeeStatus: {
     type: String,
     enum: ['Full-time permanent employee', 'Part-time employee', 'Contract-based employee', 'Intern'],
-    required: function() {
+    required: function () {
       return this.role === 'employee';
     }
   },
@@ -97,6 +97,11 @@ const userSchema = new mongoose.Schema({
   },
   salary: {
     type: Number
+  },
+  // Salary adjustments made by HR (manual overrides)
+  salaryAdjustments: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   // Work Mode for HR Performance Model
   workMode: {
@@ -207,9 +212,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Pre-save middleware to update updatedAt and job history
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   this.updatedAt = new Date();
-  
+
   // If jobTitle changed and this is an employee, update job history
   if (this.role === 'employee' && this.isModified('jobTitle') && this.jobTitle) {
     // End the current role if exists
@@ -219,12 +224,12 @@ userSchema.pre('save', function(next) {
         currentRole.endDate = new Date();
       }
     }
-    
+
     // Add new role if it's different from the last one
-    const lastJob = this.jobHistory && this.jobHistory.length > 0 
-      ? this.jobHistory[this.jobHistory.length - 1] 
+    const lastJob = this.jobHistory && this.jobHistory.length > 0
+      ? this.jobHistory[this.jobHistory.length - 1]
       : null;
-    
+
     if (!lastJob || lastJob.jobTitle !== this.jobTitle) {
       if (!this.jobHistory) this.jobHistory = [];
       this.jobHistory.push({
@@ -234,17 +239,17 @@ userSchema.pre('save', function(next) {
       });
     }
   }
-  
+
   next();
 });
 
 // Generate employee ID for new employees
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (this.role === 'employee' && !this.employeeId) {
     try {
       // Find the highest existing employee ID number
       const lastEmployee = await mongoose.model('User').findOne(
-        { 
+        {
           role: 'employee',
           employeeId: { $exists: true, $ne: null }
         },
@@ -261,18 +266,18 @@ userSchema.pre('save', async function(next) {
       // Keep trying until we find an available ID
       let attempts = 0;
       const maxAttempts = 1000; // Prevent infinite loop
-      
+
       while (attempts < maxAttempts) {
         const candidateId = `EMP${String(nextNumber).padStart(3, '0')}`;
-        
+
         // Check if this ID already exists
         const existingEmployee = await mongoose.model('User').findOne({ employeeId: candidateId });
-        
+
         if (!existingEmployee) {
           this.employeeId = candidateId;
           break;
         }
-        
+
         nextNumber++;
         attempts++;
       }
@@ -288,7 +293,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Method to compare passwords (direct string comparison for testing)
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
     console.log('Comparing passwords...');
     const isMatch = candidatePassword === this.password;
@@ -301,7 +306,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Method to calculate years in company
-userSchema.methods.getYearsInCompany = function() {
+userSchema.methods.getYearsInCompany = function () {
   if (!this.hireDate) return 0;
   const diffTime = Math.abs(new Date() - this.hireDate);
   const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
@@ -309,21 +314,21 @@ userSchema.methods.getYearsInCompany = function() {
 };
 
 // Method to calculate years in current role
-userSchema.methods.getYearsInRole = function() {
+userSchema.methods.getYearsInRole = function () {
   if (!this.jobHistory || this.jobHistory.length === 0) {
     return this.getYearsInCompany(); // Fallback to company years if no job history
   }
-  
+
   const currentRole = this.jobHistory.find(job => !job.endDate);
   if (!currentRole) return 0;
-  
+
   const diffTime = Math.abs(new Date() - currentRole.startDate);
   const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
   return Math.round(diffYears * 100) / 100; // Round to 2 decimal places
 };
 
 // Method to get salary band
-userSchema.methods.getSalaryBand = function() {
+userSchema.methods.getSalaryBand = function () {
   if (!this.salary) return 'Low';
   if (this.salary < 50000) return 'Low';
   if (this.salary >= 50000 && this.salary < 100000) return 'Medium';
@@ -331,7 +336,7 @@ userSchema.methods.getSalaryBand = function() {
 };
 
 // Method to get user data without password
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
   return user;
