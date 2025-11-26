@@ -148,7 +148,7 @@ router.get('/employees', authenticateToken, async (req, res) => {
         }
 
         // Fetch all employees
-        const employees = await User.find({ 
+        const employees = await User.find({
             role: 'employee',
             status: { $ne: 'terminated' } // Exclude terminated employees
         }).select('username email department jobTitle createdAt').sort({ username: 1 });
@@ -162,6 +162,73 @@ router.get('/employees', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching employees'
+        });
+    }
+});
+
+// Change Password endpoint
+router.post('/change-password', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.user.id;
+        const { oldPassword, newPassword } = req.body;
+
+        console.log('Change password request received for user ID:', userId);
+
+        // Validate required fields
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Old password and new password are required'
+            });
+        }
+
+        // Password validation rules
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+            });
+        }
+
+        // Get user with password
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify old password
+        const isMatch = await user.comparePassword(oldPassword);
+
+        if (!isMatch) {
+            console.log('Incorrect old password for user:', userId);
+            return res.status(401).json({
+                success: false,
+                message: 'Incorrect old password',
+                incorrectPassword: true // Flag to show retry/forgot password options
+            });
+        }
+
+        // Update password (plain text as per current implementation)
+        user.password = newPassword;
+        await user.save();
+
+        console.log('Password changed successfully for user:', userId);
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully. Please login with your new password.'
+        });
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while changing password'
         });
     }
 });

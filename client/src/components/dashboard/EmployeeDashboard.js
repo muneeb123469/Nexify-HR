@@ -1419,6 +1419,15 @@ const MobileMenuButton = styled.button`
 export const EmployerSideBar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    // Navigate to login page
+    window.location.href = '/';
+  };
+
   return (
     <>
       <MobileMenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
@@ -1461,7 +1470,7 @@ export const EmployerSideBar = () => {
             </NavItem>
           </Nav>
         </div>
-        <LogoutButton>
+        <LogoutButton onClick={handleLogout}>
           <FaSignOutAlt />
           Logout
         </LogoutButton>

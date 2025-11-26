@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Register
+// Register - Step 1: Send verification code
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Username must be at least 3 characters long' });
     }
 
-    // Check if user already exists
+    // Check if user already exists in database
     const existingUser = await User.findOne({
       $or: [
         { email: email.toLowerCase() },
@@ -54,18 +54,91 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Create new user with plain text password
-    // All new users are automatically assigned the 'applicant' role
-    const user = new User({
-      username: username.toLowerCase(),
+    // Store registration data temporarily and generate verification code
+    const { storeRegistration } = require('../utils/registrationStorage');
+    const result = storeRegistration(email, username, password);
+
+    if (!result.success) {
+      return res.status(429).json({ message: result.error });
+    }
+
+    // Send verification code via email
+    const { sendRegistrationVerificationEmail } = require('../services/emailService');
+    const emailResult = await sendRegistrationVerificationEmail(email, result.code);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        message: 'Failed to send verification code. Please try again later.',
+        error: emailResult.error
+      });
+    }
+
+    // Calculate expiry time for frontend display
+    const expiresInMinutes = Math.ceil((result.expiresAt - Date.now()) / 1000 / 60);
+
+    res.json({
+      message: 'Verification code sent to your email',
       email: email.toLowerCase(),
-      password,
+      expiresInMinutes
+    });
+
+  } catch (err) {
+    console.error('Registration Error:', err);
+    res.status(500).json({
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// Register - Step 2: Verify code and create account
+router.post('/verify-registration', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    // Validate inputs
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Email and verification code are required' });
+    }
+
+    // Verify the code
+    const { verifyRegistrationCode, clearRegistration } = require('../utils/registrationStorage');
+    const result = verifyRegistrationCode(email, code);
+
+    if (!result.valid) {
+      return res.status(400).json({ message: result.error });
+    }
+
+    // Get registration data
+    const { username, password } = result.registrationData;
+
+    // Check one more time if user exists (in case they registered elsewhere)
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { username: username.toLowerCase() }
+      ]
+    });
+
+    if (existingUser) {
+      clearRegistration(email);
+      return res.status(400).json({ message: 'User already exists. Please log in.' });
+    }
+
+    // Create new user
+    const user = new User({
+      username: username,
+      email: email,
+      password: password,
       role: 'applicant',
-      isPending: false // Applicants don't need approval
+      isPending: false
     });
 
     // Save user
     await user.save();
+
+    // Clear registration data
+    clearRegistration(email);
 
     // Create JWT token
     const payload = {
@@ -87,7 +160,7 @@ router.post('/register', async (req, res) => {
 
         // Send response with token and user data
         res.status(201).json({
-          message: 'Registration successful',
+          message: 'Registration successful! Welcome!',
           token,
           user: {
             id: user.id,
@@ -99,12 +172,65 @@ router.post('/register', async (req, res) => {
         });
       }
     );
+
   } catch (err) {
-    console.error('Registration Error:', err);
+    console.error('Verification Error:', err);
     res.status(500).json({
-      message: 'Server error during registration',
+      message: 'Server error during verification',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
+  }
+});
+
+// Resend registration verification code
+router.post('/resend-registration-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if pending registration exists
+    const { getRegistrationData, storeRegistration } = require('../utils/registrationStorage');
+    const existingRegistration = getRegistrationData(email);
+
+    if (!existingRegistration) {
+      return res.status(404).json({
+        message: 'No pending registration found. Please register again.'
+      });
+    }
+
+    // Generate new code and update storage
+    const result = storeRegistration(email, existingRegistration.username, existingRegistration.password);
+
+    if (!result.success) {
+      return res.status(429).json({ message: result.error });
+    }
+
+    // Send new verification code via email
+    const { sendRegistrationVerificationEmail } = require('../services/emailService');
+    const emailResult = await sendRegistrationVerificationEmail(email, result.code);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        message: 'Failed to send verification code. Please try again later.',
+        error: emailResult.error
+      });
+    }
+
+    // Calculate expiry time
+    const expiresInMinutes = Math.ceil((result.expiresAt - Date.now()) / 1000 / 60);
+
+    res.json({
+      message: 'New verification code sent to your email',
+      expiresInMinutes
+    });
+
+  } catch (error) {
+    console.error('Resend registration code error:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 });
 

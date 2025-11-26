@@ -367,8 +367,8 @@ const TimeTracker = () => {
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          timeout: 30000,
+          maximumAge: 0
         }
       );
     });
@@ -402,7 +402,7 @@ const TimeTracker = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Successfully checked in!');
         fetchTodayStatus();
@@ -464,7 +464,7 @@ const TimeTracker = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Successfully checked out!');
         fetchTodayStatus();
@@ -568,174 +568,174 @@ const TimeTracker = () => {
 
   return (
     <Container>
-        <Header>
-          <HeaderTitle>
+      <Header>
+        <HeaderTitle>
+          <FaClock />
+          Time Tracker
+        </HeaderTitle>
+        <HeaderSubtitle>Mark your presence and track your working hours</HeaderSubtitle>
+      </Header>
+
+      {error && (
+        <ErrorMessage>
+          <FaTimesCircle />
+          {error}
+        </ErrorMessage>
+      )}
+
+      {locationError && (
+        <ErrorMessage>
+          <FaMapMarkerAlt />
+          {locationError}
+        </ErrorMessage>
+      )}
+
+
+      {success && (
+        <SuccessMessage>
+          <FaCheckCircle />
+          {success}
+        </SuccessMessage>
+      )}
+
+      <TimeDisplay>
+        <CurrentTime>{formatCurrentTime(currentTime)}</CurrentTime>
+        <CurrentDate>{formatDate(currentTime)}</CurrentDate>
+      </TimeDisplay>
+
+      <StatusCard status={statusDisplay.status}>
+        <StatusIcon status={statusDisplay.status}>
+          {statusDisplay.icon}
+        </StatusIcon>
+        <StatusText status={statusDisplay.status}>
+          {statusDisplay.text}
+        </StatusText>
+        <StatusDetails>{statusDisplay.details}</StatusDetails>
+      </StatusCard>
+
+      <ActionsGrid>
+        <ActionCard>
+          <ActionIcon disabled={attendanceStatus?.isCurrentlyCheckedIn}>
+            <FaSignInAlt />
+          </ActionIcon>
+          <ActionTitle disabled={attendanceStatus?.isCurrentlyCheckedIn}>
+            Check In
+          </ActionTitle>
+          <ActionDescription>
+            {attendanceStatus?.isCurrentlyCheckedIn
+              ? 'Please check out first before checking in again'
+              : (attendanceStatus?.completedSessions > 0
+                ? 'Start a new work session'
+                : 'Mark your arrival and start your workday')}
+          </ActionDescription>
+          <ActionButton
+            disabled={attendanceStatus?.isCurrentlyCheckedIn || loading || locationLoading}
+            onClick={handleCheckIn}
+          >
+            {locationLoading ? (
+              <>
+                <FaLocationArrow />
+                Getting Location...
+              </>
+            ) : loading ? (
+              <>
+                <FaSpinner className="fa-spin" />
+                Checking In...
+              </>
+            ) : (
+              <>
+                <FaSignInAlt />
+                Check In
+              </>
+            )}
+          </ActionButton>
+        </ActionCard>
+
+        <ActionCard>
+          <ActionIcon disabled={!attendanceStatus?.isCurrentlyCheckedIn}>
+            <FaSignOutAlt />
+          </ActionIcon>
+          <ActionTitle disabled={!attendanceStatus?.isCurrentlyCheckedIn}>
+            Check Out
+          </ActionTitle>
+          <ActionDescription>
+            {attendanceStatus?.isCurrentlyCheckedIn
+              ? 'End your current work session'
+              : 'You need to check in first'}
+          </ActionDescription>
+          <ActionButton
+            disabled={!attendanceStatus?.isCurrentlyCheckedIn || loading || locationLoading}
+            onClick={handleCheckOut}
+          >
+            {locationLoading ? (
+              <>
+                <FaLocationArrow />
+                Getting Location...
+              </>
+            ) : loading ? (
+              <>
+                <FaSpinner className="fa-spin" />
+                Checking Out...
+              </>
+            ) : (
+              <>
+                <FaSignOutAlt />
+                Check Out
+              </>
+            )}
+          </ActionButton>
+        </ActionCard>
+      </ActionsGrid>
+
+      {attendanceStatus?.hasCheckedIn && (
+        <WorkingHoursCard>
+          <WorkingHoursTitle>
             <FaClock />
-            Time Tracker
-          </HeaderTitle>
-          <HeaderSubtitle>Mark your presence and track your working hours</HeaderSubtitle>
-        </Header>
-
-        {error && (
-          <ErrorMessage>
-            <FaTimesCircle />
-            {error}
-          </ErrorMessage>
-        )}
-
-        {locationError && (
-          <ErrorMessage>
-            <FaMapMarkerAlt />
-            {locationError}
-          </ErrorMessage>
-        )}
-
-
-        {success && (
-          <SuccessMessage>
-            <FaCheckCircle />
-            {success}
-          </SuccessMessage>
-        )}
-
-        <TimeDisplay>
-          <CurrentTime>{formatCurrentTime(currentTime)}</CurrentTime>
-          <CurrentDate>{formatDate(currentTime)}</CurrentDate>
-        </TimeDisplay>
-
-        <StatusCard status={statusDisplay.status}>
-          <StatusIcon status={statusDisplay.status}>
-            {statusDisplay.icon}
-          </StatusIcon>
-          <StatusText status={statusDisplay.status}>
-            {statusDisplay.text}
-          </StatusText>
-          <StatusDetails>{statusDisplay.details}</StatusDetails>
-        </StatusCard>
-
-        <ActionsGrid>
-          <ActionCard>
-            <ActionIcon disabled={attendanceStatus?.isCurrentlyCheckedIn}>
-              <FaSignInAlt />
-            </ActionIcon>
-            <ActionTitle disabled={attendanceStatus?.isCurrentlyCheckedIn}>
-              Check In
-            </ActionTitle>
-            <ActionDescription>
-              {attendanceStatus?.isCurrentlyCheckedIn 
-                ? 'Please check out first before checking in again' 
-                : (attendanceStatus?.completedSessions > 0 
-                   ? 'Start a new work session' 
-                   : 'Mark your arrival and start your workday')}
-            </ActionDescription>
-            <ActionButton
-              disabled={attendanceStatus?.isCurrentlyCheckedIn || loading || locationLoading}
-              onClick={handleCheckIn}
-            >
-              {locationLoading ? (
-                <>
-                  <FaLocationArrow />
-                  Getting Location...
-                </>
-              ) : loading ? (
-                <>
-                  <FaSpinner className="fa-spin" />
-                  Checking In...
-                </>
-              ) : (
-                <>
-                  <FaSignInAlt />
-                  Check In
-                </>
-              )}
-            </ActionButton>
-          </ActionCard>
-
-          <ActionCard>
-            <ActionIcon disabled={!attendanceStatus?.isCurrentlyCheckedIn}>
-              <FaSignOutAlt />
-            </ActionIcon>
-            <ActionTitle disabled={!attendanceStatus?.isCurrentlyCheckedIn}>
-              Check Out
-            </ActionTitle>
-            <ActionDescription>
-              {attendanceStatus?.isCurrentlyCheckedIn 
-                ? 'End your current work session' 
-                : 'You need to check in first'}
-            </ActionDescription>
-            <ActionButton
-              disabled={!attendanceStatus?.isCurrentlyCheckedIn || loading || locationLoading}
-              onClick={handleCheckOut}
-            >
-              {locationLoading ? (
-                <>
-                  <FaLocationArrow />
-                  Getting Location...
-                </>
-              ) : loading ? (
-                <>
-                  <FaSpinner className="fa-spin" />
-                  Checking Out...
-                </>
-              ) : (
-                <>
-                  <FaSignOutAlt />
-                  Check Out
-                </>
-              )}
-            </ActionButton>
-          </ActionCard>
-        </ActionsGrid>
-
-        {attendanceStatus?.hasCheckedIn && (
-          <WorkingHoursCard>
-            <WorkingHoursTitle>
-              <FaClock />
-              Today's Summary
-            </WorkingHoursTitle>
-            <WorkingHoursGrid>
-              <WorkingHoursStat>
-                <StatValue>
-                  {formatTime(attendanceStatus.lastCheckInTime) || '--:--'}
-                </StatValue>
-                <StatLabel>Last Check In</StatLabel>
-              </WorkingHoursStat>
-              <WorkingHoursStat>
-                <StatValue>
-                  {formatTime(attendanceStatus.lastCheckOutTime) || '--:--'}
-                </StatValue>
-                <StatLabel>Last Check Out</StatLabel>
-              </WorkingHoursStat>
-              <WorkingHoursStat>
-                <StatValue>
-                  {attendanceStatus.formattedWorkingHours || '0h 0m'}
-                </StatValue>
-                <StatLabel>Total Working Hours</StatLabel>
-              </WorkingHoursStat>
-            </WorkingHoursGrid>
-            <WorkingHoursGrid style={{ marginTop: '16px' }}>
-              <WorkingHoursStat>
-                <StatValue>
-                  {attendanceStatus.totalSessions || 0}
-                </StatValue>
-                <StatLabel>Total Sessions</StatLabel>
-              </WorkingHoursStat>
-              <WorkingHoursStat>
-                <StatValue>
-                  {attendanceStatus.completedSessions || 0}
-                </StatValue>
-                <StatLabel>Completed Sessions</StatLabel>
-              </WorkingHoursStat>
-              <WorkingHoursStat>
-                <StatValue>
-                  {attendanceStatus.isCurrentlyCheckedIn ? 'Active' : 'None'}
-                </StatValue>
-                <StatLabel>Current Status</StatLabel>
-              </WorkingHoursStat>
-            </WorkingHoursGrid>
-          </WorkingHoursCard>
-        )}
-      </Container>
+            Today's Summary
+          </WorkingHoursTitle>
+          <WorkingHoursGrid>
+            <WorkingHoursStat>
+              <StatValue>
+                {formatTime(attendanceStatus.lastCheckInTime) || '--:--'}
+              </StatValue>
+              <StatLabel>Last Check In</StatLabel>
+            </WorkingHoursStat>
+            <WorkingHoursStat>
+              <StatValue>
+                {formatTime(attendanceStatus.lastCheckOutTime) || '--:--'}
+              </StatValue>
+              <StatLabel>Last Check Out</StatLabel>
+            </WorkingHoursStat>
+            <WorkingHoursStat>
+              <StatValue>
+                {attendanceStatus.formattedWorkingHours || '0h 0m'}
+              </StatValue>
+              <StatLabel>Total Working Hours</StatLabel>
+            </WorkingHoursStat>
+          </WorkingHoursGrid>
+          <WorkingHoursGrid style={{ marginTop: '16px' }}>
+            <WorkingHoursStat>
+              <StatValue>
+                {attendanceStatus.totalSessions || 0}
+              </StatValue>
+              <StatLabel>Total Sessions</StatLabel>
+            </WorkingHoursStat>
+            <WorkingHoursStat>
+              <StatValue>
+                {attendanceStatus.completedSessions || 0}
+              </StatValue>
+              <StatLabel>Completed Sessions</StatLabel>
+            </WorkingHoursStat>
+            <WorkingHoursStat>
+              <StatValue>
+                {attendanceStatus.isCurrentlyCheckedIn ? 'Active' : 'None'}
+              </StatValue>
+              <StatLabel>Current Status</StatLabel>
+            </WorkingHoursStat>
+          </WorkingHoursGrid>
+        </WorkingHoursCard>
+      )}
+    </Container>
   );
 };
 

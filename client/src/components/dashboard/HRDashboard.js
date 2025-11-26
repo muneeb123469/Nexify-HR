@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import styled from 'styled-components';
 import './HRDashboard.css';
@@ -291,140 +291,153 @@ const GridItem = styled.div`
 `;
 
 // Components
-export const Sidebar = () => (
-  <SidebarContainer>
-    <Logo>
-      <h1>Nexify<span>-HR</span></h1>
-    </Logo>
-    <SidebarMenu>
-      <MenuItem>
-        <NavLink to="/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-chart-line"></i>
-          <span>Dashboard Overview</span>
-        </NavLink>
-      </MenuItem>
+export const Sidebar = () => {
+  const navigate = useNavigate();
 
-      {/* Recruitment Section */}
-      <MenuItem>
-        <NavLink to="/hr/job-postings" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-briefcase"></i>
-          <span>Job Postings</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/candidate-applications" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-user-plus"></i>
-          <span>Candidate Applications</span>
-        </NavLink>
-      </MenuItem>
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
 
-      <MenuItem>
-        <NavLink to="/hr/interview-scheduling" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-calendar-check"></i>
-          <span>Interview Scheduling</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/meetings" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-video"></i>
-          <span>Meetings</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/interview-feedback" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-comment-alt"></i>
-          <span>Interview Feedback</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/offer-letters" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-file-signature"></i>
-          <span>Offer Letters</span>
-        </NavLink>
-      </MenuItem>
+    // Navigate to login page
+    navigate('/');
+  };
 
-      {/* Employee Management Section */}
-      <MenuItem>
-        <NavLink to="/employee/management" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-users-cog"></i>
-          <span>Employee Management</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/attendance" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-clock"></i>
-          <span>Attendance Management</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/leave-requests" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-calendar-check"></i>
-          <span>Leave Requests</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/hr/performance-evaluation" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-chart-bar"></i>
-          <span>Performance & Task Evaluation</span>
-        </NavLink>
-      </MenuItem>
+  return (
+    <SidebarContainer>
+      <Logo>
+        <h1>Nexify<span>-HR</span></h1>
+      </Logo>
+      <SidebarMenu>
+        <MenuItem>
+          <NavLink to="/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-chart-line"></i>
+            <span>Dashboard Overview</span>
+          </NavLink>
+        </MenuItem>
 
-      {/* Payroll Section */}
-      <MenuItem>
-        <NavLink to="/payroll/salary-calculation" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-calculator"></i>
-          <span>Salary Calculation</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/payroll/payslip-generation" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-file-invoice-dollar"></i>
-          <span>Payslip Generation</span>
-        </NavLink>
-      </MenuItem>
-      {/* <MenuItem>
+        {/* Recruitment Section */}
+        <MenuItem>
+          <NavLink to="/hr/job-postings" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-briefcase"></i>
+            <span>Job Postings</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/candidate-applications" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-user-plus"></i>
+            <span>Candidate Applications</span>
+          </NavLink>
+        </MenuItem>
+
+        <MenuItem>
+          <NavLink to="/hr/interview-scheduling" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-calendar-check"></i>
+            <span>Interview Scheduling</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/meetings" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-video"></i>
+            <span>Meetings</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/interview-feedback" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-comment-alt"></i>
+            <span>Interview Feedback</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/offer-letters" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-file-signature"></i>
+            <span>Offer Letters</span>
+          </NavLink>
+        </MenuItem>
+
+        {/* Employee Management Section */}
+        <MenuItem>
+          <NavLink to="/employee/management" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-users-cog"></i>
+            <span>Employee Management</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/attendance" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-clock"></i>
+            <span>Attendance Management</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/leave-requests" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-calendar-check"></i>
+            <span>Leave Requests</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/performance-evaluation" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-chart-bar"></i>
+            <span>Performance & Task Evaluation</span>
+          </NavLink>
+        </MenuItem>
+
+        {/* Payroll Section */}
+        <MenuItem>
+          <NavLink to="/payroll/salary-calculation" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-calculator"></i>
+            <span>Salary Calculation</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/payroll/payslip-generation" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-file-invoice-dollar"></i>
+            <span>Payslip Generation</span>
+          </NavLink>
+        </MenuItem>
+        {/* <MenuItem>
         <NavLink to="/employee/payroll-tax" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-percentage"></i>
           <span>Payroll Tax</span>
         </NavLink>
       </MenuItem> */}
 
-      {/* Remote Work Section */}
-      {/* <MenuItem>
+        {/* Remote Work Section */}
+        {/* <MenuItem>
         <NavLink to="/remote-work/wellness-fitness" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-heartbeat"></i>
           <span>Wellness & Fitness</span>
         </NavLink>
       </MenuItem> */}
-      <MenuItem>
-        <NavLink to="/hr/wellness-management" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-user-md"></i>
-          <span>Wellness Management</span>
-        </NavLink>
-      </MenuItem>
-      <MenuItem>
-        <NavLink to="/remote-work/hours-tracker" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-clock"></i>
-          <span>Hours Tracker</span>
-        </NavLink>
-      </MenuItem>
+        <MenuItem>
+          <NavLink to="/hr/wellness-management" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-user-md"></i>
+            <span>Wellness Management</span>
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/remote-work/hours-tracker" className={({ isActive }) => isActive ? "active" : ""}>
+            <i className="fas fa-clock"></i>
+            <span>Hours Tracker</span>
+          </NavLink>
+        </MenuItem>
 
-      {/* Settings */}
-      {/* <MenuItem>
+        {/* Settings */}
+        {/* <MenuItem>
         <NavLink to="/settings" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-cog"></i>
           <span>System Settings</span>
         </NavLink>
       </MenuItem> */}
-    </SidebarMenu>
-    <LogoutContainer>
-      <LogoutButton>
-        <i className="fas fa-sign-out-alt"></i>
-        <span>Logout</span>
-      </LogoutButton>
-    </LogoutContainer>
-  </SidebarContainer>
-);
+      </SidebarMenu>
+      <LogoutContainer>
+        <LogoutButton onClick={handleLogout}>
+          <i className="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </LogoutButton>
+      </LogoutContainer>
+    </SidebarContainer>
+  );
+};
 
 const HeaderComponent = () => (
   <Header>

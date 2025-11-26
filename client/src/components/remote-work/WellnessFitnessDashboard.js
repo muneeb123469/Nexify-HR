@@ -375,7 +375,7 @@ const WellnessFitnessDashboard = () => {
         )}
 
         <div className="dashboard-content">
-          <div className="preferences-section">
+          {/* <div className="preferences-section">
             <h2><FaUser /> Personalize Your Experience</h2>
             <div className="preferences-form">
               <div className="form-group">
@@ -422,25 +422,25 @@ const WellnessFitnessDashboard = () => {
                 </select>
               </div>
             </div>
-          </div>
+          </div> */}
 
-          {userPreferences.fitnessGoal && userPreferences.fitnessLevel && (
+          {/* {userPreferences.fitnessGoal && userPreferences.fitnessLevel && (
             <div className="recommended-programs-section">
               <h2><FaStar /> Recommended for You</h2>
               <div className="programs-grid">
                 {getRecommendedPrograms().map(renderProgramCard)}
               </div>
             </div>
-          )}
+          )} */}
 
-          <div className="programs-section">
+          {/* <div className="programs-section">
             <h2><FaDumbbell /> Available Programs</h2>
             <div className="programs-grid">
               {programs.map(renderProgramCard)}
             </div>
-          </div>
+          </div> */}
 
-          {selectedProgram && (
+          {/* {selectedProgram && (
             <div className="program-details-section">
               <h2><FaDumbbell /> Program Details</h2>
               <div className="program-details-card">
@@ -519,8 +519,8 @@ const WellnessFitnessDashboard = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            </div> */}
+          {/* )} */}
 
           {/* ===== NEW WELLNESS FEATURES ===== */}
 

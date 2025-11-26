@@ -366,6 +366,50 @@ HR Department
         message: 'Failed to send verification code'
       };
     }
+  },
+  // Registration verification email sender
+  async sendRegistrationVerificationEmail(email, code) {
+    try {
+      const { generateRegistrationVerificationEmailHTML, generateRegistrationVerificationEmailText } = require('../utils/registrationEmailTemplate');
+      const transporter = createTransporter();
+
+      const subject = 'Verify Your Email - Registration Code';
+      const html = generateRegistrationVerificationEmailHTML(code, 15); // 15 minutes expiry
+      const text = generateRegistrationVerificationEmailText(code, 15);
+
+      const mailOptions = {
+        from: {
+          name: 'HR Management System',
+          address: 'hamad1919ahmad@gmail.com'
+        },
+        to: email,
+        subject: subject,
+        html: html,
+        text: text
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+
+      console.log('Registration verification email sent successfully:', {
+        messageId: result.messageId,
+        to: email
+      });
+
+      return {
+        success: true,
+        messageId: result.messageId,
+        message: 'Verification code sent successfully'
+      };
+
+    } catch (error) {
+      console.error('Error sending registration verification email:', error);
+
+      return {
+        success: false,
+        error: error.message,
+        message: 'Failed to send verification code'
+      };
+    }
   }
 };
 

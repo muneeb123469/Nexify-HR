@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MapPin, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Save, 
-  X, 
+import {
+  MapPin,
+  Plus,
+  Edit2,
+  Trash2,
+  Save,
+  X,
   Navigation,
   AlertCircle,
   CheckCircle,
@@ -15,11 +15,11 @@ import {
 import { AdminSideBar } from '../dashboard/AdminDashboard';
 
 // LocationModal component - defined outside to prevent re-creation on each render
-const LocationModal = ({ 
-  isEdit = false, 
-  formData, 
-  setFormData, 
-  searchAddress, 
+const LocationModal = ({
+  isEdit = false,
+  formData,
+  setFormData,
+  searchAddress,
   setSearchAddress,
   gettingLocation,
   handleSubmit,
@@ -286,8 +286,8 @@ const LocationSettings = () => {
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          timeout: 30000,
+          maximumAge: 0
         });
       });
 
@@ -354,7 +354,7 @@ const LocationSettings = () => {
 
   const getCurrentLocation = () => {
     setGettingLocation(true);
-    
+
     if (!navigator.geolocation) {
       showMessage('error', 'Geolocation is not supported by this browser');
       setGettingLocation(false);
@@ -380,8 +380,8 @@ const LocationSettings = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
+        timeout: 30000,
+        maximumAge: 0
       }
     );
   };
@@ -397,9 +397,9 @@ const LocationSettings = () => {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`
       );
-      
+
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const result = data[0];
         setFormData(prev => ({
@@ -420,7 +420,7 @@ const LocationSettings = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.latitude || !formData.longitude || !formData.radius) {
       showMessage('error', 'Please fill in all required fields');
       return;
@@ -507,7 +507,7 @@ const LocationSettings = () => {
   return (
     <div className="flex h-screen bg-[#F8F9FA]">
       <AdminSideBar />
-      
+
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
@@ -519,17 +519,16 @@ const LocationSettings = () => {
             </div>
           </div>
         </header>
-        
+
         {/* Dashboard Content */}
         <div className="p-4 lg:p-6">
 
           {/* Message */}
           {message.text && (
-            <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
-              message.type === 'success' 
-                ? 'bg-green-50 text-green-700 border border-green-200' 
+            <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${message.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
                 : 'bg-red-50 text-red-700 border border-red-200'
-            }`}>
+              }`}>
               {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
               {message.text}
             </div>
@@ -551,7 +550,7 @@ const LocationSettings = () => {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-[#2C3E50]">Approved Locations</h2>
             </div>
-          
+
             {locations.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
                 <MapPin size={64} className="mx-auto mb-6 text-gray-300" />
@@ -623,7 +622,7 @@ const LocationSettings = () => {
 
           {/* Modals */}
           {showAddModal && (
-            <LocationModal 
+            <LocationModal
               isEdit={false}
               formData={formData}
               setFormData={setFormData}
@@ -639,7 +638,7 @@ const LocationSettings = () => {
             />
           )}
           {showEditModal && (
-            <LocationModal 
+            <LocationModal
               isEdit={true}
               formData={formData}
               setFormData={setFormData}

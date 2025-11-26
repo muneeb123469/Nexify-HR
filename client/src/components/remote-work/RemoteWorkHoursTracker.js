@@ -16,6 +16,8 @@ import { Sidebar } from '../dashboard/HRDashboard';
 import { AdminSideBar } from '../dashboard/AdminDashboard';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const RemoteWorkHoursTracker = () => {
   const { user } = useAuth();
@@ -130,9 +132,7 @@ const RemoteWorkHoursTracker = () => {
   // Load all sessions for HR
   const loadAllSessions = async () => {
     try {
-      const response = await api.get('/work-sessions/all', {
-        params: { date: selectedDate }
-      });
+      const response = await api.get('/work-sessions/all');
       setAllSessions(response.data.sessions || []);
     } catch (error) {
       console.error('Error loading all sessions:', error);
@@ -344,6 +344,151 @@ const RemoteWorkHoursTracker = () => {
     }
   };
 
+  // PDF Generation Function
+  const generatePDFReport = (data) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Work Hours Report', pageWidth / 2, 20, { align: 'center' });
+
+    // Add generation date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const generatedDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    doc.text(`Generated: ${generatedDate}`, pageWidth / 2, 28, { align: 'center' });
+
+    // Add filter information
+    let yPos = 38;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Report Filters:', 14, yPos);
+    doc.setFont('helvetica', 'normal');
+    yPos += 6;
+    doc.text(`Date Range: ${dateRange.start} to ${dateRange.end}`, 14, yPos);
+    yPos += 5;
+
+    if (selectedDepartment !== 'all') {
+      doc.text(`Department: ${selectedDepartment}`, 14, yPos);
+      yPos += 5;
+    }
+
+    if (selectedEmployee !== 'all') {
+      const empName = employees.find(e => e._id === selectedEmployee)?.username || 'N/A';
+      doc.text(`Employee: ${empName}`, 14, yPos);
+      yPos += 5;
+    }
+
+    yPos += 5;
+
+    // Add summary section
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary Statistics', 14, yPos);
+    yPos += 8;
+
+    const summaryData = [
+      ['Total Sessions', data.summary.totalSessions],
+      ['Total Hours', `${data.summary.totalHours.toFixed(2)}h`],
+      ['Total Productive Hours', `${data.summary.totalProductiveHours.toFixed(2)}h`],
+      ['Total Break Time', `${data.summary.totalBreakMinutes} minutes`],
+      ['Average Hours/Session', `${data.summary.averageHoursPerSession.toFixed(2)}h`],
+      ['Average Productive Hours/Session', `${data.summary.averageProductiveHoursPerSession.toFixed(2)}h`]
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Metric', 'Value']],
+      body: summaryData,
+      theme: 'grid',
+      headStyles: { fillColor: [76, 159, 159], fontStyle: 'bold' },
+      styles: { fontSize: 10 },
+      margin: { left: 14 }
+    });
+
+    // Add detailed sessions table
+    yPos = doc.lastAutoTable.finalY + 15;
+
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detailed Work Sessions', 14, yPos);
+    yPos += 8;
+
+    // Prepare table data
+    const tableData = data.sessions.map(session => {
+      const employeeName = session.employeeId?.username || session.employeeName || 'N/A';
+      const department = session.employeeId?.department || session.department || 'N/A';
+      const date = new Date(session.date).toLocaleDateString();
+      const startTime = new Date(session.startTime).toLocaleTimeString();
+      const endTime = session.endTime ? new Date(session.endTime).toLocaleTimeString() : 'In Progress';
+      const totalHours = session.totalHours ? `${session.totalHours.toFixed(2)}h` : '0h';
+      const productiveHours = session.productiveHours ? `${session.productiveHours.toFixed(2)}h` : '0h';
+      const breakMinutes = session.totalBreakMinutes || 0;
+
+      return [
+        employeeName,
+        department,
+        date,
+        startTime,
+        endTime,
+        totalHours,
+        productiveHours,
+        `${breakMinutes}m`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Employee', 'Department', 'Date', 'Start Time', 'End Time', 'Total Hours', 'Productive Hours', 'Breaks']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [76, 159, 159], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 20 },
+        7: { cellWidth: 15 }
+      },
+      margin: { left: 14, right: 14 },
+      didDrawPage: function (data) {
+        // Add footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(
+          `Page ${data.pageNumber} of ${pageCount}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+    });
+
+    // Save the PDF
+    const fileName = `Work_Hours_Report_${dateRange.start}_to_${dateRange.end}.pdf`;
+    doc.save(fileName);
+  };
+
   const generateReport = async () => {
     try {
       setLoadingReport(true);
@@ -365,9 +510,13 @@ const RemoteWorkHoursTracker = () => {
       const response = await api.get('/work-sessions/report', { params });
 
       setReportData(response.data);
+
+      // Generate PDF report
+      generatePDFReport(response.data);
+
       setNotification({
         type: 'success',
-        message: `Report generated successfully! Total Sessions: ${response.data.summary.totalSessions}, Total Hours: ${response.data.summary.totalHours.toFixed(2)}h`
+        message: `Report generated and downloaded! Total Sessions: ${response.data.summary.totalSessions}, Total Hours: ${response.data.summary.totalHours.toFixed(2)}h`
       });
     } catch (error) {
       console.error('Error generating report:', error);
@@ -382,9 +531,10 @@ const RemoteWorkHoursTracker = () => {
 
   // Helper function to get employee session for selected date
   const getEmployeeSession = (employeeId) => {
-    return allSessions.find(session =>
-      session.employeeId === employeeId || session.employeeId._id === employeeId
-    );
+    return allSessions.find(session => {
+      const sessionEmpId = typeof session.employeeId === 'object' ? session.employeeId._id : session.employeeId;
+      return sessionEmpId === employeeId || sessionEmpId?.toString() === employeeId?.toString();
+    });
   };
 
   const departments = [...new Set(employees.map(emp => emp.department))];
@@ -649,9 +799,29 @@ const RemoteWorkHoursTracker = () => {
 
               <div className="employees-list">
                 <h2>Employee Work Hours</h2>
+                <div className="date-filter-info">
+                  <p>Showing sessions from {dateRange.start} to {dateRange.end}</p>
+                </div>
                 <div className="employees-grid">
                   {employees.map(employee => {
-                    const session = getEmployeeSession(employee._id);
+                    // Filter sessions for this employee within the date range
+                    const employeeSessions = allSessions.filter(session => {
+                      const sessionEmpId = typeof session.employeeId === 'object' ? session.employeeId._id : session.employeeId;
+                      const empMatch = sessionEmpId === employee._id || sessionEmpId?.toString() === employee._id?.toString();
+
+                      if (!empMatch) return false;
+
+                      // Check if session is within date range
+                      const sessionDate = new Date(session.date);
+                      const startDate = new Date(dateRange.start);
+                      const endDate = new Date(dateRange.end);
+
+                      return sessionDate >= startDate && sessionDate <= endDate;
+                    });
+
+                    // Get the most recent session for display
+                    const session = employeeSessions.length > 0 ? employeeSessions[0] : null;
+
                     return (
                       <div key={employee._id} className="employee-card">
                         <div className="employee-info">
@@ -679,10 +849,15 @@ const RemoteWorkHoursTracker = () => {
                                 ))}
                               </div>
                             )}
+                            {employeeSessions.length > 1 && (
+                              <div className="more-sessions">
+                                <small>+{employeeSessions.length - 1} more session(s) in this period</small>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="no-session">
-                            <p>No work session for this date</p>
+                            <p>No work session for this date range</p>
                           </div>
                         )}
                       </div>
