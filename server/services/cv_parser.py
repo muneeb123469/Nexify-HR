@@ -365,6 +365,12 @@ def validate_extracted_text(text):
 
     return True, "Text validation passed"
 
+def find_email(text):
+    if not text:
+        return None
+    m = EMAIL_RE.search(text)
+    return m.group(0).lower() if m else None
+
 def find_phone(text):
     m = PHONE_RE.search(text)
     if not m:
@@ -429,6 +435,11 @@ def extract_skills(text):
     """
     found_skills = set()
     text_lower = text.lower()
+    tech_patterns = [
+        r'\b(?:JavaScript|TypeScript|React|Node\.?js|Express|MongoDB|Mongoose|Python|Django|Flask|FastAPI|SQL|PostgreSQL|MySQL|AWS|Azure|Docker|Kubernetes|Git|Linux|HTML|CSS)\b',
+        r'\b[A-Za-z]+\.js\b',
+        r'\b(?:C\+\+|C#|\.NET)\b',
+    ]
 
     # Method 1: Direct word matching with context validation
     words = re.findall(r"[A-Za-z0-9\.\+#\-]+", text_lower)
@@ -577,7 +588,13 @@ def extract_education(sec_text):
     logger.debug(f"Education section after normalization: {lines}")
     
     i = 0
+    iterations = 0
     while i < len(lines):
+        iterations += 1
+        if iterations > len(lines) * 2:
+            logger.warning("Education extraction stopped by loop guard")
+            break
+
         current_line = lines[i].strip()
 
         if should_skip_line(current_line):
@@ -591,6 +608,31 @@ def extract_education(sec_text):
             j = i + 1
             lines_processed = 0
             max_lookahead = 4
+            while j < len(lines) and lines_processed < max_lookahead:
+                next_line = lines[j].strip()
+                if is_institution_line(next_line):
+                    break
+
+                start_date, end_date = extract_dates_from_line(next_line)
+                degree, field = extract_degree_info(next_line)
+                if degree and not entry["degree"]:
+                    entry["degree"] = degree
+                if field and not entry["field"]:
+                    entry["field"] = field
+                if start_date or end_date:
+                    entry["startDate"] = start_date
+                    entry["endDate"] = end_date
+                if "gpa" in next_line.lower() or "grade" in next_line.lower():
+                    entry["grade"] = clean_text_field(next_line, 50)
+
+                j += 1
+                lines_processed += 1
+
+            items.append(entry)
+            i = max(j, i + 1)
+        else:
+            i += 1
+
     return items[:8]
 
 def normalize_education_text(text):
@@ -1085,6 +1127,7 @@ def is_redundant_line(line, entry):
     return False
 
 def main():
+    confidence = 0.0
     try:
         if len(sys.argv) < 2:
             error_result = {"error": "missing file path", "parserVersion": "cvp-1.0.0"}
