@@ -8,6 +8,7 @@
     "start-all": "concurrently \"npm run start\" \"npm run start-client\"",
     "install-python-deps": "node scripts/install-python-deps.js",
     "test-parser": "node scripts/test-parser.js",
+    "seed": "node scripts/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
