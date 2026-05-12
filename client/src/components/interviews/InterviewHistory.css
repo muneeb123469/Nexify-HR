@@ -1,0 +1,187 @@
+.interview-history {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  color: #2C3E50;
+  font-weight: 600;
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.filters select,
+.filters input {
+  padding: 8px 16px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #2C3E50;
+  background-color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.filters select:focus,
+.filters input:focus {
+  outline: none;
+  border-color: #4C9F9F;
+  box-shadow: 0 0 0 2px rgba(76, 159, 159, 0.1);
+}
+
+.interviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.interview-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.interview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.interview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.interview-header h3 {
+  font-size: 1.1rem;
+  color: #2C3E50;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.result {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  margin-left: 8px;
+}
+
+.interview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.interview-details p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.interview-details i {
+  color: #4C9F9F;
+  width: 16px;
+}
+
+.interview-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.reschedule-btn,
+.cancel-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.reschedule-btn {
+  background-color: #4C9F9F;
+  color: #FFFFFF;
+}
+
+.reschedule-btn:hover {
+  background-color: #2A6F6F;
+}
+
+.cancel-btn {
+  background-color: #FF5A5A;
+  color: #FFFFFF;
+}
+
+.cancel-btn:hover {
+  background-color: #D32F2F;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filters select,
+  .filters input {
+    width: 100%;
+  }
+
+  .interview-actions {
+    flex-direction: column;
+  }
+
+  .reschedule-btn,
+  .cancel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+} 

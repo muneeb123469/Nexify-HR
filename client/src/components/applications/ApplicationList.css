@@ -1,0 +1,84 @@
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.application-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cancel-btn,
+.delete-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background-color: #FFB400;
+  color: #FFFFFF;
+}
+
+.cancel-btn:hover {
+  background-color: #FFA000;
+}
+
+.delete-btn {
+  background-color: #FF5A5A;
+  color: #FFFFFF;
+}
+
+.delete-btn:hover {
+  background-color: #D32F2F;
+}
+
+.cancel-btn:disabled {
+  background-color: #BDBDBD;
+  cursor: not-allowed;
+}
+
+/* Status badge styles */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* Application card hover effect */
+.application-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.application-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .application-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .delete-btn {
+    width: 100%;
+    justify-content: center;
+  }
+} 

@@ -1,0 +1,165 @@
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import ApplicationList from "./components/applications/ApplicationList";
+import { ApplicationProvider } from "./context/ApplicationContext";
+import { AuthProvider } from "./context/AuthContext";
+import { JobProvider } from "./context/JobContext";
+import Login from "./components/auth/Login";
+import Signup from "./components/auth/Signup";
+import JobList from "./components/jobs/JobList";
+import JobForm from "./components/jobs/JobForm";
+import JobDetails from "./components/jobs/JobDetails";
+import ApplicationForm from "./components/applications/ApplicationForm";
+import Register from "./components/auth/Register";
+import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
+import AdminDashboard from "./components/dashboard/AdminDashboard";
+import ApplicantDashboard from "./components/dashboard/ApplicantDashboard";
+import TwoFactorAuthentication from "./components/user-management/TwoFactorAuth";
+// HR Management Components
+import JobPostingsDashboard from "./components/recruitment/JobPostingsDashboard";
+import CandidateApplicationManagement from "./components/recruitment/CandidateApplicationManagement";
+import ResumeParsingInterface from "./components/recruitment/ResumeParsingInterface";
+import InterviewSchedulingInterface from "./components/recruitment/InterviewSchedulingInterface";
+import InterviewFeedbackRecording from "./components/recruitment/InterviewFeedbackRecording";
+import OfferLetterGeneration from "./components/recruitment/OfferLetterGeneration";
+
+// Employee Management Components
+import EmployeeDatabaseManagement from "./components/employee-management/EmployeeDatabaseManagement";
+import NewEmployeeProfile from "./components/employee-management/NewEmployeeProfile";
+import EmployeeProfileManagement from "./components/employee-management/EmployeeProfileManagement";
+import EmployeeClassification from "./components/employee-management/EmployeeClassification";
+import PayrollTaxManagement from "./components/employee-management/PayrollTaxManagement";
+import SalaryCalculation from "./components/payroll-management/SalaryCalculation";
+import PayslipGeneration from "./components/payroll-management/PayslipGeneration";
+import InterviewHistory from "./components/interviews/InterviewHistory";
+// Performance and Analytics Components
+import GoalSettingDashboard from "./components/performance-analytics/GoalSettingDashboard";
+
+// Personal Information Management Component
+import PersonalInformationManagement from "./components/self-service/PersonalInformationManagement";
+
+// Remote Work & Performance Management Components
+import WellnessFitnessDashboard from "./components/remote-work/WellnessFitnessDashboard";
+import RemoteWorkHoursTracker from "./components/remote-work/RemoteWorkHoursTracker";
+
+// Leave and Attendance Components
+import LeaveRequest from "./components/leave/LeaveRequest";
+
+// Admin Components
+import HRApprovalList from "./components/admin/HRApprovalList";
+
+const App = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <JobProvider>
+          <ApplicationProvider>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/jobs" element={<JobList />} />
+              <Route path="/jobs/new" element={<JobForm />} />
+              <Route path="/hr/jobs/create" element={<JobForm />} />
+              <Route
+                path="/applications/new/:id"
+                element={<ApplicationForm />}
+              />
+              <Route
+                path="/applicant-dashboard"
+                element={<ApplicantDashboard />}
+              />
+              <Route path="/jobs/:id" element={<JobDetails />} />
+              <Route
+                path="/applicant-dashboard/interviews"
+                element={<InterviewHistory />}
+              />
+              <Route
+                path="/applicant-dashboard/applications"
+                element={<ApplicationList />}
+              />
+              <Route
+                path="/applicant-dashboard/resume-parsing"
+                element={<ResumeParsingInterface />}
+              />
+              {/* HR Management Routes */}
+              <Route
+                path="/hr/job-postings"
+                element={<JobPostingsDashboard />}
+              />
+              <Route
+                path="/hr/candidate-applications"
+                element={<CandidateApplicationManagement />}
+              />
+              <Route
+                path="/hr/interview-scheduling"
+                element={<InterviewSchedulingInterface />}
+              />
+              <Route
+                path="/hr/interview-feedback"
+                element={<InterviewFeedbackRecording />}
+              />
+              <Route
+                path="/hr/offer-letters"
+                element={<OfferLetterGeneration />}
+              />
+
+              {/* Employee Management Routes */}
+              <Route
+                path="/employee/database"
+                element={<EmployeeDatabaseManagement />}
+              />
+              <Route
+                path="/payroll/salary-calculation"
+                element={<SalaryCalculation />}
+              />
+              <Route
+                path="/payroll/payslip-generation"
+                element={<PayslipGeneration />}
+              />
+
+              {/* Performance and Analytics Routes */}
+              <Route
+                path="/performance/goal-setting"
+                element={<GoalSettingDashboard />}
+              />
+
+              {/* Personal Information Management Route */}
+              <Route
+                path="/self-service/personal-info"
+                element={<PersonalInformationManagement />}
+              />
+
+              {/* Remote Work & Performance Management Routes */}
+              <Route
+                path="/remote-work/wellness-fitness"
+                element={<WellnessFitnessDashboard />}
+              />
+              <Route
+                path="/remote-work/hours-tracker"
+                element={<RemoteWorkHoursTracker />}
+              />
+
+              {/* Leave and Attendance Routes */}
+              <Route
+                path="/employee/leave-request"
+                element={<LeaveRequest />}
+              />
+
+              {/* Admin Routes */}
+              <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
+            </Routes>
+          </ApplicationProvider>
+        </JobProvider>
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default App;

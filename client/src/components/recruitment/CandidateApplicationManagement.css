@@ -1,0 +1,193 @@
+.candidate-application-management {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.management-header {
+  margin-bottom: 2rem;
+}
+
+.management-header h1 {
+  font-size: 2rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+}
+
+.search-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.status-filter {
+  min-width: 150px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #4a5568;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.batch-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f7fafc;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.batch-actions span {
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.batch-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.batch-btn.shortlist {
+  background-color: #48bb78;
+  color: white;
+}
+
+.batch-btn.shortlist:hover {
+  background-color: #38a169;
+}
+
+.batch-btn.reject {
+  background-color: #f56565;
+  color: white;
+}
+
+.batch-btn.reject:hover {
+  background-color: #e53e3e;
+}
+
+.applications-table {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+  background-color: #f7fafc;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+td {
+  color: #2d3748;
+  font-size: 0.875rem;
+}
+
+.status-select {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #4a5568;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.status-select.under-review {
+  border-color: #4299e1;
+  color: #2b6cb0;
+}
+
+.status-select.shortlisted {
+  border-color: #48bb78;
+  color: #2f855a;
+}
+
+.status-select.rejected {
+  border-color: #f56565;
+  color: #c53030;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-profile-btn,
+.download-resume-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-profile-btn {
+  background-color: #4299e1;
+  color: white;
+}
+
+.view-profile-btn:hover {
+  background-color: #3182ce;
+}
+
+.download-resume-btn {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.download-resume-btn:hover {
+  background-color: #cbd5e0;
+}
+
+input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  cursor: pointer;
+} 
