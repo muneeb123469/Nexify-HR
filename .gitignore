@@ -32,3 +32,8 @@ Thumbs.db
 # backend uploads
 server/uploads/
 server/uploads/*
+
+# Python cache
+__pycache__/
+*.pyc
+server/services/__pycache__/

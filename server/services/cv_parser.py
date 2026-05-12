@@ -23,7 +23,6 @@ def try_import(name):
 # Try to import PDF libraries - if not available, we'll use alternative methods
 fitz = try_import("fitz")              # PyMuPDF
 docx = try_import("docx")              # python-docx
-spacy = try_import("spacy")            # optional
 
 # Enhanced PDF extraction libraries
 pdfminer_extract_text = None

@@ -15,6 +15,9 @@ npm run install-python-deps
 This will install:
 - PyMuPDF (for PDF processing)
 - python-docx (for Word document processing)
+- pdfminer.six, pdf2image, and pytesseract (used by the parser imports/OCR fallbacks)
+
+spaCy is not required by the current parser.
 
 ### 2. Test the Parser
 
@@ -45,8 +48,8 @@ If the automatic installation fails, install dependencies manually:
 python3 --version
 
 # Install required packages
-pip install PyMuPDF==1.24.9
-pip install python-docx==1.1.2
+python -m pip install --upgrade pip
+python -m pip install -r services/requirements.txt
 
 # Verify installation
 python3 -c "import fitz; print('PyMuPDF version:', fitz.version)"
@@ -160,7 +163,7 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install PyMuPDF==1.24.9 python-docx==1.1.2
+python -m pip install -r services/requirements.txt
 ```
 
 #### 4. Parsing returns low confidence or missing data
@@ -194,7 +197,8 @@ pip install PyMuPDF==1.24.9 python-docx==1.1.2
 You can customize the parser behavior with these environment variables:
 
 ```bash
-# Python executable (default: python3)
+# Python executable (optional)
+# Defaults: Windows tries "python" then "py"; Linux/Mac/Render tries "python3" then "python"
 PYTHON_BIN=python3
 
 # Parsing timeout in milliseconds (default: 30000)
