@@ -98,11 +98,12 @@ const JobList = () => {
   const { user, hasRole } = useAuth();
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const jobList = Array.isArray(jobs) ? jobs : [];
 
-  const departments = [...new Set(jobs.map(job => job.department))];
+  const departments = [...new Set(jobList.map(job => job.department).filter(Boolean))];
   const statuses = ['open', 'closed'];
 
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = jobList.filter(job => {
     if (departmentFilter && job.department !== departmentFilter) return false;
     if (statusFilter && job.status !== statusFilter) return false;
     return true;
@@ -163,7 +164,7 @@ const JobList = () => {
             <Info>
               <div><strong>Department:</strong> {job.department}</div>
               <div><strong>Location:</strong> {job.location}</div>
-              <div><strong>Salary:</strong> {job.salary.min} - {job.salary.max} {job.salary.currency}</div>
+              <div><strong>Salary:</strong> {job.salary?.min} - {job.salary?.max} {job.salary?.currency}</div>
             </Info>
             <Status $status={job.status}>{job.status}</Status>
           </JobCard>

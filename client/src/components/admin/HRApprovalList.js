@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import styled from 'styled-components';
 import { FaCheck, FaTimes, FaUserCircle, FaSpinner, FaCalendarAlt, FaEnvelope, FaIdCard, FaSearch, FaFilter, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 
@@ -334,8 +334,9 @@ const HRApprovalList = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:5000/api/admin/hr-list');
-      setHRList(response.data);
+      const response = await api.get('/admin/hr-list');
+      const hrUsers = Array.isArray(response.data) ? response.data : [];
+      setHRList(hrUsers);
       
       // Calculate stats
       const newStats = {
@@ -344,7 +345,7 @@ const HRApprovalList = () => {
         rejected: 0
       };
       
-      response.data.forEach(hr => {
+      hrUsers.forEach(hr => {
         if (hr.isPending) newStats.pending++;
         else if (hr.approved) newStats.approved++;
         else newStats.rejected++;
@@ -365,7 +366,7 @@ const HRApprovalList = () => {
   
   // Apply filters and sorting whenever dependencies change
   useEffect(() => {
-    let result = [...hrList];
+    let result = [...(Array.isArray(hrList) ? hrList : [])];
     
     // Apply status filter
     if (statusFilter !== 'all') {
@@ -381,9 +382,9 @@ const HRApprovalList = () => {
     if (searchTerm) {
       const lowerCaseSearch = searchTerm.toLowerCase();
       result = result.filter(hr => 
-        hr.username.toLowerCase().includes(lowerCaseSearch) || 
-        hr.email.toLowerCase().includes(lowerCaseSearch) ||
-        hr._id.toLowerCase().includes(lowerCaseSearch)
+        (hr.username || '').toLowerCase().includes(lowerCaseSearch) || 
+        (hr.email || '').toLowerCase().includes(lowerCaseSearch) ||
+        (hr._id || '').toLowerCase().includes(lowerCaseSearch)
       );
     }
     
@@ -407,10 +408,7 @@ const HRApprovalList = () => {
   const handleApproval = async (hrId, action) => {
     try {
       setProcessingId(hrId);
-      await axios.post(
-        'http://localhost:5000/api/admin/hr',
-        { hrId, action }
-      );
+      await api.post('/admin/hr-approval', { hrId, action });
       await fetchHRList();
     } catch (err) {
       console.error(`Error ${action}ing HR profile:`, err);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import api from "../utils/api";
 
 const JobContext = createContext();
 
@@ -10,8 +10,6 @@ export const JobProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = "http://localhost:5000/api";
-
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -19,8 +17,8 @@ export const JobProvider = ({ children }) => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/jobs`);
-      setJobs(response.data);
+      const response = await api.get("/jobs");
+      setJobs(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (err) {
       setError("Failed to fetch jobs");
@@ -32,6 +30,9 @@ export const JobProvider = ({ children }) => {
 
   const createJob = async (jobData) => {
     try {
+      const response = await api.post("/jobs", jobData);
+      setJobs((prev) => [...(Array.isArray(prev) ? prev : []), response.data]);
+      return response.data;
     } catch (err) {
       throw new Error(err.response?.data?.message || "Failed to create job");
     }
@@ -39,7 +40,13 @@ export const JobProvider = ({ children }) => {
 
   const updateJob = async (id, jobData) => {
     try {
-      const response = await axios.put(`${API_URL}/jobs/${id}`, jobData);
+      const response = await api.put(`/jobs/${id}`, jobData);
+      setJobs((prev) =>
+        (Array.isArray(prev) ? prev : []).map((job) =>
+          job._id === id ? response.data : job,
+        ),
+      );
+      return response.data;
     } catch (err) {
       throw new Error(err.response?.data?.message || "Failed to update job");
     }
@@ -47,6 +54,8 @@ export const JobProvider = ({ children }) => {
 
   const deleteJob = async (id) => {
     try {
+      await api.delete(`/jobs/${id}`);
+      setJobs((prev) => (Array.isArray(prev) ? prev : []).filter((job) => job._id !== id));
     } catch (err) {
       throw new Error(err.response?.data?.message || "Failed to delete job");
     }

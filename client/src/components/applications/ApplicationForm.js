@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useJobs } from "../../context/JobContext";
-import axios from "axios";
+import api from "../../utils/api";
 import styled from "styled-components";
 
 const Container = styled.div`
@@ -129,7 +129,7 @@ const ApplicationForm = () => {
   });
 
   useEffect(() => {
-    const foundJob = jobs.find((j) => j._id === id);
+    const foundJob = (Array.isArray(jobs) ? jobs : []).find((j) => j._id === id);
     if (foundJob) setJob(foundJob);
   }, [id, jobs]);
 
@@ -174,13 +174,9 @@ const ApplicationForm = () => {
       fd.append("coverLetter", formData.coverLetter);
       fd.append("resume", formData.resume); // field name expected by upload middleware
 
-      const res = await axios.post(
-        "http://localhost:5000/api/applications",
-        fd,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const res = await api.post("/applications", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       console.log("Application response:", res.data);
       setSuccess("Application submitted successfully!");

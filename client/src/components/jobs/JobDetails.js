@@ -139,7 +139,7 @@ const JobDetails = () => {
   const [job, setJob] = useState(null);
 
   useEffect(() => {
-    const foundJob = jobs.find((j) => j._id === id);
+    const foundJob = (Array.isArray(jobs) ? jobs : []).find((j) => j._id === id);
     if (foundJob) {
       setJob(foundJob);
     }
@@ -244,7 +244,7 @@ const JobDetails = () => {
         <Section>
           <SectionTitle>Requirements</SectionTitle>
           <List>
-            {job.requirements.map((req, index) => (
+            {(Array.isArray(job.requirements) ? job.requirements : []).map((req, index) => (
               <ListItem key={index}>{req}</ListItem>
             ))}
           </List>
@@ -253,7 +253,7 @@ const JobDetails = () => {
         <Section>
           <SectionTitle>Responsibilities</SectionTitle>
           <List>
-            {job.responsibilities.map((resp, index) => (
+            {(Array.isArray(job.responsibilities) ? job.responsibilities : []).map((resp, index) => (
               <ListItem key={index}>{resp}</ListItem>
             ))}
           </List>

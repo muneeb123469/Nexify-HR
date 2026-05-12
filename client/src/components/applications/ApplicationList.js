@@ -120,19 +120,20 @@ const ApplicationList = () => {
   } = useApplications();
   const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("");
+  const applicationList = Array.isArray(applications) ? applications : [];
 
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const filteredApplications = statusFilter
-    ? applications.filter((app) => app.status === statusFilter)
-    : applications;
+  const filteredApplications = statusFilter && statusFilter !== "all"
+    ? applicationList.filter((app) => app.status === statusFilter)
+    : applicationList;
 
   const handleCancelApplication = (applicationId) => {
     if (window.confirm("Are you sure you want to cancel this application?")) {
       // Mock API call - replace with actual API call
-      const updatedApplications = applications.filter(
+      const updatedApplications = applicationList.filter(
         (app) => app._id !== applicationId,
       );
       fetchApplications(updatedApplications);
@@ -146,7 +147,7 @@ const ApplicationList = () => {
       )
     ) {
       // Mock API call - replace with actual API call
-      const updatedApplications = applications.filter(
+      const updatedApplications = applicationList.filter(
         (app) => app._id !== applicationId,
       );
       fetchApplications(updatedApplications);
@@ -162,7 +163,7 @@ const ApplicationList = () => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status = "") => {
     switch (status.toLowerCase()) {
       case "under review":
         return "#FFB400";

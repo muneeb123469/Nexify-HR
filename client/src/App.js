@@ -16,10 +16,7 @@ import JobForm from "./components/jobs/JobForm";
 import JobDetails from "./components/jobs/JobDetails";
 import ApplicationForm from "./components/applications/ApplicationForm";
 import Register from "./components/auth/Register";
-import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
-import AdminDashboard from "./components/dashboard/AdminDashboard";
 import ApplicantDashboard from "./components/dashboard/ApplicantDashboard";
-import TwoFactorAuthentication from "./components/user-management/TwoFactorAuth";
 // HR Management Components
 import JobPostingsDashboard from "./components/recruitment/JobPostingsDashboard";
 import CandidateApplicationManagement from "./components/recruitment/CandidateApplicationManagement";
@@ -30,10 +27,6 @@ import OfferLetterGeneration from "./components/recruitment/OfferLetterGeneratio
 
 // Employee Management Components
 import EmployeeDatabaseManagement from "./components/employee-management/EmployeeDatabaseManagement";
-import NewEmployeeProfile from "./components/employee-management/NewEmployeeProfile";
-import EmployeeProfileManagement from "./components/employee-management/EmployeeProfileManagement";
-import EmployeeClassification from "./components/employee-management/EmployeeClassification";
-import PayrollTaxManagement from "./components/employee-management/PayrollTaxManagement";
 import SalaryCalculation from "./components/payroll-management/SalaryCalculation";
 import PayslipGeneration from "./components/payroll-management/PayslipGeneration";
 import InterviewHistory from "./components/interviews/InterviewHistory";
@@ -74,6 +67,18 @@ const App = () => {
               <Route
                 path="/applicant-dashboard"
                 element={<ApplicantDashboard />}
+              />
+              <Route
+                path="/dashboard"
+                element={<Navigate to="/hr/job-postings" replace />}
+              />
+              <Route
+                path="/employee-dashboard"
+                element={<Navigate to="/employee/database" replace />}
+              />
+              <Route
+                path="/admin-dashboard"
+                element={<Navigate to="/admin/hr-approvals" replace />}
               />
               <Route path="/jobs/:id" element={<JobDetails />} />
               <Route
@@ -154,6 +159,7 @@ const App = () => {
 
               {/* Admin Routes */}
               <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ApplicationProvider>
         </JobProvider>

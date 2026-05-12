@@ -151,7 +151,7 @@ const JobForm = () => {
 
   useEffect(() => {
     if (id) {
-      const job = jobs.find(j => j._id === id);
+      const job = (Array.isArray(jobs) ? jobs : []).find(j => j._id === id);
       if (job) {
         setFormData(job);
       }

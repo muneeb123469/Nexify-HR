@@ -22,7 +22,7 @@ const JobPostingsDashboard = () => {
   };
 
   const postings = useMemo(() => {
-    return jobs
+    return (Array.isArray(jobs) ? jobs : [])
       .filter(j => {
         if (filters.jobType && j.department !== filters.jobType) return false;
         if (filters.status && (j.status || '').toLowerCase() !== filters.status.toLowerCase()) return false;
