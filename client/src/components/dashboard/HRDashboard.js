@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import styled from 'styled-components';
 import './HRDashboard.css';
+import { useAuth } from '../../context/AuthContext';
 
 // Import HR Management Components
 import JobPostingsDashboard from '../recruitment/JobPostingsDashboard';
@@ -287,14 +288,23 @@ const GridItem = styled.div`
 `;
 
 // Components
-const Sidebar = () => (
+const Sidebar = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  return (
   <SidebarContainer>
     <Logo>
       <h1>Nexify<span>-HR</span></h1>
     </Logo>
     <SidebarMenu>
       <MenuItem>
-        <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>
+        <NavLink to="/hr/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
           <i className="fas fa-chart-line"></i>
           <span>Dashboard Overview</span>
         </NavLink>
@@ -384,13 +394,14 @@ const Sidebar = () => (
       </MenuItem>
     </SidebarMenu>
     <LogoutContainer>
-      <LogoutButton>
-        <i className="fas fa-sign-out-alt"></i>
+      <LogoutButton onClick={handleLogout}>
+       <i className="fas fa-sign-out-alt"></i>
         <span>Logout</span>
       </LogoutButton>
     </LogoutContainer>
   </SidebarContainer>
-);
+  );
+};
 
 const HeaderComponent = () => (
   <Header>
@@ -1583,7 +1594,7 @@ const HRDashboard = () => {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route index element={<Dashboard />} />
 
         {/* Recruitment Routes */}
         <Route path="/hr/job-postings" element={<JobPostingsDashboard />} />

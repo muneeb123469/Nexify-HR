@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import { FaThLarge, FaUsers, FaClock, FaLeaf, FaMoneyBill, FaCog, FaChartBar, FaSignOutAlt, FaSearch, FaMicrophone, FaBell, FaChevronRight, FaDownload, FaMoneyBillWave, FaPercent, FaTrophy, FaBullseye, FaHistory, FaPlus, FaCheckCircle, FaSpinner, FaCalendarAlt, FaFileUpload, FaFileAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaComments, FaPaperPlane, FaHeadset, FaBolt, FaHeartbeat, FaUserEdit } from 'react-icons/fa';
 
 const DashboardContainer = styled.div`
@@ -1419,6 +1421,13 @@ const MobileMenuButton = styled.button`
 
 const EmployeeDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <DashboardContainer>
@@ -1459,7 +1468,7 @@ const EmployeeDashboard = () => {
             </NavItem>
           </Nav>
         </div>
-        <LogoutButton>
+        <LogoutButton onClick={handleLogout}>
           <FaSignOutAlt />
           Logout
         </LogoutButton>

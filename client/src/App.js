@@ -17,6 +17,7 @@ import JobDetails from "./components/jobs/JobDetails";
 import ApplicationForm from "./components/applications/ApplicationForm";
 import Register from "./components/auth/Register";
 import ApplicantDashboard from "./components/dashboard/ApplicantDashboard";
+import HRDashboard from "./components/dashboard/HRDashboard";
 import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
 import AdminDashboard from "./components/dashboard/AdminDashboard";
 // HR Management Components
@@ -80,7 +81,7 @@ const App = () => {
                 path="/dashboard"
                 element={<Navigate to="/hr/dashboard" replace />}
               />
-              <Route path="/hr/dashboard" element={<JobPostingsDashboard />} />
+              <Route path="/hr/dashboard/*" element={<HRDashboard />} />
               <Route
                 path="/employee-dashboard"
                 element={<EmployeeDashboard />}
