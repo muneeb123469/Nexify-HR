@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['hr', 'applicant'],
+    enum: ['hr', 'applicant', 'employee', 'admin'],
     default: 'applicant'
   },
   isPending: {
@@ -31,7 +31,9 @@ const userSchema = new mongoose.Schema({
   },
   approved: {
     type: Boolean,
-    default: false
+    default: function() {
+      return this.role !== 'hr';
+    }
   },
   createdAt: {
     type: Date,
@@ -60,4 +62,4 @@ userSchema.methods.toJSON = function() {
 };
 
 // Export the model with safety check to prevent overwrite errors
-module.exports = mongoose.models.User || mongoose.model('User', userSchema); 
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

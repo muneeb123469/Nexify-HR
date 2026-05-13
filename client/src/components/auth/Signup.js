@@ -38,7 +38,6 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const validatePassword = (password) => {
     const minLength = password.length >= 8;
@@ -72,11 +71,6 @@ const Signup = () => {
     e.preventDefault();
     setError(null);
 
-    if (!acceptedTerms) {
-      setError('Please accept the terms and conditions');
-      return;
-    }
-
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -91,18 +85,16 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const userData = await register(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role,
-        formData.company,
-        formData.position
-      );
-      
+      const userData = await register({
+        username: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+
       switch (userData.role) {
         case 'hr':
-          navigate('/dashboard');
+          navigate('/hr/dashboard');
           break;
         case 'employee':
           navigate('/employee-dashboard');
@@ -308,4 +300,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; 
+export default Signup;

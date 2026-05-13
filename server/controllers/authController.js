@@ -7,6 +7,8 @@ const generateToken = (userId) => {
   });
 };
 
+const validRoles = ['hr', 'applicant', 'employee', 'admin'];
+
 exports.signup = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
@@ -27,12 +29,19 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
+    const requestedRole = role || 'applicant';
+    if (!validRoles.includes(requestedRole)) {
+      return res.status(400).json({ message: 'Invalid role. Supported roles are applicant, HR, employee, and admin.' });
+    }
+
     // Create new user
-    const user = new User({ 
-      username, 
-      email, 
+    const user = new User({
+      username,
+      email,
       password,
-      role: role || 'applicant' // Default to applicant if no role specified
+      role: requestedRole,
+      isPending: requestedRole === 'hr',
+      approved: requestedRole !== 'hr'
     });
     await user.save();
 
@@ -46,14 +55,16 @@ exports.signup = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isPending: user.isPending,
+        approved: user.approved
       }
     });
   } catch (error) {
     console.error('Signup Error:', error);
-    res.status(500).json({ 
-      message: 'Error creating user', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    res.status(500).json({
+      message: 'Error creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -84,14 +95,16 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isPending: user.isPending,
+        approved: user.approved
       }
     });
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ 
-      message: 'Error logging in', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    res.status(500).json({
+      message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
-}; 
+};

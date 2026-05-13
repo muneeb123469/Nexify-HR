@@ -3,7 +3,7 @@ import './EmployeeProfileManagement.css';
 
 const EmployeeProfileManagement = () => {
   const [employees, setEmployees] = useState([
-    
+
     {
       id: 'EMP002',
       name: 'Jane Smith',
@@ -26,7 +26,9 @@ const EmployeeProfileManagement = () => {
       }
     }
   ]);
-onst [notification, setNotification] = useState(null);
+  const [notification, setNotification] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [activeTab, setActiveTab] = useState('personal');
 
   const handleStatusChange = (employeeId, newStatus) => {
     setEmployees(prev =>
@@ -85,6 +87,7 @@ onst [notification, setNotification] = useState(null);
               {employees.map(employee => (
                 <tr
                   key={employee.id}
+                  onClick={() => setSelectedEmployee(employee)}
                 >
                   <td>{employee.id}</td>
                   <td>{employee.name}</td>
@@ -263,4 +266,4 @@ onst [notification, setNotification] = useState(null);
   );
 };
 
-export default EmployeeProfileManagement; 
+export default EmployeeProfileManagement;

@@ -457,6 +457,11 @@ function UserTable() {
     setShowPermissionsModal(true);
   };
 
+  const handle2FAEdit = (user) => {
+    setSelectedUser(user);
+    setShow2FAModal(true);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">

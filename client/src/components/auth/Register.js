@@ -109,7 +109,7 @@ const Register = () => {
 
       switch (userData.role) {
         case "hr":
-          navigate("/dashboard");
+          navigate("/hr/dashboard");
           break;
         case "employee":
           navigate("/employee-dashboard");

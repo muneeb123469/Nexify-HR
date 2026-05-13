@@ -41,6 +41,9 @@ const NewEmployeeProfile = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [notification, setNotification] = useState(null);
 
+  const nextStep = () => setCurrentStep(step => Math.min(step + 1, 4));
+  const prevStep = () => setCurrentStep(step => Math.max(step - 1, 1));
+
   const handleInputChange = (section, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -386,4 +389,4 @@ const NewEmployeeProfile = () => {
   );
 };
 
-export default NewEmployeeProfile; 
+export default NewEmployeeProfile;
