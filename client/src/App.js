@@ -17,6 +17,9 @@ import JobDetails from "./components/jobs/JobDetails";
 import ApplicationForm from "./components/applications/ApplicationForm";
 import Register from "./components/auth/Register";
 import ApplicantDashboard from "./components/dashboard/ApplicantDashboard";
+import HRDashboard from "./components/dashboard/HRDashboard";
+import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
+import AdminDashboard from "./components/dashboard/AdminDashboard";
 // HR Management Components
 import JobPostingsDashboard from "./components/recruitment/JobPostingsDashboard";
 import CandidateApplicationManagement from "./components/recruitment/CandidateApplicationManagement";
@@ -27,6 +30,10 @@ import OfferLetterGeneration from "./components/recruitment/OfferLetterGeneratio
 
 // Employee Management Components
 import EmployeeDatabaseManagement from "./components/employee-management/EmployeeDatabaseManagement";
+import NewEmployeeProfile from "./components/employee-management/NewEmployeeProfile";
+import EmployeeProfileManagement from "./components/employee-management/EmployeeProfileManagement";
+import EmployeeClassification from "./components/employee-management/EmployeeClassification";
+import PayrollTaxManagement from "./components/employee-management/PayrollTaxManagement";
 import SalaryCalculation from "./components/payroll-management/SalaryCalculation";
 import PayslipGeneration from "./components/payroll-management/PayslipGeneration";
 import InterviewHistory from "./components/interviews/InterviewHistory";
@@ -42,9 +49,11 @@ import RemoteWorkHoursTracker from "./components/remote-work/RemoteWorkHoursTrac
 
 // Leave and Attendance Components
 import LeaveRequest from "./components/leave/LeaveRequest";
+import AttendanceOverview from "./components/attendance/AttendanceOverview";
 
 // Admin Components
 import HRApprovalList from "./components/admin/HRApprovalList";
+import UserRolesPermissions from "./components/user-management/UserRolesPermissions";
 
 const App = () => {
   return (
@@ -70,15 +79,16 @@ const App = () => {
               />
               <Route
                 path="/dashboard"
-                element={<Navigate to="/hr/job-postings" replace />}
+                element={<Navigate to="/hr/dashboard" replace />}
               />
+              <Route path="/hr/dashboard/*" element={<HRDashboard />} />
               <Route
                 path="/employee-dashboard"
-                element={<Navigate to="/employee/database" replace />}
+                element={<EmployeeDashboard />}
               />
               <Route
                 path="/admin-dashboard"
-                element={<Navigate to="/admin/hr-approvals" replace />}
+                element={<AdminDashboard />}
               />
               <Route path="/jobs/:id" element={<JobDetails />} />
               <Route
@@ -121,6 +131,22 @@ const App = () => {
                 element={<EmployeeDatabaseManagement />}
               />
               <Route
+                path="/employee/new-profile"
+                element={<NewEmployeeProfile />}
+              />
+              <Route
+                path="/employee/profile-management"
+                element={<EmployeeProfileManagement />}
+              />
+              <Route
+                path="/employee/classification"
+                element={<EmployeeClassification />}
+              />
+              <Route
+                path="/employee/payroll-tax"
+                element={<PayrollTaxManagement />}
+              />
+              <Route
                 path="/payroll/salary-calculation"
                 element={<SalaryCalculation />}
               />
@@ -156,9 +182,14 @@ const App = () => {
                 path="/employee/leave-request"
                 element={<LeaveRequest />}
               />
+              <Route
+                path="/employee/attendance"
+                element={<AttendanceOverview />}
+              />
 
               {/* Admin Routes */}
               <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
+              <Route path="/user-roles" element={<UserRolesPermissions />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ApplicationProvider>

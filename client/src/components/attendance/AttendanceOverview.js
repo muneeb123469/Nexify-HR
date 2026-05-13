@@ -12,7 +12,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
-  
+
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
   }
@@ -31,7 +31,7 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   svg {
     color: #4C9F9F;
   }
@@ -78,19 +78,19 @@ const MonthSelector = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  
+
   button {
     background: none;
     border: none;
     color: #4C9F9F;
     cursor: pointer;
     font-size: 16px;
-    
+
     &:hover {
       color: #2A6F6F;
     }
   }
-  
+
   span {
     font-weight: 600;
     color: #2C3E50;
@@ -102,7 +102,7 @@ const WeekDays = styled.div`
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 8px;
-  
+
   span {
     text-align: center;
     font-weight: 500;
@@ -127,7 +127,7 @@ const Day = styled.div`
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  
+
   ${props => {
     switch (props.status) {
       case 'present':
@@ -140,12 +140,12 @@ const Day = styled.div`
         return 'background: #F8F9FA; color: #666666;';
     }
   }}
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &.today {
     border: 2px solid #4C9F9F;
   }
@@ -164,7 +164,7 @@ const LegendItem = styled.div`
   gap: 8px;
   color: #666666;
   font-size: 14px;
-  
+
   svg {
     color: ${props => {
       switch (props.type) {
@@ -183,29 +183,33 @@ const LegendItem = styled.div`
 
 const AttendanceOverview = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
+
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
-    
+
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(null);
-    }    
+    }
     return days;
   };
-  
+
   const days = getDaysInMonth(currentMonth);
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
   const handleNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
-  
+
   return (
     <Container>
       <Grid>
@@ -214,7 +218,7 @@ const AttendanceOverview = () => {
             <FaCalendarAlt />
             Attendance Overview
           </Title>
-          
+
           <StatsGrid>
             <StatCard>
               <StatValue>22</StatValue>
@@ -229,7 +233,7 @@ const AttendanceOverview = () => {
               <StatLabel>Absent Days</StatLabel>
             </StatCard>
           </StatsGrid>
-          
+
           <Calendar>
             <CalendarHeader>
               <MonthSelector>
@@ -238,13 +242,13 @@ const AttendanceOverview = () => {
                 <button onClick={handleNextMonth}>→</button>
               </MonthSelector>
             </CalendarHeader>
-            
+
             <WeekDays>
               {weekDays.map(day => (
                 <span key={day}>{day}</span>
               ))}
             </WeekDays>
-            
+
             <Days>
               {days.map((day, index) => (
                 day ? (
@@ -260,7 +264,7 @@ const AttendanceOverview = () => {
                 )
               ))}
             </Days>
-            
+
             <Legend>
               <LegendItem type="present">
                 <FaCheckCircle />
@@ -277,13 +281,13 @@ const AttendanceOverview = () => {
             </Legend>
           </Calendar>
         </Card>
-        
+
         <Card>
           <Title>
             <FaClock />
             Recent Activity
           </Title>
-          
+
           {/* Add recent activity list here */}
         </Card>
       </Grid>
@@ -291,4 +295,4 @@ const AttendanceOverview = () => {
   );
 };
 
-export default AttendanceOverview; 
+export default AttendanceOverview;

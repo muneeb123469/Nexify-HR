@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   Calendar, 
@@ -53,6 +54,7 @@ import {
   Clock
 } from 'lucide-react';
 import HRApprovalList from '../admin/HRApprovalList';
+import { useAuth } from '../../context/AuthContext';
 import './HRDashboard.css';
 
 // Helper Components
@@ -455,6 +457,11 @@ function UserTable() {
   const handlePermissionsEdit = (user) => {
     setSelectedUser(user);
     setShowPermissionsModal(true);
+  };
+
+  const handle2FAEdit = (user) => {
+    setSelectedUser(user);
+    setShow2FAModal(true);
   };
 
   return (
@@ -1034,10 +1041,18 @@ function RemoteWorkAnalytics() {
 }
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    setIsSidebarOpen(false);
+    navigate('/login', { replace: true });
+  };
   
   return (
     <div className="flex h-screen bg-[#F8F9FA]">
@@ -1308,10 +1323,7 @@ const AdminDashboard = () => {
           <div className="p-4 lg:p-6 border-t border-gray-700">
             <button 
               className="flex items-center justify-start w-full bg-[#4C9F9F] hover:bg-[#2A6F6F] text-white py-2 px-4 rounded-md transition-colors duration-200"
-              onClick={() => {
-                // Handle logout
-                setIsSidebarOpen(false);
-              }}
+              onClick={handleLogout}
             >
               <LogOut className="w-5 h-5 mr-2" />
               <span className="text-sm lg:text-base">Logout</span>

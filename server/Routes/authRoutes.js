@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const validRoles = ['hr', 'applicant', 'employee', 'admin'];
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -11,7 +13,7 @@ router.post('/register', async (req, res) => {
 
     // Validate required fields
     if (!username || !email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Please provide all required fields',
         missing: {
           username: !username,
@@ -38,7 +40,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       $or: [
         { email: email.toLowerCase() },
         { username: username.toLowerCase() }
@@ -54,10 +56,11 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Validate role - only allow applicant or hr
-    const validRoles = ['hr', 'applicant'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ message: 'Invalid role. Only applicant or HR roles are allowed.' });
+    const requestedRole = role || 'applicant';
+
+    // Validate role
+    if (!validRoles.includes(requestedRole)) {
+      return res.status(400).json({ message: 'Invalid role. Supported roles are applicant, HR, employee, and admin.' });
     }
 
     // Create new user with plain text password
@@ -65,8 +68,9 @@ router.post('/register', async (req, res) => {
       username: username.toLowerCase(),
       email: email.toLowerCase(),
       password,
-      role: role || 'applicant',
-      isPending: role === 'hr' // Set pending status for HR registrations
+      role: requestedRole,
+      isPending: requestedRole === 'hr', // Set pending status for HR registrations
+      approved: requestedRole !== 'hr'
     });
 
     // Save user
@@ -89,11 +93,11 @@ router.post('/register', async (req, res) => {
           console.error('JWT Sign Error:', err);
           return res.status(500).json({ message: 'Error generating token' });
         }
-        
+
         // Send response with token and user data
         res.status(201).json({
-          message: role === 'hr' ? 
-            'HR registration successful. Your account is pending approval.' : 
+          message: requestedRole === 'hr' ?
+            'HR registration successful. Your account is pending approval.' :
             'Registration successful',
           token,
           user: {
@@ -101,14 +105,15 @@ router.post('/register', async (req, res) => {
             username: user.username,
             email: user.email,
             role: user.role,
-            isPending: user.isPending
+            isPending: user.isPending,
+            approved: user.approved
           }
         });
       }
     );
   } catch (err) {
     console.error('Registration Error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Server error during registration',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
@@ -133,7 +138,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('User found:', { 
+    console.log('User found:', {
       id: user._id,
       email: user.email,
       role: user.role,
@@ -143,14 +148,14 @@ router.post('/login', async (req, res) => {
 
     // Check if HR account is pending
     if (user.role === 'hr' && user.isPending) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Your HR account is pending verification. Please wait for admin approval before logging in.'
       });
     }
 
     // Check if HR account was rejected
     if (user.role === 'hr' && !user.isPending && !user.approved) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Your HR account has been rejected. Please contact the administrator for more information.'
       });
     }
@@ -169,12 +174,12 @@ router.post('/login', async (req, res) => {
 
     // Validate role if provided
     if (role && role !== user.role) {
-      console.log('Role mismatch:', { 
-        provided: role, 
-        actual: user.role 
+      console.log('Role mismatch:', {
+        provided: role,
+        actual: user.role
       });
-      return res.status(403).json({ 
-        message: `This account is registered as ${user.role}. Please select the correct role.` 
+      return res.status(403).json({
+        message: `This account is registered as ${user.role}. Please select the correct role.`
       });
     }
 
@@ -217,4 +222,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
