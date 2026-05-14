@@ -10,6 +10,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const isAuthenticated = () => {
     return !!user;
   };
@@ -27,8 +28,10 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error("Error parsing stored user:", error);
         localStorage.removeItem("user");
+        localStorage.removeItem("token");
       }
     }
+    setLoading(false);
   }, []);
 
   const login = async (email, password, role) => {
@@ -119,7 +122,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, isAuthenticated, hasRole }}
+      value={{ user, loading, login, register, logout, isAuthenticated, hasRole }}
     >
       {children}
     </AuthContext.Provider>

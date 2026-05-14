@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import ApplicationList from "./components/applications/ApplicationList";
 import { ApplicationProvider } from "./context/ApplicationContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { JobProvider } from "./context/JobContext";
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
@@ -55,6 +55,48 @@ import AttendanceOverview from "./components/attendance/AttendanceOverview";
 import HRApprovalList from "./components/admin/HRApprovalList";
 import UserRolesPermissions from "./components/user-management/UserRolesPermissions";
 
+const roleDashboardPaths = {
+  applicant: "/applicant-dashboard",
+  hr: "/hr/dashboard",
+  employee: "/employee-dashboard",
+  admin: "/admin-dashboard",
+};
+
+const getDashboardPath = (role) => roleDashboardPaths[role] || "/login";
+
+const ProtectedRoute = ({ children, roles }) => {
+  const { user, loading } = useAuth();
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
+
+  return children;
+};
+
+const DashboardRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={getDashboardPath(user.role)} replace />;
+};
+
 const App = () => {
   return (
     <Router>
@@ -67,129 +109,261 @@ const App = () => {
               <Route path="/signup" element={<Signup />} />
               <Route path="/register" element={<Register />} />
               <Route path="/jobs" element={<JobList />} />
-              <Route path="/jobs/new" element={<JobForm />} />
-              <Route path="/hr/jobs/create" element={<JobForm />} />
+              <Route
+                path="/jobs/new"
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <JobForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/hr/jobs/create"
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <JobForm />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/applications/new/:id"
-                element={<ApplicationForm />}
+                element={
+                  <ProtectedRoute roles="applicant">
+                    <ApplicationForm />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/applicant-dashboard"
-                element={<ApplicantDashboard />}
+                element={
+                  <ProtectedRoute roles="applicant">
+                    <ApplicantDashboard />
+                  </ProtectedRoute>
+                }
               />
+              <Route path="/dashboard" element={<DashboardRedirect />} />
               <Route
-                path="/dashboard"
-                element={<Navigate to="/hr/dashboard" replace />}
+                path="/hr/dashboard/*"
+                element={
+                  <ProtectedRoute roles="hr">
+                    <HRDashboard />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/hr/dashboard/*" element={<HRDashboard />} />
               <Route
                 path="/employee-dashboard"
-                element={<EmployeeDashboard />}
+                element={
+                  <ProtectedRoute roles="employee">
+                    <EmployeeDashboard />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/admin-dashboard"
-                element={<AdminDashboard />}
+                element={
+                  <ProtectedRoute roles="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
               />
               <Route path="/jobs/:id" element={<JobDetails />} />
               <Route
                 path="/applicant-dashboard/interviews"
-                element={<InterviewHistory />}
+                element={
+                  <ProtectedRoute roles="applicant">
+                    <InterviewHistory />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/applicant-dashboard/applications"
-                element={<ApplicationList />}
+                element={
+                  <ProtectedRoute roles="applicant">
+                    <ApplicationList />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/applicant-dashboard/resume-parsing"
-                element={<ResumeParsingInterface />}
+                element={
+                  <ProtectedRoute roles="applicant">
+                    <ResumeParsingInterface />
+                  </ProtectedRoute>
+                }
               />
               {/* HR Management Routes */}
               <Route
                 path="/hr/job-postings"
-                element={<JobPostingsDashboard />}
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <JobPostingsDashboard />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/hr/candidate-applications"
-                element={<CandidateApplicationManagement />}
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <CandidateApplicationManagement />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/hr/interview-scheduling"
-                element={<InterviewSchedulingInterface />}
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <InterviewSchedulingInterface />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/hr/interview-feedback"
-                element={<InterviewFeedbackRecording />}
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <InterviewFeedbackRecording />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/hr/offer-letters"
-                element={<OfferLetterGeneration />}
+                element={
+                  <ProtectedRoute roles={["hr", "admin"]}>
+                    <OfferLetterGeneration />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Employee Management Routes */}
               <Route
                 path="/employee/database"
-                element={<EmployeeDatabaseManagement />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <EmployeeDatabaseManagement />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/employee/new-profile"
-                element={<NewEmployeeProfile />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <NewEmployeeProfile />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/employee/profile-management"
-                element={<EmployeeProfileManagement />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <EmployeeProfileManagement />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/employee/classification"
-                element={<EmployeeClassification />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <EmployeeClassification />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/employee/payroll-tax"
-                element={<PayrollTaxManagement />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <PayrollTaxManagement />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/payroll/salary-calculation"
-                element={<SalaryCalculation />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <SalaryCalculation />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/payroll/payslip-generation"
-                element={<PayslipGeneration />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <PayslipGeneration />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Performance and Analytics Routes */}
               <Route
                 path="/performance/goal-setting"
-                element={<GoalSettingDashboard />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <GoalSettingDashboard />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Personal Information Management Route */}
               <Route
                 path="/self-service/personal-info"
-                element={<PersonalInformationManagement />}
+                element={
+                  <ProtectedRoute roles="employee">
+                    <PersonalInformationManagement />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Remote Work & Performance Management Routes */}
               <Route
                 path="/remote-work/wellness-fitness"
-                element={<WellnessFitnessDashboard />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <WellnessFitnessDashboard />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/remote-work/hours-tracker"
-                element={<RemoteWorkHoursTracker />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <RemoteWorkHoursTracker />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Leave and Attendance Routes */}
               <Route
                 path="/employee/leave-request"
-                element={<LeaveRequest />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <LeaveRequest />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/employee/attendance"
-                element={<AttendanceOverview />}
+                element={
+                  <ProtectedRoute roles={["employee", "hr", "admin"]}>
+                    <AttendanceOverview />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Admin Routes */}
-              <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
-              <Route path="/user-roles" element={<UserRolesPermissions />} />
+              <Route
+                path="/admin/hr-approvals"
+                element={
+                  <ProtectedRoute roles="admin">
+                    <HRApprovalList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/user-roles"
+                element={
+                  <ProtectedRoute roles="admin">
+                    <UserRolesPermissions />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ApplicationProvider>

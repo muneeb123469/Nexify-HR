@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const SALT_ROUNDS = 10;
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -41,12 +44,23 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Method to compare passwords (direct string comparison for testing)
+userSchema.pre('save', async function(next) {
+  try {
+    if (!this.isModified('password')) {
+      return next();
+    }
+
+    this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Method to compare hashed passwords
 userSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    console.log('Comparing passwords...');
-    const isMatch = candidatePassword === this.password;
-    console.log('Password comparison result:', isMatch);
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
     return isMatch;
   } catch (error) {
     console.error('Error comparing passwords:', error);

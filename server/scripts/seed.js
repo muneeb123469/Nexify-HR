@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const Job = require('../models/Job');
@@ -6,21 +7,34 @@ const User = require('../models/User');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/job-portal';
 const DEMO_PASSWORD = 'Demo@12345';
+const SALT_ROUNDS = 10;
 
 const users = [
   {
     username: 'applicantdemo',
     email: 'applicant.demo@nexify.local',
-    password: DEMO_PASSWORD,
     role: 'applicant',
     isPending: false,
-    approved: false,
+    approved: true,
   },
   {
     username: 'hrdemo',
     email: 'hr.demo@nexify.local',
-    password: DEMO_PASSWORD,
     role: 'hr',
+    isPending: false,
+    approved: true,
+  },
+  {
+    username: 'employeedemo',
+    email: 'employee.demo@nexify.local',
+    role: 'employee',
+    isPending: false,
+    approved: true,
+  },
+  {
+    username: 'admindemo',
+    email: 'admin.demo@nexify.local',
+    role: 'admin',
     isPending: false,
     approved: true,
   },
@@ -66,9 +80,16 @@ async function seed() {
   await mongoose.connect(MONGODB_URI);
 
   for (const user of users) {
+    const hashedDemoPassword = await bcrypt.hash(DEMO_PASSWORD, SALT_ROUNDS);
+
     await User.updateOne(
       { email: user.email },
-      { $setOnInsert: user },
+      {
+        $set: {
+          ...user,
+          password: hashedDemoPassword,
+        },
+      },
       { upsert: true },
     );
   }
