@@ -80,10 +80,12 @@ python -c "import fitz, docx, pdfminer.high_level, pdf2image, pytesseract; print
 
 - Applicant: `applicant.demo@nexify.local` / `Demo@12345`
 - HR: `hr.demo@nexify.local` / `Demo@12345`
+- Employee: `employee.demo@nexify.local` / `Demo@12345`
+- Admin: `admin.demo@nexify.local` / `Demo@12345`
 
 ## Known Limitations
 
-- Demo passwords are stored in plain text by the current development auth model.
+- Demo passwords are hashed by the backend seed script.
 - Some dashboards contain placeholder/mock sections.
 - Uploaded resumes are stored on local disk under `server/uploads`.
 - Resume parsing depends on local Python packages being installed.

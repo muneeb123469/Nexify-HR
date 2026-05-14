@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -63,7 +62,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Invalid role. Supported roles are applicant, HR, employee, and admin.' });
     }
 
-    // Create new user with plain text password
+    // Create new user. The User model hashes the password before saving.
     const user = new User({
       username: username.toLowerCase(),
       email: email.toLowerCase(),
