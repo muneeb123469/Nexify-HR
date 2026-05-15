@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useApplications } from "../../context/ApplicationContext";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
@@ -108,9 +107,43 @@ const Button = styled(motion.button)`
   }
 `;
 
+const DemoNote = styled.p`
+  margin: 1rem 0 0;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+`;
+
+const DetailsPanel = styled.div`
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+`;
+
+const DetailsHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
+const CloseButton = styled.button`
+  background: #ecf0f1;
+  border: none;
+  border-radius: 8px;
+  color: #2c3e50;
+  cursor: pointer;
+  padding: 0.5rem 0.8rem;
+`;
+
+const Message = styled.p`
+  color: #7f8c8d;
+`;
+
 const ApplicationList = () => {
-  const { id: jobId } = useParams();
-  const navigate = useNavigate();
   const {
     applications,
     loading,
@@ -120,43 +153,35 @@ const ApplicationList = () => {
   } = useApplications();
   const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedApplication, setSelectedApplication] = useState(null);
   const applicationList = Array.isArray(applications) ? applications : [];
+  const isStatusManager = user?.role === "hr" || user?.role === "admin";
 
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const filteredApplications = statusFilter && statusFilter !== "all"
-    ? applicationList.filter((app) => app.status === statusFilter)
-    : applicationList;
+  const normalizeStatus = (status = "") =>
+    status.toString().toLowerCase().replace(/[\s-]+/g, "_");
 
-  const handleCancelApplication = (applicationId) => {
-    if (window.confirm("Are you sure you want to cancel this application?")) {
-      // Mock API call - replace with actual API call
-      const updatedApplications = applicationList.filter(
-        (app) => app._id !== applicationId,
-      );
-      fetchApplications(updatedApplications);
-    }
-  };
+  const filteredApplications = applicationList.filter((app) => {
+    const matchesStatus =
+      !statusFilter ||
+      statusFilter === "all" ||
+      normalizeStatus(app.status) === statusFilter;
+    const searchValue = `${app.jobTitle || ""} ${app.company || ""} ${app.status || ""}`.toLowerCase();
+    const matchesSearch = searchValue.includes(searchTerm.toLowerCase());
 
-  const handleDeleteApplication = (applicationId) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this application? This action cannot be undone.",
-      )
-    ) {
-      // Mock API call - replace with actual API call
-      const updatedApplications = applicationList.filter(
-        (app) => app._id !== applicationId,
-      );
-      fetchApplications(updatedApplications);
-    }
-  };
+    return matchesStatus && matchesSearch;
+  });
 
   const handleStatusChange = async (applicationId, status) => {
     try {
-      await updateApplicationStatus(applicationId, status);
+      const result = await updateApplicationStatus(applicationId, status);
+      if (result?.success === false) {
+        throw new Error(result.error);
+      }
     } catch (err) {
       console.error("Failed to update application status:", err);
       alert(err.message || "Failed to update application status");
@@ -187,14 +212,39 @@ const ApplicationList = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All Status</option>
-            <option value="under_review">Under Review</option>
-            <option value="interview">Interview Scheduled</option>
+            <option value="pending">Pending</option>
+            <option value="shortlisted">Shortlisted</option>
             <option value="rejected">Rejected</option>
-            <option value="accepted">Accepted</option>
+            <option value="hired">Hired</option>
           </Select>
-          <input type="text" placeholder="Search applications..." />
+          <input
+            type="text"
+            placeholder="Search applications..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </Filters>
       </Header>
+
+      {selectedApplication && (
+        <DetailsPanel>
+          <DetailsHeader>
+            <h2>{selectedApplication.jobTitle || "Application Details"}</h2>
+            <CloseButton type="button" onClick={() => setSelectedApplication(null)}>
+              Close
+            </CloseButton>
+          </DetailsHeader>
+          <Info>Company: {selectedApplication.company || "Not available"}</Info>
+          <Info>Status: {selectedApplication.status || "Not available"}</Info>
+          <Info>Applied: {selectedApplication.appliedDate || "Not available"}</Info>
+          <Info>
+            Last Updated: {selectedApplication.lastUpdated || "Not available"}
+          </Info>
+        </DetailsPanel>
+      )}
+
+      {loading && <Message>Loading applications...</Message>}
+      {error && <Message>{error}</Message>}
 
       <ApplicationGrid>
         {filteredApplications.map((application) => (
@@ -224,7 +274,7 @@ const ApplicationList = () => {
               {application.status}
             </Status>
 
-            {user && user.role !== "candidate" && (
+            {isStatusManager && (
               <div style={{ marginTop: "1rem" }}>
                 <Select
                   value={application.status}
@@ -241,29 +291,15 @@ const ApplicationList = () => {
               </div>
             )}
 
-            <div className="application-actions">
-              <button
-                className="cancel-btn"
-                onClick={() => handleCancelApplication(application._id)}
-                disabled={
-                  application.status === "Rejected" ||
-                  application.status === "Accepted"
-                }
-              >
-                <i className="fas fa-times"></i> Cancel
-              </button>
-              <button
-                className="delete-btn"
-                onClick={() => handleDeleteApplication(application._id)}
-              >
-                <i className="fas fa-trash"></i> Delete
-              </button>
-            </div>
+            {!isStatusManager && (
+              <DemoNote>Manage requests unavailable in demo.</DemoNote>
+            )}
 
             <Button
+              type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate(`/applications/${application._id}`)}
+              onClick={() => setSelectedApplication(application)}
             >
               View Details
             </Button>

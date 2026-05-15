@@ -10,7 +10,6 @@ import { ApplicationProvider } from "./context/ApplicationContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { JobProvider } from "./context/JobContext";
 import Login from "./components/auth/Login";
-import Signup from "./components/auth/Signup";
 import JobList from "./components/jobs/JobList";
 import JobForm from "./components/jobs/JobForm";
 import JobDetails from "./components/jobs/JobDetails";
@@ -106,7 +105,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              <Route path="/signup" element={<Navigate to="/register" replace />} />
               <Route path="/register" element={<Register />} />
               <Route path="/jobs" element={<JobList />} />
               <Route
