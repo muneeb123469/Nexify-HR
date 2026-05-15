@@ -163,6 +163,11 @@
   background-color: #3182ce;
 }
 
+.view-details-btn:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
 .no-postings {
   text-align: center;
   padding: 3rem;
@@ -170,4 +175,4 @@
   border-radius: 0.5rem;
   color: #718096;
   font-size: 1.125rem;
-} 
+}

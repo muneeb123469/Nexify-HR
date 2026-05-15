@@ -169,8 +169,8 @@ const CandidateApplicationManagement = () => {
                 <td>{application.appliedDate}</td>
                 <td>
                   <div className="action-buttons">
-                    <button className="view-profile-btn">View Profile</button>
-                    <button className="download-resume-btn">Download Resume</button>
+                    <span className="unavailable-action">Profile unavailable</span>
+                    <span className="unavailable-action">Resume unavailable</span>
                   </div>
                 </td>
               </tr>
@@ -182,4 +182,4 @@ const CandidateApplicationManagement = () => {
   );
 };
 
-export default CandidateApplicationManagement; 
+export default CandidateApplicationManagement;

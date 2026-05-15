@@ -22,10 +22,24 @@ const JobPostingsDashboard = () => {
   };
 
   const postings = useMemo(() => {
+    const dateRangeDays = {
+      '7days': 7,
+      '30days': 30,
+      '90days': 90,
+    };
+
     return (Array.isArray(jobs) ? jobs : [])
       .filter(j => {
         if (filters.jobType && j.department !== filters.jobType) return false;
         if (filters.status && (j.status || '').toLowerCase() !== filters.status.toLowerCase()) return false;
+        if (filters.dateRange) {
+          const days = dateRangeDays[filters.dateRange];
+          const postedAt = j.postedDate ? new Date(j.postedDate) : null;
+          if (!postedAt || Number.isNaN(postedAt.getTime())) return false;
+
+          const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+          if (postedAt.getTime() < cutoff) return false;
+        }
         return true;
       })
       .map(j => ({
@@ -110,7 +124,14 @@ const JobPostingsDashboard = () => {
                   <span className="metric-label">Views</span>
                 </div>
               </div>
-              <button className="view-details-btn">View Details</button>
+              <button
+                className="view-details-btn"
+                onClick={() => navigate(`/jobs/${posting.id}`)}
+                disabled={!posting.id}
+                type="button"
+              >
+                View Details
+              </button>
             </div>
           ))}
         </div>
