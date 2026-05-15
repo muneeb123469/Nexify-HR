@@ -140,6 +140,11 @@ td {
   color: #2b6cb0;
 }
 
+.status-select.pending {
+  border-color: #f6ad55;
+  color: #b7791f;
+}
+
 .status-select.shortlisted {
   border-color: #48bb78;
   color: #2f855a;
@@ -148,6 +153,11 @@ td {
 .status-select.rejected {
   border-color: #f56565;
   color: #c53030;
+}
+
+.status-select.hired {
+  border-color: #38a169;
+  color: #276749;
 }
 
 .action-buttons {
@@ -191,6 +201,21 @@ td {
   color: #718096;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.empty-state,
+.error-state {
+  color: #718096;
+  padding: 1rem;
+  text-align: center;
+}
+
+.error-state {
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 0.375rem;
+  color: #c53030;
+  margin-bottom: 1rem;
 }
 
 input[type="checkbox"] {

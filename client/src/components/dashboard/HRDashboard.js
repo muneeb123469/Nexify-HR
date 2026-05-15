@@ -385,13 +385,6 @@ const Sidebar = () => {
         </NavLink>
       </MenuItem>
 
-      {/* Settings */}
-      <MenuItem>
-        <NavLink to="/settings" className={({ isActive }) => isActive ? "active" : ""}>
-          <i className="fas fa-cog"></i>
-          <span>System Settings</span>
-        </NavLink>
-      </MenuItem>
     </SidebarMenu>
     <LogoutContainer>
       <LogoutButton onClick={handleLogout}>
@@ -1616,7 +1609,6 @@ const HRDashboard = () => {
         {/* Additional Feature Routes */}
         <Route path="/remote-work/wellness-fitness" element={<WellnessFitnessDashboard />} />
         <Route path="/remote-work/hours-tracker" element={<RemoteWorkHoursTracker />} />
-        <Route path="/settings" element={<div>System Settings Page</div>} />
       </Routes>
     </Layout>
   );
