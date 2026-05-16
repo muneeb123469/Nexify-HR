@@ -1,32 +1,48 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./EmployeeDatabaseManagement.css";
 
-const EmployeeDatabaseManagement = () => {
-  const [employees, setEmployees] = useState([
-    {
-      id: "EMP001",
-      name: "John Doe",
-      department: "Engineering",
-      role: "Senior Developer",
-      email: "john.doe@company.com",
-      phone: "+1 234 567 8900",
-      status: "Active",
-      lastModified: "2024-03-15",
-      modifiedBy: "Admin User",
-    },
-    {
-      id: "EMP002",
-      name: "Jane Smith",
-      department: "HR",
-      role: "HR Manager",
-      email: "jane.smith@company.com",
-      phone: "+1 234 567 8901",
-      status: "Active",
-      lastModified: "2024-03-14",
-      modifiedBy: "Admin User",
-    },
-  ]);
+const EMPLOYEE_STORAGE_KEY = "nexify_hr_employee_records";
+const OFFER_STORAGE_KEY = "nexify_hr_offer_letters";
 
+const emptyEmployee = {
+  name: "",
+  department: "",
+  role: "",
+  email: "",
+  phone: "",
+  status: "Active",
+};
+
+const readStorageArray = (key) => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
+
+const saveEmployees = (records) => {
+  localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(records));
+};
+
+const createEmployeeId = (records) => {
+  const highestNumber = records.reduce((highest, employee) => {
+    const numericId = Number(String(employee.id || "").replace("EMP", ""));
+    return Number.isFinite(numericId) ? Math.max(highest, numericId) : highest;
+  }, 0);
+
+  return `EMP${String(highestNumber + 1).padStart(3, "0")}`;
+};
+
+const getTimestamp = () => new Date().toISOString();
+
+const EmployeeDatabaseManagement = () => {
+  const [employees, setEmployees] = useState(() =>
+    readStorageArray(EMPLOYEE_STORAGE_KEY),
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -34,38 +50,59 @@ const EmployeeDatabaseManagement = () => {
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [notification, setNotification] = useState(null);
 
-  const [newEmployee, setNewEmployee] = useState({
-    name: "",
-    department: "",
-    role: "",
-    email: "",
-    phone: "",
-    status: "Active",
-  });
+  const [newEmployee, setNewEmployee] = useState(emptyEmployee);
+
+  const preparedOffers = readStorageArray(OFFER_STORAGE_KEY);
+  const importableOffers = useMemo(
+    () =>
+      preparedOffers.filter(
+        (offer) =>
+          !employees.some(
+            (employee) =>
+              employee.sourceOfferId === offer.id ||
+              employee.sourceApplicationId === offer.applicationId ||
+              (offer.email && employee.email === offer.email),
+          ),
+      ),
+    [employees, preparedOffers],
+  );
+
+  const updateEmployees = (records) => {
+    setEmployees(records);
+    saveEmployees(records);
+  };
+
+  const resetForm = () => {
+    setNewEmployee(emptyEmployee);
+    setSelectedEmployee(null);
+  };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
   const handleAddEmployee = () => {
+    resetForm();
     setShowAddForm(true);
     setShowEditForm(false);
     setShowAuditLogs(false);
   };
+
   const handleEditEmployee = (employee) => {
     setSelectedEmployee(employee);
     setNewEmployee({
-      name: employee.name,
-      department: employee.department,
-      role: employee.role,
-      email: employee.email,
-      phone: employee.phone,
-      status: employee.status,
+      name: employee.name || "",
+      department: employee.department || "",
+      role: employee.role || "",
+      email: employee.email || "",
+      phone: employee.phone || "",
+      status: employee.status || "Active",
     });
     setShowEditForm(true);
     setShowAddForm(false);
     setShowAuditLogs(false);
   };
+
   const handleViewAuditLogs = (employee) => {
     setSelectedEmployee(employee);
     setShowAuditLogs(true);
@@ -81,27 +118,65 @@ const EmployeeDatabaseManagement = () => {
     }));
   };
 
+  const handleImportPreparedOffers = () => {
+    if (importableOffers.length === 0) {
+      const hasPreparedOffers = preparedOffers.length > 0;
+
+      setNotification({
+        type: "info",
+        message: hasPreparedOffers
+          ? "All prepared offers have already been synced to employee records."
+          : "No prepared offers found. Prepare an offer letter for a hired candidate first.",
+      });
+      return;
+    }
+
+    const timestamp = getTimestamp();
+    let nextEmployees = [...employees];
+    const importedEmployees = importableOffers.map((offer) => {
+      const employee = {
+        id: createEmployeeId(nextEmployees),
+        name: offer.candidateName || "Unknown Applicant",
+        department: "Pending Assignment",
+        role: offer.position || "Unknown Role",
+        email: offer.email || "",
+        phone: offer.phone || "",
+        status: "Onboarding",
+        createdAt: timestamp,
+        lastModified: timestamp,
+        modifiedBy: "HR User",
+        sourceApplicationId: offer.applicationId || "",
+        sourceOfferId: offer.id || "",
+        source: "Prepared Offer",
+      };
+      nextEmployees = [...nextEmployees, employee];
+      return employee;
+    });
+
+    updateEmployees([...employees, ...importedEmployees]);
+    setNotification({
+      type: "success",
+      message: `${importedEmployees.length} hired candidate record(s) imported.`,
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add validation logic here
-    const newId = `EMP${String(employees.length + 1).padStart(3, "0")}`;
+    const timestamp = getTimestamp();
     const employeeToAdd = {
       ...newEmployee,
-      id: newId,
-      lastModified: new Date().toISOString().split("T")[0],
-      modifiedBy: "Admin User",
+      id: createEmployeeId(employees),
+      createdAt: timestamp,
+      lastModified: timestamp,
+      modifiedBy: "HR User",
+      sourceApplicationId: "",
+      sourceOfferId: "",
+      source: "Manual Entry",
     };
 
-    setEmployees((prev) => [...prev, employeeToAdd]);
+    updateEmployees([...employees, employeeToAdd]);
     setShowAddForm(false);
-    setNewEmployee({
-      name: "",
-      department: "",
-      role: "",
-      email: "",
-      phone: "",
-      status: "Active",
-    });
+    resetForm();
     setNotification({
       type: "success",
       message: "Employee added successfully!",
@@ -110,24 +185,30 @@ const EmployeeDatabaseManagement = () => {
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    // Add validation logic here
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === selectedEmployee.id
-          ? {
-              ...emp,
-              ...newEmployee,
-              lastModified: new Date().toISOString().split("T")[0],
-              modifiedBy: "Admin User",
-            }
-          : emp,
-      ),
+    const timestamp = getTimestamp();
+    const updatedEmployees = employees.map((emp) =>
+      emp.id === selectedEmployee.id
+        ? {
+            ...emp,
+            ...newEmployee,
+            lastModified: timestamp,
+            modifiedBy: "HR User",
+          }
+        : emp,
     );
+
+    updateEmployees(updatedEmployees);
+    setShowEditForm(false);
+    resetForm();
+    setNotification({
+      type: "success",
+      message: "Employee updated successfully!",
+    });
   };
 
   const filteredEmployees = employees.filter((employee) =>
     Object.values(employee).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+      String(value || "").toLowerCase().includes(searchTerm.toLowerCase()),
     ),
   );
 
@@ -143,6 +224,9 @@ const EmployeeDatabaseManagement = () => {
             onChange={handleSearch}
             className="search-input"
           />
+          <button onClick={handleImportPreparedOffers} className="sync-button">
+            Sync From Prepared Offers
+          </button>
           <button onClick={handleAddEmployee} className="add-button">
             Add New Employee
           </button>
@@ -157,53 +241,61 @@ const EmployeeDatabaseManagement = () => {
 
       <div className="database-content">
         <div className="employees-list">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Last Modified</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.map((employee) => (
-                <tr key={employee.id}>
-                  <td>{employee.id}</td>
-                  <td>{employee.name}</td>
-                  <td>{employee.department}</td>
-                  <td>{employee.role}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${employee.status.toLowerCase()}`}
-                    >
-                      {employee.status}
-                    </span>
-                  </td>
-                  <td>{employee.lastModified}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        onClick={() => handleEditEmployee(employee)}
-                        className="edit-button"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleViewAuditLogs(employee)}
-                        className="audit-button"
-                      >
-                        Audit Logs
-                      </button>
-                    </div>
-                  </td>
+          {filteredEmployees.length === 0 ? (
+            <div className="empty-state">
+              {employees.length === 0
+                ? "No employee records found. Add an employee or prepare an offer letter for a hired candidate."
+                : "No employee records match your search."}
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Last Modified</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredEmployees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td>{employee.id}</td>
+                    <td>{employee.name}</td>
+                    <td>{employee.department}</td>
+                    <td>{employee.role}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${employee.status.toLowerCase()}`}
+                      >
+                        {employee.status}
+                      </span>
+                    </td>
+                    <td>{new Date(employee.lastModified).toLocaleString()}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleEditEmployee(employee)}
+                          className="edit-button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleViewAuditLogs(employee)}
+                          className="audit-button"
+                        >
+                          Audit Logs
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {showAddForm && (
@@ -211,51 +303,10 @@ const EmployeeDatabaseManagement = () => {
             <div className="form-container">
               <h2>Add New Employee</h2>
               <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newEmployee.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Department</label>
-                  <select
-                    name="department"
-                    value={newEmployee.department}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Marketing">Marketing</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Role</label>
-                  <input
-                    type="text"
-                    name="role"
-                    value={newEmployee.role}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={newEmployee.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+                <EmployeeFormFields
+                  employee={newEmployee}
+                  onChange={handleInputChange}
+                />
                 <div className="form-actions">
                   <button type="submit" className="submit-button">
                     Add Employee
@@ -278,63 +329,10 @@ const EmployeeDatabaseManagement = () => {
             <div className="form-container">
               <h2>Edit Employee</h2>
               <form onSubmit={handleUpdate}>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newEmployee.name || selectedEmployee.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Department</label>
-                  <select
-                    name="department"
-                    value={
-                      newEmployee.department || selectedEmployee.department
-                    }
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Marketing">Marketing</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Role</label>
-                  <input
-                    type="text"
-                    name="role"
-                    value={newEmployee.role || selectedEmployee.role}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={newEmployee.email || selectedEmployee.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={newEmployee.phone || selectedEmployee.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+                <EmployeeFormFields
+                  employee={newEmployee}
+                  onChange={handleInputChange}
+                />
                 <div className="form-actions">
                   <button type="submit" className="submit-button">
                     Update Employee
@@ -359,17 +357,25 @@ const EmployeeDatabaseManagement = () => {
               <div className="audit-logs">
                 <div className="log-entry">
                   <p>
+                    <strong>Created:</strong>{" "}
+                    {selectedEmployee.createdAt
+                      ? new Date(selectedEmployee.createdAt).toLocaleString()
+                      : "Not recorded"}
+                  </p>
+                  <p>
                     <strong>Last Modified:</strong>{" "}
-                    {selectedEmployee.lastModified}
+                    {selectedEmployee.lastModified
+                      ? new Date(selectedEmployee.lastModified).toLocaleString()
+                      : "Not recorded"}
                   </p>
                   <p>
                     <strong>Modified By:</strong> {selectedEmployee.modifiedBy}
                   </p>
                   <p>
-                    <strong>Changes:</strong> Employee information updated
+                    <strong>Source:</strong>{" "}
+                    {selectedEmployee.source || "Manual Entry"}
                   </p>
                 </div>
-                {/* Add more log entries as needed */}
               </div>
               <button
                 onClick={() => setShowAuditLogs(false)}
@@ -384,5 +390,79 @@ const EmployeeDatabaseManagement = () => {
     </div>
   );
 };
+
+const EmployeeFormFields = ({ employee, onChange }) => (
+  <>
+    <div className="form-group">
+      <label>Name</label>
+      <input
+        type="text"
+        name="name"
+        value={employee.name}
+        onChange={onChange}
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label>Department</label>
+      <select
+        name="department"
+        value={employee.department}
+        onChange={onChange}
+        required
+      >
+        <option value="">Select Department</option>
+        <option value="Pending Assignment">Pending Assignment</option>
+        <option value="Engineering">Engineering</option>
+        <option value="HR">HR</option>
+        <option value="Finance">Finance</option>
+        <option value="Marketing">Marketing</option>
+      </select>
+    </div>
+    <div className="form-group">
+      <label>Role</label>
+      <input
+        type="text"
+        name="role"
+        value={employee.role}
+        onChange={onChange}
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label>Email</label>
+      <input
+        type="email"
+        name="email"
+        value={employee.email}
+        onChange={onChange}
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label>Phone</label>
+      <input
+        type="tel"
+        name="phone"
+        value={employee.phone}
+        onChange={onChange}
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label>Status</label>
+      <select
+        name="status"
+        value={employee.status}
+        onChange={onChange}
+        required
+      >
+        <option value="Active">Active</option>
+        <option value="Onboarding">Onboarding</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
+  </>
+);
 
 export default EmployeeDatabaseManagement;
