@@ -1,22 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useApplications } from '../../context/ApplicationContext';
 import './InterviewSchedulingInterface.css';
 
-const InterviewSchedulingInterface = () => {
-  const [shortlistedCandidates, setShortlistedCandidates] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      position: 'Senior Software Engineer',
-      availability: ['2024-03-20', '2024-03-21', '2024-03-22'],
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      position: 'Product Manager',
-      availability: ['2024-03-21', '2024-03-22', '2024-03-23'],
-    },
-  ]);
+const STORAGE_KEY = 'nexify_hr_scheduled_interviews';
 
+const getStoredInterviews = () => {
+  try {
+    const savedInterviews = localStorage.getItem(STORAGE_KEY);
+    const parsedInterviews = savedInterviews ? JSON.parse(savedInterviews) : [];
+    return Array.isArray(parsedInterviews) ? parsedInterviews : [];
+  } catch (error) {
+    console.error('Failed to read scheduled interviews:', error);
+    return [];
+  }
+};
+
+const generateAvailableDates = () =>
+  Array.from({ length: 3 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index + 1);
+    return date.toISOString().slice(0, 10);
+  });
+
+const InterviewSchedulingInterface = () => {
+  const { applications, loading, error, fetchApplications } = useApplications();
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -24,10 +31,43 @@ const InterviewSchedulingInterface = () => {
   const [interviewers, setInterviewers] = useState([]);
   const [notificationSent, setNotificationSent] = useState(false);
 
+  const availableDates = useMemo(() => generateAvailableDates(), []);
+  const shortlistedCandidates = useMemo(() => {
+    const applicationList = Array.isArray(applications) ? applications : [];
+
+    return applicationList
+      .filter((application) => application.status?.toLowerCase() === 'shortlisted')
+      .map((application) => ({
+        id: application._id,
+        applicationId: application._id,
+        name: application.applicantName || 'Unknown Applicant',
+        position: application.jobTitle || 'Unknown Job',
+        email: application.email || '',
+        phone: application.phone || '',
+        availability: availableDates,
+      }));
+  }, [applications, availableDates]);
+
   const timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM',
     '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'
   ];
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useEffect(() => {
+    if (
+      selectedCandidate &&
+      !shortlistedCandidates.some((candidate) => candidate.id === selectedCandidate.id)
+    ) {
+      setSelectedCandidate(null);
+      setSelectedDate('');
+      setSelectedTime('');
+      setInterviewers([]);
+    }
+  }, [selectedCandidate, shortlistedCandidates]);
 
   const handleCandidateSelect = (candidate) => {
     setSelectedCandidate(candidate);
@@ -53,20 +93,43 @@ const InterviewSchedulingInterface = () => {
   };
 
   const handleInterviewerAdd = (interviewer) => {
-    if (!interviewers.includes(interviewer)) {
+    if (interviewer && !interviewers.includes(interviewer)) {
       setInterviewers([...interviewers, interviewer]);
+      setNotificationSent(false);
     }
   };
 
   const handleInterviewerRemove = (interviewer) => {
     setInterviewers(interviewers.filter(i => i !== interviewer));
+    setNotificationSent(false);
   };
 
   const handleScheduleInterview = () => {
-    // Simulate scheduling process
-    setTimeout(() => {
-      setNotificationSent(true);
-    }, 1000);
+    if (!selectedCandidate || !selectedDate || !selectedTime || interviewers.length === 0) {
+      return;
+    }
+
+    const scheduledInterview = {
+      id: `interview_${Date.now()}`,
+      applicationId: selectedCandidate.applicationId,
+      candidateName: selectedCandidate.name,
+      position: selectedCandidate.position,
+      email: selectedCandidate.email,
+      phone: selectedCandidate.phone,
+      date: selectedDate,
+      time: selectedTime,
+      interviewType,
+      interviewers,
+      status: 'upcoming',
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedInterviews = [...getStoredInterviews(), scheduledInterview];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedInterviews));
+    setNotificationSent(true);
+    setSelectedDate('');
+    setSelectedTime('');
+    setInterviewers([]);
   };
 
   return (
@@ -79,24 +142,40 @@ const InterviewSchedulingInterface = () => {
         <div className="candidates-section">
           <h2>Shortlisted Candidates</h2>
           <div className="candidates-list">
-            {shortlistedCandidates.map(candidate => (
-              <div
-                key={candidate.id}
-                className={`candidate-card ${selectedCandidate?.id === candidate.id ? 'selected' : ''}`}
-                onClick={() => handleCandidateSelect(candidate)}
-              >
-                <h3>{candidate.name}</h3>
-                <p className="position">{candidate.position}</p>
-                <div className="availability">
-                  <h4>Available Dates:</h4>
-                  <div className="date-tags">
-                    {candidate.availability.map(date => (
-                      <span key={date} className="date-tag">{date}</span>
-                    ))}
+            {loading ? (
+              <div className="no-candidate-selected">
+                <p>Loading shortlisted applications...</p>
+              </div>
+            ) : error ? (
+              <div className="no-candidate-selected">
+                <p>{error}</p>
+              </div>
+            ) : shortlistedCandidates.length === 0 ? (
+              <div className="no-candidate-selected">
+                <p>No shortlisted candidates available. Shortlist candidates from Candidate Applications first.</p>
+              </div>
+            ) : (
+              shortlistedCandidates.map(candidate => (
+                <div
+                  key={candidate.id}
+                  className={`candidate-card ${selectedCandidate?.id === candidate.id ? 'selected' : ''}`}
+                  onClick={() => handleCandidateSelect(candidate)}
+                >
+                  <h3>{candidate.name}</h3>
+                  <p className="position">{candidate.position}</p>
+                  {candidate.email && <p className="position">{candidate.email}</p>}
+                  {candidate.phone && <p className="position">{candidate.phone}</p>}
+                  <div className="availability">
+                    <h4>Available Dates:</h4>
+                    <div className="date-tags">
+                      {candidate.availability.map(date => (
+                        <span key={date} className="date-tag">{date}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -170,9 +249,10 @@ const InterviewSchedulingInterface = () => {
                           className="interviewer-select"
                         >
                           <option value="">Select Interviewer</option>
-                          <option value="Sarah Johnson">Sarah Johnson</option>
-                          <option value="Mike Brown">Mike Brown</option>
-                          <option value="Lisa Chen">Lisa Chen</option>
+                          <option value="HR Manager">HR Manager</option>
+                          <option value="Technical Lead">Technical Lead</option>
+                          <option value="Department Head">Department Head</option>
+                          <option value="Recruitment Coordinator">Recruitment Coordinator</option>
                         </select>
                         <div className="selected-interviewers">
                           {interviewers.map(interviewer => (
@@ -182,7 +262,7 @@ const InterviewSchedulingInterface = () => {
                                 onClick={() => handleInterviewerRemove(interviewer)}
                                 className="remove-interviewer"
                               >
-                                ×
+                                x
                               </button>
                             </div>
                           ))}
@@ -197,13 +277,17 @@ const InterviewSchedulingInterface = () => {
                     >
                       Schedule Interview
                     </button>
+                    <div className="local-demo-note">
+                      Email notifications are not configured in this local demo.
+                    </div>
 
-                    {notificationSent && (
-                      <div className="notification-success">
-                        Interview scheduled successfully! Notifications sent to all participants.
-                      </div>
-                    )}
                   </>
+                )}
+
+                {notificationSent && (
+                  <div className="notification-success">
+                    Interview scheduled successfully and saved for feedback review.
+                  </div>
                 )}
               </div>
             </>
@@ -218,4 +302,4 @@ const InterviewSchedulingInterface = () => {
   );
 };
 
-export default InterviewSchedulingInterface; 
+export default InterviewSchedulingInterface;
