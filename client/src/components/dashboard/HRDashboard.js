@@ -549,7 +549,7 @@ const AttendanceChart = ({ attendanceData, currentMonth }) => {
 };
 
 const Calendar = ({ month, year }) => {
-  const daysInMonth = new Date(year, month + 1, 0). getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
 
   const days = [];

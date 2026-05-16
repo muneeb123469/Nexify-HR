@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaSearch, FaUserShield, FaUserCog, FaUserEdit, FaEye, FaLock, FaCheck, FaTimes, 
-  FaFilter, FaSave, FaPlus, FaUserPlus, FaUserMinus, FaChevronDown, FaChevronUp, 
-  FaEllipsisV, FaCalendarAlt, FaIdBadge, FaBuilding, FaInfoCircle } from 'react-icons/fa';
+import { FaSearch, FaUserShield, FaUserCog, FaUserEdit, FaEye, FaLock, FaCheck, FaTimes,
+  FaFilter, FaSave, FaUserPlus, FaUserMinus, FaChevronDown, FaChevronUp,
+  FaCalendarAlt, FaIdBadge, FaBuilding, FaInfoCircle } from 'react-icons/fa';
 
 const UserRolesPermissions = () => {
   const [users, setUsers] = useState([

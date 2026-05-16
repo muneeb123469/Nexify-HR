@@ -17,8 +17,8 @@ export const JobProvider = ({ children }) => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/jobs");
-      setJobs(Array.isArray(response.data) ? response.data : []);
+      const { data } = await api.get("/jobs");
+      setJobs(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
       setError("Failed to fetch jobs");
@@ -30,9 +30,9 @@ export const JobProvider = ({ children }) => {
 
   const createJob = async (jobData) => {
     try {
-      const response = await api.post("/jobs", jobData);
-      setJobs((prev) => [...(Array.isArray(prev) ? prev : []), response.data]);
-      return response.data;
+      const { data } = await api.post("/jobs", jobData);
+      setJobs((prev) => [...(Array.isArray(prev) ? prev : []), data]);
+      return data;
     } catch (err) {
       throw new Error(err.response?.data?.message || "Failed to create job");
     }
@@ -40,13 +40,13 @@ export const JobProvider = ({ children }) => {
 
   const updateJob = async (id, jobData) => {
     try {
-      const response = await api.put(`/jobs/${id}`, jobData);
+      const { data } = await api.put(`/jobs/${id}`, jobData);
       setJobs((prev) =>
         (Array.isArray(prev) ? prev : []).map((job) =>
-          job._id === id ? response.data : job,
+          job._id === id ? data : job,
         ),
       );
-      return response.data;
+      return data;
     } catch (err) {
       throw new Error(err.response?.data?.message || "Failed to update job");
     }
