@@ -1,55 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaCheck, FaExclamationTriangle, FaSearch, FaFilter, FaDownload, FaTimes, FaUserCircle, FaInfoCircle, FaChevronDown, FaCalculator, FaChartLine, FaMoneyBillWave, FaFileInvoiceDollar, FaClipboardCheck } from 'react-icons/fa';
+import React, { useMemo, useState } from 'react';
+import { FaSpinner, FaCheck, FaExclamationTriangle, FaSearch, FaFilter, FaDownload, FaTimes, FaChevronDown, FaCalculator, FaChartLine, FaMoneyBillWave, FaFileInvoiceDollar, FaClipboardCheck } from 'react-icons/fa';
 import './SalaryCalculation.css';
 
-const SalaryCalculation = () => {
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: 'Ammar Majid',
-      position: 'Software Engineer',
-      profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
-      basicSalary: 5000,
-      workingHours: 160,
-      overtime: 10,
-      bonuses: 500,
-      deductions: {
-        tax: 1000,
-        insurance: 200,
-        other: 100
-      },
-      status: 'pending',
-      approvalStatus: 'pending',
-      adjustments: [],
-      comments: []
-    },
-    {
-      id: 2,
-      name: 'Maryam Junaid',
-      position: 'HR Manager',
-      profilePicture: 'https://randomuser.me/api/portraits/women/1.jpg',
-      basicSalary: 4500,
-      workingHours: 155,
-      overtime: 5,
-      bonuses: 300,
-      deductions: {
-        tax: 900,
-        insurance: 180,
-        other: 90
-      },
-      status: 'pending',
-      approvalStatus: 'pending',
-      adjustments: [],
-      comments: []
-    }
-  ]);
+const EMPLOYEE_STORAGE_KEY = 'nexify_hr_employee_records';
+const OFFER_STORAGE_KEY = 'nexify_hr_offer_letters';
 
+const readStorageArray = (key) => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
+
+const parseSalaryValue = (salary) => {
+  if (typeof salary === 'number') return Number.isFinite(salary) ? salary : 0;
+  const match = String(salary || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+};
+
+const findOfferForEmployee = (employee, offers) =>
+  offers.find((offer) =>
+    (employee.sourceApplicationId && offer.applicationId === employee.sourceApplicationId) ||
+    (employee.email && offer.email === employee.email) ||
+    (employee.sourceOfferId && offer.id === employee.sourceOfferId)
+  );
+
+const formatMoney = (value) => `$${Number(value || 0).toLocaleString()}`;
+
+const getInitials = (name = '') =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'NA';
+
+const buildPayrollEmployees = () => {
+  const employeeRecords = readStorageArray(EMPLOYEE_STORAGE_KEY);
+  const offers = readStorageArray(OFFER_STORAGE_KEY);
+
+  return employeeRecords.map((employee) => {
+    const offer = findOfferForEmployee(employee, offers);
+    const salarySource = offer?.offerDetails?.salary || employee.salary || employee.basicSalary || '';
+    const basicSalary = parseSalaryValue(salarySource);
+    const tax = basicSalary ? Math.round(basicSalary * 0.12) : 0;
+    const insurance = basicSalary ? Math.round(basicSalary * 0.02) : 0;
+
+    return {
+      id: employee.id,
+      name: employee.name || 'Unknown Employee',
+      position: employee.role || offer?.position || 'Unassigned Role',
+      department: employee.department || 'Pending Assignment',
+      employeeStatus: employee.status || 'Active',
+      salaryDisplay: salarySource ? String(salarySource) : 'Not Set',
+      basicSalary,
+      workingHours: 160,
+      overtime: 0,
+      bonuses: 0,
+      deductions: {
+        tax,
+        insurance,
+        other: 0
+      },
+      status: 'pending',
+      approvalStatus: 'pending',
+      adjustments: [],
+      comments: []
+    };
+  });
+};
+
+const SalaryCalculation = () => {
+  const [employees, setEmployees] = useState(buildPayrollEmployees);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [calculationStatus, setCalculationStatus] = useState('idle');
   const [notification, setNotification] = useState(null);
   const [verificationIssues, setVerificationIssues] = useState([]);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalAction, setApprovalAction] = useState('approved');
   const [adjustmentData, setAdjustmentData] = useState({
     amount: '',
     type: 'bonus',
@@ -75,18 +109,22 @@ const SalaryCalculation = () => {
   };
 
   const calculateSalary = (employee) => {
-    const {
-      basicSalary,
-      overtime,
-      bonuses,
-      deductions,
-      adjustments
-    } = employee;
+    if (!employee) {
+      return {
+        basicSalary: 0,
+        overtimePay: 0,
+        bonuses: 0,
+        totalAdjustments: 0,
+        totalDeductions: 0,
+        netSalary: 0
+      };
+    }
 
-    const overtimeRate = basicSalary / 160;
+    const { basicSalary, overtime, bonuses, deductions, adjustments } = employee;
+    const overtimeRate = basicSalary ? basicSalary / 160 : 0;
     const overtimePay = overtime * overtimeRate;
-    const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0);
-    const totalAdjustments = adjustments.reduce((sum, adj) => 
+    const totalDeductions = Object.values(deductions).reduce((a, b) => a + Number(b || 0), 0);
+    const totalAdjustments = adjustments.reduce((sum, adj) =>
       sum + (adj.type === 'bonus' ? adj.amount : -adj.amount), 0);
     const netSalary = basicSalary + overtimePay + bonuses + totalAdjustments - totalDeductions;
 
@@ -101,43 +139,49 @@ const SalaryCalculation = () => {
   };
 
   const handleCalculateAll = async () => {
+    if (employees.length === 0) {
+      setNotification({
+        type: 'info',
+        message: 'No employee records found. Sync employees from prepared offers first.',
+        icon: <FaExclamationTriangle />
+      });
+      return;
+    }
+
     setCalculationStatus('processing');
     setVerificationIssues([]);
     setNotification(null);
     setProgress(0);
 
-    const totalEmployees = employees.length;
     const issues = [];
 
-    for (let i = 0; i < totalEmployees; i++) {
+    for (let i = 0; i < employees.length; i++) {
       const employee = employees[i];
-      if (employee.workingHours < 160) {
-        issues.push(`${employee.name}: Incomplete attendance records`);
+      if (!employee.basicSalary) {
+        issues.push(`${employee.name}: Salary is not set`);
       }
-      if (!employee.deductions.tax) {
-        issues.push(`${employee.name}: Missing tax information`);
-      }
-      setProgress(((i + 1) / totalEmployees) * 100);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      setProgress(((i + 1) / employees.length) * 100);
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
+
+    setEmployees(prev =>
+      prev.map(emp => ({
+        ...emp,
+        status: 'calculated'
+      }))
+    );
 
     if (issues.length > 0) {
       setVerificationIssues(issues);
       setNotification({
-        type: 'error',
-        message: 'Some employees have incomplete records',
+        type: 'info',
+        message: 'Salary calculation completed with missing salary values shown as 0.',
         icon: <FaExclamationTriangle />
       });
     } else {
-      setEmployees(prev =>
-        prev.map(emp => ({
-          ...emp,
-          status: 'calculated'
-        }))
-      );
       setNotification({
         type: 'success',
-        message: 'Salary calculation completed successfully!',
+        message: 'Salary calculation completed for local demo records.',
         icon: <FaCheck />
       });
     }
@@ -150,26 +194,58 @@ const SalaryCalculation = () => {
     setCalculationStatus('generating');
     setNotification(null);
     setProgress(0);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await new Promise(resolve => setTimeout(resolve, 800));
     setProgress(100);
 
     setNotification({
       type: 'success',
-      message: 'Payslips generated successfully!',
+      message: 'Payslips prepared for local demo review.',
       icon: <FaCheck />
     });
     setCalculationStatus('completed');
   };
 
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter(emp => {
+        const matchesSearch =
+          emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          emp.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          emp.department.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [employees, searchTerm, statusFilter],
+  );
+
   const handleExport = () => {
-    const headers = ['Employee', 'Position', 'Basic Salary', 'Working Hours', 'Overtime', 'Bonuses', 'Deductions', 'Net Salary', 'Status'];
+    if (filteredEmployees.length === 0) {
+      setNotification({
+        type: 'info',
+        message: 'No payroll rows are available to export.',
+        icon: <FaExclamationTriangle />
+      });
+      return;
+    }
+
+    if (exportFormat !== 'csv') {
+      setNotification({
+        type: 'info',
+        message: 'Excel/PDF export is not configured in this local demo. Use CSV export.',
+        icon: <FaExclamationTriangle />
+      });
+      return;
+    }
+
+    const headers = ['Employee', 'Position', 'Department', 'Basic Salary', 'Working Hours', 'Overtime', 'Bonuses', 'Deductions', 'Net Salary', 'Status'];
     const data = filteredEmployees.map(emp => {
       const salary = calculateSalary(emp);
       return [
         emp.name,
         emp.position,
-        emp.basicSalary,
+        emp.department,
+        emp.salaryDisplay,
         emp.workingHours,
         emp.overtime,
         emp.bonuses,
@@ -179,108 +255,81 @@ const SalaryCalculation = () => {
       ];
     });
 
-    let content;
-    let mimeType;
-    let fileExtension;
+    const content = [
+      headers.join(','),
+      ...data.map(row => row.join(','))
+    ].join('\n');
 
-    switch (exportFormat) {
-      case 'csv':
-        content = [
-          headers.join(','),
-          ...data.map(row => row.join(','))
-        ].join('\n');
-        mimeType = 'text/csv;charset=utf-8;';
-        fileExtension = 'csv';
-        break;
-      case 'excel':
-        // Add Excel export logic here
-        break;
-      case 'pdf':
-        // Add PDF export logic here
-        break;
-      default:
-        content = [
-          headers.join(','),
-          ...data.map(row => row.join(','))
-        ].join('\n');
-        mimeType = 'text/csv;charset=utf-8;';
-        fileExtension = 'csv';
-    }
-
-    const blob = new Blob([content], { type: mimeType });
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `payroll_report.${fileExtension}`;
+    link.download = 'payroll_report.csv';
     link.click();
   };
 
   const handleAdjustment = () => {
-    if (!adjustmentData.amount || !adjustmentData.comment) return;
+    if (!adjustmentData.amount || !adjustmentData.comment || !selectedEmployee) return;
 
-    setEmployees(prev =>
-      prev.map(emp =>
-        emp.id === selectedEmployee.id
-          ? {
-              ...emp,
-              adjustments: [
-                ...emp.adjustments,
-                {
-                  ...adjustmentData,
-                  amount: Number(adjustmentData.amount),
-                  date: new Date().toISOString()
-                }
-              ],
-              comments: [
-                ...emp.comments,
-                {
-                  text: adjustmentData.comment,
-                  date: new Date().toISOString()
-                }
-              ]
-            }
-          : emp
-      )
+    const updatedEmployees = employees.map(emp =>
+      emp.id === selectedEmployee.id
+        ? {
+            ...emp,
+            adjustments: [
+              ...emp.adjustments,
+              {
+                ...adjustmentData,
+                amount: Number(adjustmentData.amount),
+                date: new Date().toISOString()
+              }
+            ],
+            comments: [
+              ...emp.comments,
+              {
+                text: adjustmentData.comment,
+                date: new Date().toISOString()
+              }
+            ]
+          }
+        : emp
     );
 
+    setEmployees(updatedEmployees);
+    setSelectedEmployee(updatedEmployees.find(emp => emp.id === selectedEmployee.id));
     setShowAdjustmentModal(false);
     setAdjustmentData({ amount: '', type: 'bonus', comment: '' });
     setNotification({
       type: 'success',
-      message: 'Salary adjustment applied successfully!',
+      message: 'Salary adjustment applied locally.',
       icon: <FaCheck />
     });
   };
 
   const handleApproval = (status) => {
-    setEmployees(prev =>
-      prev.map(emp =>
-        emp.id === selectedEmployee.id
-          ? {
-              ...emp,
-              approvalStatus: status
-            }
-          : emp
-      )
+    if (!selectedEmployee) return;
+
+    const updatedEmployees = employees.map(emp =>
+      emp.id === selectedEmployee.id
+        ? {
+            ...emp,
+            status,
+            approvalStatus: status
+          }
+        : emp
     );
 
+    setEmployees(updatedEmployees);
+    setSelectedEmployee(updatedEmployees.find(emp => emp.id === selectedEmployee.id));
     setShowApprovalModal(false);
     setNotification({
       type: 'success',
-      message: `Salary ${status} successfully!`,
+      message: `Salary ${status} locally.`,
       icon: <FaCheck />
     });
   };
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         emp.position.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const renderBreakdownSection = (title, icon, section, items) => (
     <div className={`breakdown-section ${collapsedSections[section] ? 'collapsed' : ''}`}>
-      <div 
+      <div
         className="breakdown-section-header"
         onClick={() => toggleSection(section)}
       >
@@ -372,7 +421,7 @@ const SalaryCalculation = () => {
 
       {calculationStatus === 'processing' && (
         <div className="progress-bar">
-          <div 
+          <div
             className="progress-fill"
             style={{ width: `${progress}%` }}
           />
@@ -385,7 +434,7 @@ const SalaryCalculation = () => {
           <FaSearch />
           <input
             type="text"
-            placeholder="Search employees by name or position..."
+            placeholder="Search employees by name, department, or position..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -408,40 +457,47 @@ const SalaryCalculation = () => {
       <div className="calculation-content">
         <div className="employees-list">
           <div className="employees-list-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Position</th>
-                  <th>Basic Salary</th>
-                  <th>Working Hours</th>
-                  <th>Overtime</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.map(employee => {
-                  const salary = calculateSalary(employee);
-                  return (
+            {employees.length === 0 ? (
+              <div className="empty-state">
+                No employee records found. Sync employees from prepared offers first.
+              </div>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="empty-state">
+                No payroll rows match the selected filters.
+              </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Basic Salary</th>
+                    <th>Working Hours</th>
+                    <th>Overtime</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEmployees.map(employee => (
                     <tr
                       key={employee.id}
                       className={selectedEmployee?.id === employee.id ? 'selected' : ''}
                       onClick={() => setSelectedEmployee(employee)}
                     >
                       <td className="employee-cell">
-                        <img 
-                          src={employee.profilePicture} 
-                          alt={employee.name}
-                          className="employee-avatar"
-                        />
+                        <div className="employee-avatar">
+                          {getInitials(employee.name)}
+                        </div>
                         <div className="employee-info">
                           <span className="employee-name">{employee.name}</span>
-                          <span className="employee-position">{employee.position}</span>
+                          <span className="employee-position">{employee.employeeStatus}</span>
                         </div>
                       </td>
                       <td>{employee.position}</td>
-                      <td>${employee.basicSalary.toLocaleString()}</td>
+                      <td>{employee.department}</td>
+                      <td>{employee.salaryDisplay}</td>
                       <td>{employee.workingHours}</td>
                       <td>{employee.overtime}</td>
                       <td>
@@ -457,7 +513,7 @@ const SalaryCalculation = () => {
                         </div>
                       </td>
                       <td>
-                        <button 
+                        <button
                           className="view-details-button"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -469,10 +525,10 @@ const SalaryCalculation = () => {
                         </button>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
             <div className="scroll-indicator" />
           </div>
         </div>
@@ -481,15 +537,14 @@ const SalaryCalculation = () => {
           <div className="salary-details">
             <div className="details-header">
               <div className="employee-profile">
-                <img 
-                  src={selectedEmployee.profilePicture} 
-                  alt={selectedEmployee.name}
-                  className="profile-picture"
-                />
+                <div className="profile-picture">
+                  {getInitials(selectedEmployee.name)}
+                </div>
                 <div>
                   <h2>{selectedEmployee.name}</h2>
                   <p className="employee-position">{selectedEmployee.position}</p>
                   <p className="employee-id">ID: {selectedEmployee.id}</p>
+                  <p className="employee-id">Department: {selectedEmployee.department}</p>
                 </div>
               </div>
             </div>
@@ -507,7 +562,7 @@ const SalaryCalculation = () => {
                   <>
                     <div className="breakdown-item">
                       <span className="label">Base Amount:</span>
-                      <span className="value">${selectedEmployee.basicSalary.toLocaleString()}</span>
+                      <span className="value">{selectedEmployee.salaryDisplay}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="label">Working Hours:</span>
@@ -524,15 +579,15 @@ const SalaryCalculation = () => {
                     <div className="breakdown-item">
                       <span className="label">Overtime Pay:</span>
                       <span className="value tooltip">
-                        ${calculateSalary(selectedEmployee).overtimePay.toLocaleString()}
+                        {formatMoney(calculateSalary(selectedEmployee).overtimePay)}
                         <span className="tooltip-text">
-                          Calculated at 1.5x hourly rate for hours over 160
+                          Calculated from local demo payroll values
                         </span>
                       </span>
                     </div>
                     <div className="breakdown-item">
                       <span className="label">Bonuses:</span>
-                      <span className="value">${selectedEmployee.bonuses.toLocaleString()}</span>
+                      <span className="value">{formatMoney(selectedEmployee.bonuses)}</span>
                     </div>
                   </>
                 )}
@@ -544,15 +599,15 @@ const SalaryCalculation = () => {
                   <>
                     <div className="breakdown-item">
                       <span className="label">Tax:</span>
-                      <span className="value">-${selectedEmployee.deductions.tax.toLocaleString()}</span>
+                      <span className="value">-{formatMoney(selectedEmployee.deductions.tax)}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="label">Insurance:</span>
-                      <span className="value">-${selectedEmployee.deductions.insurance.toLocaleString()}</span>
+                      <span className="value">-{formatMoney(selectedEmployee.deductions.insurance)}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="label">Other:</span>
-                      <span className="value">-${selectedEmployee.deductions.other.toLocaleString()}</span>
+                      <span className="value">-{formatMoney(selectedEmployee.deductions.other)}</span>
                     </div>
                   </>
                 )}
@@ -564,14 +619,14 @@ const SalaryCalculation = () => {
                   <>
                     <div className="breakdown-item">
                       <span className="label">Total Adjustments:</span>
-                      <span className="value">${calculateSalary(selectedEmployee).totalAdjustments.toLocaleString()}</span>
+                      <span className="value">{formatMoney(calculateSalary(selectedEmployee).totalAdjustments)}</span>
                     </div>
                   </>
                 )}
 
                 <div className="breakdown-item total">
                   <span className="label">Net Salary:</span>
-                  <span className="value">${calculateSalary(selectedEmployee).netSalary.toLocaleString()}</span>
+                  <span className="value">{formatMoney(calculateSalary(selectedEmployee).netSalary)}</span>
                 </div>
               </div>
             </div>
@@ -591,7 +646,7 @@ const SalaryCalculation = () => {
                         </span>
                       </div>
                       <div className="adjustment-amount">
-                        {adj.type === 'bonus' ? '+' : '-'}${adj.amount.toLocaleString()}
+                        {adj.type === 'bonus' ? '+' : '-'}{formatMoney(adj.amount)}
                       </div>
                       <div className="adjustment-comment">
                         {selectedEmployee.comments[index]?.text}
@@ -605,14 +660,20 @@ const SalaryCalculation = () => {
             <div className="approval-actions">
               <button
                 className="approve-button"
-                onClick={() => setShowApprovalModal(true)}
+                onClick={() => {
+                  setApprovalAction('approved');
+                  setShowApprovalModal(true);
+                }}
                 disabled={selectedEmployee.status !== 'calculated'}
               >
                 Approve Salary
               </button>
               <button
                 className="reject-button"
-                onClick={() => setShowApprovalModal(true)}
+                onClick={() => {
+                  setApprovalAction('rejected');
+                  setShowApprovalModal(true);
+                }}
                 disabled={selectedEmployee.status !== 'calculated'}
               >
                 Reject Salary
@@ -622,12 +683,12 @@ const SalaryCalculation = () => {
         )}
       </div>
 
-      {showAdjustmentModal && (
+      {showAdjustmentModal && selectedEmployee && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
               <h3>Adjust Salary</h3>
-              <button 
+              <button
                 className="close-button"
                 onClick={() => setShowAdjustmentModal(false)}
               >
@@ -691,12 +752,12 @@ const SalaryCalculation = () => {
         </div>
       )}
 
-      {showApprovalModal && (
+      {showApprovalModal && selectedEmployee && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>Confirm Salary {selectedEmployee?.approvalStatus === 'approved' ? 'Approval' : 'Rejection'}</h3>
-              <button 
+              <h3>Confirm Salary {approvalAction === 'approved' ? 'Approval' : 'Rejection'}</h3>
+              <button
                 className="close-button"
                 onClick={() => setShowApprovalModal(false)}
               >
@@ -704,15 +765,15 @@ const SalaryCalculation = () => {
               </button>
             </div>
             <div className="modal-content">
-              <p>Are you sure you want to {selectedEmployee?.approvalStatus === 'approved' ? 'approve' : 'reject'} the salary calculation for {selectedEmployee?.name}?</p>
+              <p>Are you sure you want to {approvalAction === 'approved' ? 'approve' : 'reject'} the salary calculation for {selectedEmployee.name}?</p>
               <div className="salary-summary">
                 <div className="summary-item">
                   <span>Basic Salary:</span>
-                  <span>${selectedEmployee?.basicSalary.toLocaleString()}</span>
+                  <span>{selectedEmployee.salaryDisplay}</span>
                 </div>
                 <div className="summary-item">
                   <span>Net Salary:</span>
-                  <span>${calculateSalary(selectedEmployee).netSalary.toLocaleString()}</span>
+                  <span>{formatMoney(calculateSalary(selectedEmployee).netSalary)}</span>
                 </div>
               </div>
             </div>
@@ -724,8 +785,8 @@ const SalaryCalculation = () => {
                 Cancel
               </button>
               <button
-                className={selectedEmployee?.approvalStatus === 'approved' ? 'approve-button' : 'reject-button'}
-                onClick={() => handleApproval(selectedEmployee?.approvalStatus === 'approved' ? 'approved' : 'rejected')}
+                className={approvalAction === 'approved' ? 'approve-button' : 'reject-button'}
+                onClick={() => handleApproval(approvalAction)}
               >
                 Confirm
               </button>
@@ -737,4 +798,4 @@ const SalaryCalculation = () => {
   );
 };
 
-export default SalaryCalculation; 
+export default SalaryCalculation;
