@@ -6,11 +6,41 @@ const Job = require("../models/Job");
 const { parseResume } = require("../services/cvParser");
 const upload = require("../middleware/upload"); // Enhanced upload middleware
 const { validateApplicationRequest } = require("../utils/validation");
-// const { auth } = require('../middleware/auth'); // If you need authentication
+const { auth, authorize } = require("../middleware/auth");
 
 // NEW: for writing the sidecar JSON next to the uploaded file
 const fs = require("fs");
 const path = require("path");
+
+const ALLOWED_APPLICATION_STATUSES = [
+  "pending",
+  "reviewed",
+  "shortlisted",
+  "rejected",
+  "hired",
+];
+
+function formatApplication(app) {
+  return {
+    _id: app._id,
+    jobTitle: app.job?.title || app.jobTitle || "Unknown Job",
+    company: app.company || "Nexify HR",
+    department: app.job?.department || app.jobDepartment || "N/A",
+    location: app.job?.location || app.jobLocation || "N/A",
+    applicantName: app.name,
+    email: app.email,
+    phone: app.phone,
+    coverLetter: app.coverLetter,
+    resume: app.resume,
+    status: app.status,
+    appliedDate: app.createdAt
+      ? new Date(app.createdAt).toLocaleDateString()
+      : "N/A",
+    lastUpdated: app.createdAt
+      ? new Date(app.createdAt).toLocaleDateString()
+      : "N/A",
+  };
+}
 
 // NEW: helper to write a JSON file beside the uploaded resume
 async function writeParseJson(file, payload, requestId = "no_reqid") {
@@ -155,6 +185,11 @@ router.post("/", upload, async (req, res) => {
     console.log(`[${requestId}] Creating application record`);
     let app = await Application.create({
       job: job._id,
+      // Keep a job snapshot so applications remain readable after job deletion.
+      jobTitle: job.title,
+      jobDepartment: job.department,
+      jobLocation: job.location,
+      company: job.company || "Nexify HR",
       name,
       email,
       phone,
@@ -306,33 +341,25 @@ router.post("/", upload, async (req, res) => {
   }
 });
 // -----------------------
-// Get all applications
+// Get applications visible to the current user
 // -----------------------
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    const applications = await Application.find()
+    let query = {};
+
+    if (req.user.role === "applicant") {
+      query = { email: req.user.email };
+    } else if (req.user.role !== "hr" && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "You are not authorized to view applications",
+      });
+    }
+
+    const applications = await Application.find(query)
       .populate("job", "title department location")
       .sort("-createdAt");
 
-    const formattedApplications = applications.map((app) => ({
-      _id: app._id,
-      jobTitle: app.job?.title || "Unknown Job",
-      company: "Nexify HR",
-      department: app.job?.department || "N/A",
-      location: app.job?.location || "N/A",
-      applicantName: app.name,
-      email: app.email,
-      phone: app.phone,
-      coverLetter: app.coverLetter,
-      resume: app.resume,
-      status: app.status,
-      appliedDate: app.createdAt
-        ? new Date(app.createdAt).toLocaleDateString()
-        : "N/A",
-      lastUpdated: app.createdAt
-        ? new Date(app.createdAt).toLocaleDateString()
-        : "N/A",
-    }));
+    const formattedApplications = applications.map(formatApplication);
 
     res.json(formattedApplications);
   } catch (error) {
@@ -489,13 +516,20 @@ router.post("/:id/reparse", async (req, res) => {
 // -----------------------
 // Update application status
 // -----------------------
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", auth, authorize("hr", "admin"), async (req, res) => {
   try {
     const { status } = req.body;
+
+    if (!ALLOWED_APPLICATION_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed statuses are: ${ALLOWED_APPLICATION_STATUSES.join(", ")}`,
+      });
+    }
+
     const application = await Application.findByIdAndUpdate(
       req.params.id,
       { status },
-      { new: true },
+      { new: true, runValidators: true },
     );
 
     if (!application) {

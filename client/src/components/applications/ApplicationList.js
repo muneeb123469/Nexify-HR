@@ -190,12 +190,17 @@ const ApplicationList = () => {
 
   const getStatusColor = (status = "") => {
     switch (status.toLowerCase()) {
+      case "pending":
+        return "#f39c12";
+      case "reviewed":
       case "under review":
-        return "#FFB400";
+        return "#3498db";
+      case "shortlisted":
       case "interview scheduled":
         return "#4C9F9F";
       case "rejected":
         return "#FF5A5A";
+      case "hired":
       case "accepted":
         return "#4CAF50";
       default:
