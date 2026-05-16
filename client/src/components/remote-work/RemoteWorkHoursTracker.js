@@ -10,6 +10,7 @@ import {
   FaStop,
   FaCheck,
 } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 import './RemoteWorkHoursTracker.css';
 
 const EMPLOYEE_STORAGE_KEY = 'nexify_hr_employee_records';
@@ -62,6 +63,7 @@ const buildEmployeeRecord = (employee) => ({
 });
 
 const RemoteWorkHoursTracker = () => {
+  const { user } = useAuth() || {};
   const [employeeRecords, setEmployeeRecords] = useState(() => readStorageArray(EMPLOYEE_STORAGE_KEY));
   const [sessions, setSessions] = useState(() => readStorageArray(SESSION_STORAGE_KEY));
   const [isAdmin, setIsAdmin] = useState(false);
@@ -87,6 +89,10 @@ const RemoteWorkHoursTracker = () => {
     [employeeRecords]
   );
 
+  const userRole = (user?.role || '').toLowerCase();
+  const canManageWorkHours = ['admin', 'hr', 'manager', 'administrator'].includes(userRole);
+  const isAdminView = canManageWorkHours && isAdmin;
+
   useEffect(() => {
     const savedEmployees = readStorageArray(EMPLOYEE_STORAGE_KEY);
     const savedSessions = readStorageArray(SESSION_STORAGE_KEY);
@@ -100,6 +106,12 @@ const RemoteWorkHoursTracker = () => {
       setCurrentEmployeeId(employees[0].id);
     }
   }, [currentEmployeeId, employees]);
+
+  useEffect(() => {
+    if (!canManageWorkHours && isAdmin) {
+      setIsAdmin(false);
+    }
+  }, [canManageWorkHours, isAdmin]);
 
   useEffect(() => {
     const timer = setInterval(() => setElapsedTick((tick) => tick + 1), 30000);
@@ -447,20 +459,22 @@ const RemoteWorkHoursTracker = () => {
       <div className="tracker-header">
         <h1>Remote Work Hours Tracker</h1>
         <p className="local-demo-note">Work hours are saved locally for this demo.</p>
-        <div className="view-toggle">
-          <button
-            className={!isAdmin ? 'active' : ''}
-            onClick={() => setIsAdmin(false)}
-          >
-            Employee View
-          </button>
-          <button
-            className={isAdmin ? 'active' : ''}
-            onClick={() => setIsAdmin(true)}
-          >
-            Admin View
-          </button>
-        </div>
+        {canManageWorkHours && (
+          <div className="view-toggle">
+            <button
+              className={!isAdminView ? 'active' : ''}
+              onClick={() => setIsAdmin(false)}
+            >
+              Employee View
+            </button>
+            <button
+              className={isAdminView ? 'active' : ''}
+              onClick={() => setIsAdmin(true)}
+            >
+              Admin View
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="date-selector">
@@ -476,7 +490,7 @@ const RemoteWorkHoursTracker = () => {
         <div className="empty-state">
           No employee records found. Sync employees from prepared offers first.
         </div>
-      ) : !isAdmin ? (
+      ) : !isAdminView ? (
         <div className="employee-dashboard">
           <div className="employee-selector">
             <label htmlFor="remote-work-employee">Employee</label>
