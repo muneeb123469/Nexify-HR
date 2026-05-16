@@ -1,50 +1,69 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./PayrollTaxManagement.css";
 
-const PayrollTaxManagement = () => {
-  const [employees, setEmployees] = useState([
-    {
-      id: "EMP001",
-      name: "John Doe",
-      department: "Engineering",
-      position: "Senior Developer",
-      salary: 80000,
-      taxInfo: {
-        taxId: "TAX123456",
-        taxCategory: "Standard",
-        exemptions: 2,
-        additionalDeductions: 0,
-      },
-      payrollInfo: {
-        paymentMethod: "Direct Deposit",
-        bankAccount: "****1234",
-        paymentFrequency: "Monthly",
-        lastPayment: "2024-02-28",
-        nextPayment: "2024-03-31",
-      },
-    },
-    {
-      id: "EMP002",
-      name: "Jane Smith",
-      department: "HR",
-      position: "HR Manager",
-      salary: 90000,
-      taxInfo: {
-        taxId: "TAX789012",
-        taxCategory: "Standard",
-        exemptions: 1,
-        additionalDeductions: 500,
-      },
-      payrollInfo: {
-        paymentMethod: "Direct Deposit",
-        bankAccount: "****5678",
-        paymentFrequency: "Monthly",
-        lastPayment: "2024-02-28",
-        nextPayment: "2024-03-31",
-      },
-    },
-  ]);
+const EMPLOYEE_STORAGE_KEY = "nexify_hr_employee_records";
+const OFFER_STORAGE_KEY = "nexify_hr_offer_letters";
 
+const readStorageArray = (key) => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
+
+const parseSalaryValue = (salary) => {
+  if (typeof salary === "number") return Number.isFinite(salary) ? salary : 0;
+  const match = String(salary || "").replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+};
+
+const findOfferForEmployee = (employee, offers) =>
+  offers.find((offer) =>
+    (employee.sourceApplicationId && offer.applicationId === employee.sourceApplicationId) ||
+    (employee.email && offer.email === employee.email) ||
+    (employee.sourceOfferId && offer.id === employee.sourceOfferId)
+  );
+
+const buildPayrollRows = () => {
+  const employeeRecords = readStorageArray(EMPLOYEE_STORAGE_KEY);
+  const offers = readStorageArray(OFFER_STORAGE_KEY);
+
+  return employeeRecords.map((employee) => {
+    const offer = findOfferForEmployee(employee, offers);
+    const salarySource = offer?.offerDetails?.salary || employee.salary || employee.basicSalary || "";
+    const salary = parseSalaryValue(salarySource);
+    const id = employee.id || `EMP-${employee.email || employee.name || "UNKNOWN"}`;
+
+    return {
+      id,
+      name: employee.name || "Unknown Employee",
+      department: employee.department || "Pending Assignment",
+      position: employee.role || offer?.position || "Unassigned Role",
+      salary,
+      salaryDisplay: salarySource ? String(salarySource) : "Not Set",
+      taxInfo: {
+        taxId: employee.taxId || `TAX-${id}`,
+        taxCategory: employee.taxCategory || "Standard",
+        exemptions: employee.exemptions || 0,
+        additionalDeductions: employee.additionalDeductions || 0,
+      },
+      payrollInfo: {
+        paymentMethod: "Local Demo",
+        bankAccount: "Not configured",
+        paymentFrequency: "Monthly",
+        lastPayment: "Not recorded",
+        nextPayment: "Not scheduled",
+      },
+    };
+  });
+};
+
+const PayrollTaxManagement = () => {
+  const [employees, setEmployees] = useState(buildPayrollRows);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [notification, setNotification] = useState(null);
@@ -55,6 +74,7 @@ const PayrollTaxManagement = () => {
     netSalary: 0,
     taxBreakdown: {},
   });
+
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -62,43 +82,71 @@ const PayrollTaxManagement = () => {
   const handleEmployeeSelect = (employee) => {
     setSelectedEmployee(employee);
   };
+
   const handleTaxInfoUpdate = (employeeId, field, value) => {
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === employeeId
-          ? {
-              ...emp,
-              taxInfo: {
-                ...emp.taxInfo,
-                [field]: value,
-              },
-            }
-          : emp,
-      ),
+    const updatedEmployees = employees.map((emp) =>
+      emp.id === employeeId
+        ? {
+            ...emp,
+            taxInfo: {
+              ...emp.taxInfo,
+              [field]: value,
+            },
+          }
+        : emp,
     );
+
+    setEmployees(updatedEmployees);
+    setSelectedEmployee(updatedEmployees.find((employee) => employee.id === employeeId));
     setNotification({
       type: "success",
-      message: "Tax information updated successfully!",
+      message: "Tax information updated locally.",
     });
   };
 
   const calculateTax = (employee) => {
-    const grossSalary = employee.salary;
-    const taxRate = 0.2; // 20% tax rate (simplified)
+    const grossSalary = Number(employee.salary || 0);
+    const taxRate = 0.2;
     const taxDeductions = grossSalary * taxRate;
     const netSalary = grossSalary - taxDeductions;
 
     const taxBreakdown = {
-      federalTax: taxDeductions * 0.7, // 70% of total tax
-      stateTax: taxDeductions * 0.2, // 20% of total tax
-      localTax: taxDeductions * 0.1, // 10% of total tax
+      federalTax: taxDeductions * 0.7,
+      stateTax: taxDeductions * 0.2,
+      localTax: taxDeductions * 0.1,
     };
+
+    setTaxCalculation({
+      grossSalary,
+      taxDeductions,
+      netSalary,
+      taxBreakdown,
+    });
+    setShowTaxCalculator(true);
+    setSelectedEmployee(employee);
+    setNotification({
+      type: grossSalary ? "success" : "info",
+      message: grossSalary
+        ? "Tax calculation completed for local demo data."
+        : "Salary is not set, so tax calculation is shown as 0.",
+    });
   };
 
-  const filteredEmployees = employees.filter((employee) =>
-    Object.values(employee).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-    ),
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter((employee) => {
+        const searchableText = [
+          employee.id,
+          employee.name,
+          employee.department,
+          employee.position,
+          employee.salaryDisplay,
+          employee.taxInfo.taxId,
+        ].join(" ").toLowerCase();
+
+        return searchableText.includes(searchTerm.toLowerCase());
+      }),
+    [employees, searchTerm],
   );
 
   return (
@@ -124,48 +172,58 @@ const PayrollTaxManagement = () => {
 
       <div className="management-content">
         <div className="employees-list">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Position</th>
-                <th>Salary</th>
-                <th>Tax ID</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.map((employee) => (
-                <tr
-                  key={employee.id}
-                  className={
-                    selectedEmployee?.id === employee.id ? "selected" : ""
-                  }
-                  onClick={() => handleEmployeeSelect(employee)}
-                >
-                  <td>{employee.id}</td>
-                  <td>{employee.name}</td>
-                  <td>{employee.department}</td>
-                  <td>{employee.position}</td>
-                  <td>${employee.salary.toLocaleString()}</td>
-                  <td>{employee.taxInfo.taxId}</td>
-                  <td>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        calculateTax(employee);
-                      }}
-                      className="calculate-button"
-                    >
-                      Calculate Tax
-                    </button>
-                  </td>
+          {employees.length === 0 ? (
+            <div className="empty-state">
+              No employee records found. Sync employees from prepared offers first.
+            </div>
+          ) : filteredEmployees.length === 0 ? (
+            <div className="empty-state">
+              No payroll tax rows match your search.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Position</th>
+                  <th>Salary</th>
+                  <th>Tax ID</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredEmployees.map((employee) => (
+                  <tr
+                    key={employee.id}
+                    className={
+                      selectedEmployee?.id === employee.id ? "selected" : ""
+                    }
+                    onClick={() => handleEmployeeSelect(employee)}
+                  >
+                    <td>{employee.id}</td>
+                    <td>{employee.name}</td>
+                    <td>{employee.department}</td>
+                    <td>{employee.position}</td>
+                    <td>{employee.salaryDisplay}</td>
+                    <td>{employee.taxInfo.taxId}</td>
+                    <td>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          calculateTax(employee);
+                        }}
+                        className="calculate-button"
+                      >
+                        Calculate Tax
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {selectedEmployee && (
@@ -213,7 +271,7 @@ const PayrollTaxManagement = () => {
                       handleTaxInfoUpdate(
                         selectedEmployee.id,
                         "exemptions",
-                        parseInt(e.target.value),
+                        Number(e.target.value) || 0,
                       )
                     }
                     min="0"
@@ -228,7 +286,7 @@ const PayrollTaxManagement = () => {
                       handleTaxInfoUpdate(
                         selectedEmployee.id,
                         "additionalDeductions",
-                        parseInt(e.target.value),
+                        Number(e.target.value) || 0,
                       )
                     }
                     min="0"
@@ -288,19 +346,19 @@ const PayrollTaxManagement = () => {
                 <div className="breakdown-item">
                   <label>Federal Tax</label>
                   <p>
-                    ${taxCalculation.taxBreakdown.federalTax.toLocaleString()}
+                    ${(taxCalculation.taxBreakdown.federalTax || 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="breakdown-item">
                   <label>State Tax</label>
                   <p>
-                    ${taxCalculation.taxBreakdown.stateTax.toLocaleString()}
+                    ${(taxCalculation.taxBreakdown.stateTax || 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="breakdown-item">
                   <label>Local Tax</label>
                   <p>
-                    ${taxCalculation.taxBreakdown.localTax.toLocaleString()}
+                    ${(taxCalculation.taxBreakdown.localTax || 0).toLocaleString()}
                   </p>
                 </div>
               </div>
