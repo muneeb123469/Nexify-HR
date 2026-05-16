@@ -113,6 +113,18 @@
   color: #718096;
 }
 
+.file-type {
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin-top: 0.25rem;
+}
+
+.file-error {
+  color: #c53030;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
 .parse-button {
   padding: 0.5rem 1rem;
   background-color: #4299e1;
@@ -168,6 +180,18 @@
   color: #48bb78;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.status-failed {
+  color: #c53030;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.failed-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .parsed-data-grid {
@@ -235,4 +259,27 @@
   font-size: 0.75rem;
   color: #718096;
   margin-top: 0.25rem;
-} 
+}
+
+.raw-text-preview {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .parsing-content {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-section,
+  .file-card,
+  .failed-status {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
