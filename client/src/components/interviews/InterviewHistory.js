@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import './InterviewHistory.css';
 
 const InterviewHistory = () => {
@@ -165,4 +164,4 @@ const InterviewHistory = () => {
   );
 };
 
-export default InterviewHistory; 
+export default InterviewHistory;

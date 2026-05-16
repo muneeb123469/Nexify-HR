@@ -723,30 +723,30 @@ function CompanyMessages({ applicantName }) {
         <div className="bg-[#E3F2FD] rounded-lg p-4">
           <h4 className="font-medium text-[#2C3E50] mb-2">Helpful Resources</h4>
           <div className="space-y-2">
-            <a
-              href="#"
-              className="flex items-center text-[#4C9F9F] hover:text-[#2A6F6F]"
+            <span
+              className="flex items-center text-[#4C9F9F] opacity-80 cursor-default"
+              aria-disabled="true"
             >
               <BookOpen className="w-4 h-4 mr-2" />
               <span>Interview Preparation Tips</span>
               <ChevronRight className="w-4 h-4 ml-auto" />
-            </a>
-            <a
-              href="#"
-              className="flex items-center text-[#4C9F9F] hover:text-[#2A6F6F]"
+            </span>
+            <span
+              className="flex items-center text-[#4C9F9F] opacity-80 cursor-default"
+              aria-disabled="true"
             >
               <Info className="w-4 h-4 mr-2" />
               <span>Company Hiring Process</span>
               <ChevronRight className="w-4 h-4 ml-auto" />
-            </a>
-            <a
-              href="#"
-              className="flex items-center text-[#4C9F9F] hover:text-[#2A6F6F]"
+            </span>
+            <span
+              className="flex items-center text-[#4C9F9F] opacity-80 cursor-default"
+              aria-disabled="true"
             >
               <HelpCircle className="w-4 h-4 mr-2" />
               <span>Frequently Asked Questions</span>
               <ChevronRight className="w-4 h-4 ml-auto" />
-            </a>
+            </span>
           </div>
         </div>
 

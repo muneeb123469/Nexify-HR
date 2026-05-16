@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { FaCalendarAlt, FaFileAlt, FaPaperPlane } from 'react-icons/fa';
+import { FaCalendarAlt, FaPaperPlane } from 'react-icons/fa';
 
 const Container = styled.div`
   padding: 24px;
@@ -207,4 +207,4 @@ const LeaveRequest = () => {
   );
 };
 
-export default LeaveRequest; 
+export default LeaveRequest;
