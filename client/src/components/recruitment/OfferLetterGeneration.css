@@ -92,7 +92,8 @@
   color: #2b6cb0;
 }
 
-.status.offer_sent {
+.status.offer_sent,
+.status.offer_prepared {
   background-color: #c6f6d5;
   color: #2f855a;
 }
@@ -238,6 +239,12 @@
   cursor: not-allowed;
 }
 
+.local-demo-note {
+  color: #718096;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
 .offer-sent-notification {
   padding: 1rem;
   background-color: #c6f6d5;
@@ -255,4 +262,4 @@
   color: #718096;
   font-size: 1rem;
   text-align: center;
-} 
+}
