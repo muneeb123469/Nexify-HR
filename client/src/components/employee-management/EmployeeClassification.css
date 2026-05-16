@@ -76,6 +76,12 @@
   padding: 1.5rem;
 }
 
+.autosave-note {
+  margin-bottom: 1rem;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
 .employees-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -113,6 +119,11 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.level-badge.unassigned {
+  background-color: #edf2f7;
+  color: #4a5568;
 }
 
 .level-badge.junior {
@@ -164,6 +175,39 @@
   margin: 0;
 }
 
+.classification-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.classification-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.classification-control label {
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.classification-control select {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #2d3748;
+  background-color: white;
+}
+
+.classification-control select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
 .skills-section,
 .projects-section {
   margin-bottom: 1.5rem;
@@ -194,8 +238,15 @@
   color: #4a5568;
 }
 
+.add-skill,
+.add-project {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .add-skill input,
 .add-project input {
+  flex: 1;
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #e2e8f0;
@@ -212,6 +263,37 @@
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
+.add-skill button,
+.add-project button {
+  padding: 0.5rem 0.75rem;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add-skill button:hover:not(:disabled),
+.add-project button:hover:not(:disabled) {
+  background-color: #3182ce;
+}
+
+.add-skill button:disabled,
+.add-project button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.empty-state {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #718096;
+  font-size: 0.95rem;
+}
+
 @media (max-width: 768px) {
   .employee-classification {
     padding: 1rem;
@@ -224,4 +306,4 @@
   .employees-grid {
     grid-template-columns: 1fr;
   }
-} 
+}
