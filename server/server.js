@@ -33,6 +33,7 @@ app.use('/uploads', (req, res, next) => {
 app.use('/api/auth', require('./Routes/authRoutes'));
 app.use('/api/jobs', require('./Routes/jobRoutes'));
 app.use('/api/applications', require('./Routes/applicationRoutes'));
+app.use('/api/resumes', require('./Routes/resumeRoutes'));
 app.use('/api/admin', require('./Routes/adminRoutes'));
 
 // MongoDB Connection
