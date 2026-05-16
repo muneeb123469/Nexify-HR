@@ -222,6 +222,12 @@
   text-align: center;
 }
 
+.local-demo-note {
+  color: #718096;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
 .no-candidate-selected {
   display: flex;
   align-items: center;
@@ -230,4 +236,4 @@
   color: #718096;
   font-size: 1rem;
   text-align: center;
-} 
+}

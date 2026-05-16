@@ -1,66 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './InterviewFeedbackRecording.css';
 
-const InterviewFeedbackRecording = () => {
-  const [interviews, setInterviews] = useState([
-    {
-      id: 1,
-      candidateName: 'John Doe',
-      position: 'Senior Software Engineer',
-      date: '2024-03-20',
-      time: '10:00 AM',
-      status: 'upcoming',
-      interviewers: ['Sarah Johnson', 'Mike Brown'],
-    },
-    {
-      id: 2,
-      candidateName: 'Jane Smith',
-      position: 'Product Manager',
-      date: '2024-03-19',
-      time: '02:00 PM',
-      status: 'completed',
-      interviewers: ['Lisa Chen'],
-      feedback: {
-        technicalSkills: 4,
-        communication: 5,
-        problemSolving: 4,
-        culturalFit: 5,
-        strengths: 'Strong technical background and excellent communication skills.',
-        weaknesses: 'Could improve on system design knowledge.',
-        overallAssessment: 'Highly recommended for the position.',
-        notes: 'Great potential for growth.'
-      }
-    },
-  ]);
+const STORAGE_KEY = 'nexify_hr_scheduled_interviews';
 
+const createEmptyFeedback = () => ({
+  technicalSkills: 0,
+  communication: 0,
+  problemSolving: 0,
+  culturalFit: 0,
+  strengths: '',
+  weaknesses: '',
+  overallAssessment: '',
+  notes: ''
+});
+
+const getStoredInterviews = () => {
+  try {
+    const savedInterviews = localStorage.getItem(STORAGE_KEY);
+    const parsedInterviews = savedInterviews ? JSON.parse(savedInterviews) : [];
+    return Array.isArray(parsedInterviews) ? parsedInterviews : [];
+  } catch (error) {
+    console.error('Failed to read scheduled interviews:', error);
+    return [];
+  }
+};
+
+const saveStoredInterviews = (interviews) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(interviews));
+};
+
+const InterviewFeedbackRecording = () => {
+  const [interviews, setInterviews] = useState([]);
   const [selectedInterview, setSelectedInterview] = useState(null);
-  const [feedback, setFeedback] = useState({
-    technicalSkills: 0,
-    communication: 0,
-    problemSolving: 0,
-    culturalFit: 0,
-    strengths: '',
-    weaknesses: '',
-    overallAssessment: '',
-    notes: ''
-  });
+  const [feedback, setFeedback] = useState(createEmptyFeedback);
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+
+  useEffect(() => {
+    setInterviews(getStoredInterviews());
+  }, []);
 
   const handleInterviewSelect = (interview) => {
     setSelectedInterview(interview);
-    if (interview.feedback) {
-      setFeedback(interview.feedback);
-    } else {
-      setFeedback({
-        technicalSkills: 0,
-        communication: 0,
-        problemSolving: 0,
-        culturalFit: 0,
-        strengths: '',
-        weaknesses: '',
-        overallAssessment: '',
-        notes: ''
-      });
-    }
+    setFeedback(interview.feedback || createEmptyFeedback());
+    setFeedbackSuccess(false);
   };
 
   const handleRatingChange = (category, value) => {
@@ -68,6 +50,7 @@ const InterviewFeedbackRecording = () => {
       ...prev,
       [category]: value
     }));
+    setFeedbackSuccess(false);
   };
 
   const handleTextChange = (field, value) => {
@@ -75,18 +58,33 @@ const InterviewFeedbackRecording = () => {
       ...prev,
       [field]: value
     }));
+    setFeedbackSuccess(false);
   };
 
   const handleSubmitFeedback = () => {
-    setInterviews(prev =>
-      prev.map(interview =>
-        interview.id === selectedInterview.id
-          ? { ...interview, feedback, status: 'completed' }
-          : interview
-      )
+    if (!selectedInterview) {
+      return;
+    }
+
+    const updatedInterview = {
+      ...selectedInterview,
+      feedback,
+      status: 'completed',
+      feedbackSubmittedAt: new Date().toISOString(),
+    };
+
+    const updatedInterviews = interviews.map(interview =>
+      interview.id === selectedInterview.id ? updatedInterview : interview
     );
-    setSelectedInterview(null);
+
+    setInterviews(updatedInterviews);
+    saveStoredInterviews(updatedInterviews);
+    setSelectedInterview(updatedInterview);
+    setFeedbackSuccess(true);
   };
+
+  const hasSavedFeedback =
+    selectedInterview?.status === 'completed' || Boolean(selectedInterview?.feedback);
 
   const renderRatingStars = (category, value) => {
     return (
@@ -97,7 +95,7 @@ const InterviewFeedbackRecording = () => {
             className={`star ${star <= value ? 'filled' : ''}`}
             onClick={() => handleRatingChange(category, star)}
           >
-            ★
+            &#9733;
           </button>
         ))}
       </div>
@@ -114,35 +112,41 @@ const InterviewFeedbackRecording = () => {
         <div className="interviews-section">
           <h2>Interviews</h2>
           <div className="interviews-list">
-            {interviews.map(interview => (
-              <div
-                key={interview.id}
-                className={`interview-card ${selectedInterview?.id === interview.id ? 'selected' : ''}`}
-                onClick={() => handleInterviewSelect(interview)}
-              >
-                <div className="interview-info">
-                  <h3>{interview.candidateName}</h3>
-                  <p className="position">{interview.position}</p>
-                  <div className="interview-details">
-                    <p className="date">{interview.date}</p>
-                    <p className="time">{interview.time}</p>
-                    <span className={`status ${interview.status}`}>
-                      {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
-                    </span>
-                  </div>
-                  <div className="interviewers">
-                    <p>Interviewers:</p>
-                    <div className="interviewer-tags">
-                      {interview.interviewers.map(interviewer => (
-                        <span key={interviewer} className="interviewer-tag">
-                          {interviewer}
-                        </span>
-                      ))}
+            {interviews.length === 0 ? (
+              <div className="no-interview-selected">
+                <p>No scheduled interviews found. Schedule interviews first.</p>
+              </div>
+            ) : (
+              interviews.map(interview => (
+                <div
+                  key={interview.id}
+                  className={`interview-card ${selectedInterview?.id === interview.id ? 'selected' : ''}`}
+                  onClick={() => handleInterviewSelect(interview)}
+                >
+                  <div className="interview-info">
+                    <h3>{interview.candidateName}</h3>
+                    <p className="position">{interview.position}</p>
+                    <div className="interview-details">
+                      <p className="date">{interview.date}</p>
+                      <p className="time">{interview.time}</p>
+                      <span className={`status ${interview.status}`}>
+                        {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="interviewers">
+                      <p>Interviewers:</p>
+                      <div className="interviewer-tags">
+                        {(interview.interviewers || []).map(interviewer => (
+                          <span key={interviewer} className="interviewer-tag">
+                            {interviewer}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -211,8 +215,14 @@ const InterviewFeedbackRecording = () => {
                 onClick={handleSubmitFeedback}
                 disabled={!feedback.overallAssessment}
               >
-                Submit Feedback
+                {hasSavedFeedback ? 'Update Feedback' : 'Submit Feedback'}
               </button>
+
+              {feedbackSuccess && (
+                <div className="feedback-success">
+                  Feedback saved successfully.
+                </div>
+              )}
             </div>
           ) : (
             <div className="no-interview-selected">
@@ -225,4 +235,4 @@ const InterviewFeedbackRecording = () => {
   );
 };
 
-export default InterviewFeedbackRecording; 
+export default InterviewFeedbackRecording;

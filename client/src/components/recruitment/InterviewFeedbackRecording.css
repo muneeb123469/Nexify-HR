@@ -218,6 +218,15 @@
   cursor: not-allowed;
 }
 
+.feedback-success {
+  padding: 1rem;
+  background-color: #c6f6d5;
+  color: #2f855a;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 .no-interview-selected {
   display: flex;
   align-items: center;
@@ -226,4 +235,4 @@
   color: #718096;
   font-size: 1rem;
   text-align: center;
-} 
+}
