@@ -1,28 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useApplications } from '../../context/ApplicationContext';
 import './CandidateApplicationManagement.css';
 
 const CandidateApplicationManagement = () => {
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      candidateName: 'John Doe',
-      jobTitle: 'Senior Software Engineer',
-      status: 'Under Review',
-      appliedDate: '2024-03-15',
-      resume: 'resume.pdf',
-      coverLetter: 'cover_letter.pdf',
-    },
-    {
-      id: 2,
-      candidateName: 'Jane Smith',
-      jobTitle: 'Product Manager',
-      status: 'Shortlisted',
-      appliedDate: '2024-03-14',
-      resume: 'resume.pdf',
-      coverLetter: 'cover_letter.pdf',
-    },
-  ]);
-
+  const {
+    applications,
+    loading,
+    error,
+    fetchApplications,
+    updateApplicationStatus,
+  } = useApplications();
   const [filters, setFilters] = useState({
     candidateName: '',
     jobTitle: '',
@@ -30,6 +17,29 @@ const CandidateApplicationManagement = () => {
   });
 
   const [selectedApplications, setSelectedApplications] = useState([]);
+  const [actionError, setActionError] = useState('');
+  const applicationList = useMemo(
+    () => (Array.isArray(applications) ? applications : []),
+    [applications]
+  );
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const filteredApplications = useMemo(() => {
+    return applicationList.filter(application => {
+      const applicantName = application.applicantName || '';
+      const jobTitle = application.jobTitle || '';
+      const status = application.status || '';
+
+      return (
+        applicantName.toLowerCase().includes(filters.candidateName.toLowerCase()) &&
+        jobTitle.toLowerCase().includes(filters.jobTitle.toLowerCase()) &&
+        (!filters.status || status === filters.status)
+      );
+    });
+  }, [applicationList, filters]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -39,21 +49,30 @@ const CandidateApplicationManagement = () => {
     }));
   };
 
-  const handleStatusChange = (applicationId, newStatus) => {
-    setApplications(prev =>
-      prev.map(app =>
-        app.id === applicationId ? { ...app, status: newStatus } : app
-      )
-    );
+  const handleStatusChange = async (applicationId, newStatus) => {
+    setActionError('');
+    const result = await updateApplicationStatus(applicationId, newStatus);
+
+    if (result?.success === false) {
+      setActionError(result.error || 'Failed to update application status');
+    }
   };
 
-  const handleBatchStatusChange = (newStatus) => {
-    setApplications(prev =>
-      prev.map(app =>
-        selectedApplications.includes(app.id) ? { ...app, status: newStatus } : app
+  const handleBatchStatusChange = async (newStatus) => {
+    setActionError('');
+
+    const results = await Promise.all(
+      selectedApplications.map(applicationId =>
+        updateApplicationStatus(applicationId, newStatus)
       )
     );
-    setSelectedApplications([]);
+    const failedResult = results.find(result => result?.success === false);
+
+    if (failedResult) {
+      setActionError(failedResult.error || 'Failed to update one or more applications');
+    } else {
+      setSelectedApplications([]);
+    }
   };
 
   const toggleApplicationSelection = (applicationId) => {
@@ -62,6 +81,18 @@ const CandidateApplicationManagement = () => {
         ? prev.filter(id => id !== applicationId)
         : [...prev, applicationId]
     );
+  };
+
+  const filteredApplicationIds = filteredApplications.map(application => application._id);
+  const allFilteredSelected =
+    filteredApplicationIds.length > 0 &&
+    filteredApplicationIds.every(applicationId => selectedApplications.includes(applicationId));
+
+  const formatStatus = (status = '') => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -92,25 +123,28 @@ const CandidateApplicationManagement = () => {
             className="status-filter"
           >
             <option value="">All Status</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Shortlisted">Shortlisted</option>
-            <option value="Rejected">Rejected</option>
+            <option value="pending">Pending</option>
+            <option value="shortlisted">Shortlisted</option>
+            <option value="rejected">Rejected</option>
+            <option value="hired">Hired</option>
           </select>
         </div>
       </div>
+      {error && <div className="error-state">{error}</div>}
+      {actionError && <div className="error-state">{actionError}</div>}
 
       {selectedApplications.length > 0 && (
         <div className="batch-actions">
           <span>{selectedApplications.length} applications selected</span>
           <div className="batch-buttons">
             <button
-              onClick={() => handleBatchStatusChange('Shortlisted')}
+              onClick={() => handleBatchStatusChange('shortlisted')}
               className="batch-btn shortlist"
             >
               Shortlist Selected
             </button>
             <button
-              onClick={() => handleBatchStatusChange('Rejected')}
+              onClick={() => handleBatchStatusChange('rejected')}
               className="batch-btn reject"
             >
               Reject Selected
@@ -128,12 +162,13 @@ const CandidateApplicationManagement = () => {
                   type="checkbox"
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedApplications(applications.map(app => app.id));
+                      setSelectedApplications(filteredApplicationIds);
                     } else {
                       setSelectedApplications([]);
                     }
                   }}
-                  checked={selectedApplications.length === applications.length}
+                  checked={allFilteredSelected}
+                  disabled={filteredApplicationIds.length === 0}
                 />
               </th>
               <th>Candidate Name</th>
@@ -144,26 +179,39 @@ const CandidateApplicationManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {applications.map(application => (
-              <tr key={application.id}>
+            {loading && (
+              <tr>
+                <td colSpan="6" className="empty-state">Loading applications...</td>
+              </tr>
+            )}
+            {!loading && filteredApplications.length === 0 && (
+              <tr>
+                <td colSpan="6" className="empty-state">
+                  No applications found. Submitted applicant applications will appear here.
+                </td>
+              </tr>
+            )}
+            {!loading && filteredApplications.map(application => (
+              <tr key={application._id}>
                 <td>
                   <input
                     type="checkbox"
-                    checked={selectedApplications.includes(application.id)}
-                    onChange={() => toggleApplicationSelection(application.id)}
+                    checked={selectedApplications.includes(application._id)}
+                    onChange={() => toggleApplicationSelection(application._id)}
                   />
                 </td>
-                <td>{application.candidateName}</td>
+                <td>{application.applicantName || 'Unknown Applicant'}</td>
                 <td>{application.jobTitle}</td>
                 <td>
                   <select
                     value={application.status}
-                    onChange={(e) => handleStatusChange(application.id, e.target.value)}
-                    className={`status-select ${application.status.toLowerCase().replace(' ', '-')}`}
+                    onChange={(e) => handleStatusChange(application._id, e.target.value)}
+                    className={`status-select ${application.status}`}
                   >
-                    <option value="Under Review">Under Review</option>
-                    <option value="Shortlisted">Shortlisted</option>
-                    <option value="Rejected">Rejected</option>
+                    <option value="pending">{formatStatus('pending')}</option>
+                    <option value="shortlisted">{formatStatus('shortlisted')}</option>
+                    <option value="rejected">{formatStatus('rejected')}</option>
+                    <option value="hired">{formatStatus('hired')}</option>
                   </select>
                 </td>
                 <td>{application.appliedDate}</td>

@@ -893,6 +893,9 @@ const ApplicantDashboard = () => {
         <nav className="sidebar-nav">
           <NavLink to="/applicant-dashboard">Dashboard</NavLink>
           <NavLink to="/jobs">Browse Jobs</NavLink>
+          <NavLink to="/applicant-dashboard/applications">
+            My Applications
+          </NavLink>
           <NavLink to="/applicant-dashboard/interviews">Interviews</NavLink>
           <NavLink to="/applicant-dashboard/resume-parsing">
             Resume Parser

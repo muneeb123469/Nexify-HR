@@ -46,6 +46,20 @@ const applicationSchema = new mongoose.Schema({
     ref: 'Job',
     required: true
   },
+  // Snapshot fields preserve historical application data if the job is deleted later.
+  jobTitle: {
+    type: String
+  },
+  jobDepartment: {
+    type: String
+  },
+  jobLocation: {
+    type: String
+  },
+  company: {
+    type: String,
+    default: 'Nexify HR'
+  },
   name: {
     type: String,
     required: true
@@ -68,7 +82,7 @@ const applicationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'reviewed', 'shortlisted', 'rejected'],
+    enum: ['pending', 'reviewed', 'shortlisted', 'rejected', 'hired'],
     default: 'pending'
   },
   // Include parsed resume data from CV parser
@@ -83,4 +97,4 @@ const applicationSchema = new mongoose.Schema({
 applicationSchema.index({ job: 1, email: 1 }, { unique: true });
 
 // Export the model with safety check to prevent overwrite errors
-module.exports = mongoose.models.Application || mongoose.model('Application', applicationSchema); 
+module.exports = mongoose.models.Application || mongoose.model('Application', applicationSchema);

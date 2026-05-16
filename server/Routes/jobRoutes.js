@@ -56,15 +56,14 @@ router.put('/:id', async (req, res) => {
 // Delete job
 router.delete('/:id', async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByIdAndDelete(req.params.id);
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
-    await job.remove();
     res.json({ message: 'Job deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-module.exports = router; 
+module.exports = router;

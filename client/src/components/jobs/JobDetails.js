@@ -135,7 +135,7 @@ const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { jobs, loading, error, updateJob, deleteJob } = useJobs();
-  const { user, hasRole, isAuthenticated } = useAuth();
+  const { hasRole, isAuthenticated } = useAuth();
   const [job, setJob] = useState(null);
 
   useEffect(() => {
@@ -170,7 +170,7 @@ const JobDetails = () => {
     if (window.confirm("Are you sure you want to delete this job?")) {
       try {
         await deleteJob(id);
-        navigate("/jobs");
+        navigate("/hr/job-postings");
       } catch (error) {
         console.error("Error deleting job:", error);
         alert("Failed to delete job");
@@ -192,25 +192,9 @@ const JobDetails = () => {
     navigate(`/applications/new/${id}`); // Updated route to match App.js
   };
 
-  const handleEdit = () => {
-    if (!hasRole("hr")) {
-      alert("Only HR can edit jobs");
-      return;
-    }
-
-    navigate(`/jobs/${id}/edit`);
-  };
-
   if (loading) return <Container>Loading...</Container>;
   if (error) return <Container>Error: {error}</Container>;
   if (!job) return <Container>Job not found</Container>;
-
-  // Debug logging to check user role
-  console.log("Current user:", user);
-  console.log("User role:", user?.role);
-  console.log("hasRole(hr):", hasRole("hr"));
-  console.log("hasRole(applicant):", hasRole("applicant"));
-  console.log("isAuthenticated:", isAuthenticated());
 
   return (
     <Container>
@@ -263,9 +247,6 @@ const JobDetails = () => {
           {/* HR-only buttons */}
           {hasRole("hr") && (
             <>
-              <Button className="primary" onClick={handleEdit}>
-                Edit Job
-              </Button>
               <Button className="secondary" onClick={handleStatusChange}>
                 {job.status === "open" ? "Close Job" : "Reopen Job"}
               </Button>
