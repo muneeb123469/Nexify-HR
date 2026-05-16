@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaPaperPlane } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+
+const EMPLOYEE_STORAGE_KEY = 'nexify_hr_employee_records';
+const LEAVE_STORAGE_KEY = 'nexify_hr_leave_requests';
+
+const readStorageArray = (key) => {
+  try {
+    const value = localStorage.getItem(key);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
 
 const Container = styled.div`
   padding: 24px;
@@ -112,7 +127,50 @@ const SubmitButton = styled.button`
   }
 `;
 
+const Card = styled.div`
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+`;
+
+const RequestList = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const RequestItem = styled.div`
+  padding: 14px;
+  background: #F8F9FA;
+  border-radius: 8px;
+  color: #2C3E50;
+`;
+
+const RequestMeta = styled.div`
+  color: #666;
+  font-size: 13px;
+  margin-top: 6px;
+`;
+
+const Notification = styled.div`
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #D4EDDA;
+  color: #155724;
+`;
+
+const EmptyState = styled.p`
+  color: #666;
+  margin: 0;
+`;
+
 const LeaveRequest = () => {
+  const { user } = useAuth() || {};
+  const [employeeRecords] = useState(() => readStorageArray(EMPLOYEE_STORAGE_KEY));
+  const [leaveRequests, setLeaveRequests] = useState(() => readStorageArray(LEAVE_STORAGE_KEY));
+  const [notification, setNotification] = useState('');
   const [formData, setFormData] = useState({
     leaveType: '',
     startDate: '',
@@ -120,6 +178,17 @@ const LeaveRequest = () => {
     reason: '',
     attachments: null
   });
+
+  const userEmail = user?.email?.toLowerCase();
+  const currentEmployee = employeeRecords.find(
+    (employee) => employee.email?.toLowerCase() === userEmail
+  ) || employeeRecords[0];
+
+  const employeeLeaveRequests = leaveRequests.filter(
+    (request) =>
+      request.employeeId === currentEmployee?.id ||
+      (request.employeeEmail && request.employeeEmail === currentEmployee?.email)
+  );
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -131,12 +200,46 @@ const LeaveRequest = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log(formData);
+    if (!currentEmployee) {
+      setNotification('No employee record found. Ask HR to sync your employee record first.');
+      return;
+    }
+
+    const nextRequest = {
+      id: `leave_${Date.now()}`,
+      employeeId: currentEmployee.id,
+      employeeName: currentEmployee.name,
+      employeeEmail: currentEmployee.email || '',
+      leaveType: formData.leaveType,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      reason: formData.reason,
+      attachmentName: formData.attachments?.name || '',
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+    };
+    const nextRequests = [...leaveRequests, nextRequest];
+
+    setLeaveRequests(nextRequests);
+    localStorage.setItem(LEAVE_STORAGE_KEY, JSON.stringify(nextRequests));
+    setFormData({
+      leaveType: '',
+      startDate: '',
+      endDate: '',
+      reason: '',
+      attachments: null,
+    });
+    setNotification('Leave request saved locally for HR review.');
   };
 
   return (
     <Container>
+      {notification && <Notification>{notification}</Notification>}
+      {!currentEmployee && (
+        <Card>
+          <EmptyState>No employee record found. Ask HR to sync your employee record first.</EmptyState>
+        </Card>
+      )}
       <Form onSubmit={handleSubmit}>
         <Title>
           <FaCalendarAlt />
@@ -203,6 +306,27 @@ const LeaveRequest = () => {
           Submit Request
         </SubmitButton>
       </Form>
+
+      <Card>
+        <Title>
+          <FaCalendarAlt />
+          My Submitted Leave Requests
+        </Title>
+        {employeeLeaveRequests.length === 0 ? (
+          <EmptyState>No leave requests submitted yet.</EmptyState>
+        ) : (
+          <RequestList>
+            {employeeLeaveRequests.map((request) => (
+              <RequestItem key={request.id}>
+                <strong>{request.leaveType}</strong> from {request.startDate} to {request.endDate}
+                <RequestMeta>
+                  Status: {request.status} | Submitted: {new Date(request.submittedAt).toLocaleString()}
+                </RequestMeta>
+              </RequestItem>
+            ))}
+          </RequestList>
+        )}
+      </Card>
     </Container>
   );
 };

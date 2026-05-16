@@ -1,6 +1,28 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationCircle } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+
+const EMPLOYEE_STORAGE_KEY = 'nexify_hr_employee_records';
+const REMOTE_HOURS_STORAGE_KEY = 'nexify_hr_remote_work_hours';
+
+const readStorageArray = (key) => {
+  try {
+    const value = localStorage.getItem(key);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
+
+const formatDuration = (minutes = 0) => {
+  const safeMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+  return `${hours}h ${remainingMinutes.toString().padStart(2, '0')}m`;
+};
 
 const Container = styled.div`
   padding: 24px;
@@ -84,11 +106,8 @@ const MonthSelector = styled.div`
     border: none;
     color: #4C9F9F;
     cursor: pointer;
-    font-size: 16px;
-
-    &:hover {
-      color: #2A6F6F;
-    }
+    font-size: 14px;
+    font-weight: 600;
   }
 
   span {
@@ -124,27 +143,8 @@ const Day = styled.div`
   justify-content: center;
   border-radius: 8px;
   font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-
-  ${props => {
-    switch (props.status) {
-      case 'present':
-        return 'background: rgba(76, 159, 159, 0.1); color: #4C9F9F;';
-      case 'absent':
-        return 'background: rgba(244, 67, 54, 0.1); color: #F44336;';
-      case 'late':
-        return 'background: rgba(255, 193, 7, 0.1); color: #FFC107;';
-      default:
-        return 'background: #F8F9FA; color: #666666;';
-    }
-  }}
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
+  background: ${(props) => props.status === 'present' ? 'rgba(76, 159, 159, 0.1)' : '#F8F9FA'};
+  color: ${(props) => props.status === 'present' ? '#4C9F9F' : '#666666'};
 
   &.today {
     border: 2px solid #4C9F9F;
@@ -164,26 +164,46 @@ const LegendItem = styled.div`
   gap: 8px;
   color: #666666;
   font-size: 14px;
+`;
 
-  svg {
-    color: ${props => {
-      switch (props.type) {
-        case 'present':
-          return '#4C9F9F';
-        case 'absent':
-          return '#F44336';
-        case 'late':
-          return '#FFC107';
-        default:
-          return '#666666';
-      }
-    }};
-  }
+const ActivityList = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const ActivityItem = styled.div`
+  padding: 12px;
+  border-radius: 8px;
+  background: #F8F9FA;
+  color: #2C3E50;
+`;
+
+const EmptyState = styled.p`
+  color: #666;
+  margin: 0;
 `;
 
 const AttendanceOverview = () => {
+  const { user } = useAuth() || {};
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [employees] = useState(() => readStorageArray(EMPLOYEE_STORAGE_KEY));
+  const [remoteSessions] = useState(() => readStorageArray(REMOTE_HOURS_STORAGE_KEY));
 
+  const userEmail = user?.email?.toLowerCase();
+  const currentEmployee = employees.find(
+    (employee) => employee.email?.toLowerCase() === userEmail
+  ) || employees[0];
+
+  const employeeSessions = remoteSessions.filter(
+    (session) => session.employeeId === currentEmployee?.id
+  );
+  const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+  const monthSessions = employeeSessions.filter((session) => session.date?.startsWith(monthKey));
+  const presentDateSet = new Set(monthSessions.map((session) => session.date));
+  const totalRemoteMinutes = monthSessions.reduce(
+    (total, session) => total + (Number(session.durationMinutes) || 0),
+    0
+  );
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const getDaysInMonth = (date) => {
@@ -191,24 +211,23 @@ const AttendanceOverview = () => {
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
-
     const days = [];
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDate = new Date(year, month, day);
+      const dateKey = dayDate.toISOString().slice(0, 10);
+      days.push({
+        date: dayDate,
+        status: presentDateSet.has(dateKey) ? 'present' : 'empty',
+      });
     }
     return days;
   };
 
   const days = getDaysInMonth(currentMonth);
-  const handlePrevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
 
   return (
     <Container>
@@ -221,62 +240,64 @@ const AttendanceOverview = () => {
 
           <StatsGrid>
             <StatCard>
-              <StatValue>22</StatValue>
-              <StatLabel>Present Days</StatLabel>
+              <StatValue>{presentDateSet.size}</StatValue>
+              <StatLabel>Remote Work Days</StatLabel>
             </StatCard>
             <StatCard>
-              <StatValue>3</StatValue>
-              <StatLabel>Late Days</StatLabel>
+              <StatValue>{formatDuration(totalRemoteMinutes)}</StatValue>
+              <StatLabel>Tracked Hours</StatLabel>
             </StatCard>
             <StatCard>
-              <StatValue>1</StatValue>
-              <StatLabel>Absent Days</StatLabel>
+              <StatValue>0</StatValue>
+              <StatLabel>Manual Attendance Rows</StatLabel>
             </StatCard>
           </StatsGrid>
+
+          {!currentEmployee && (
+            <EmptyState>No employee record found. Ask HR to sync your employee record first.</EmptyState>
+          )}
 
           <Calendar>
             <CalendarHeader>
               <MonthSelector>
-                <button onClick={handlePrevMonth}>←</button>
+                <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}>Prev</button>
                 <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <button onClick={handleNextMonth}>→</button>
+                <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}>Next</button>
               </MonthSelector>
             </CalendarHeader>
 
             <WeekDays>
-              {weekDays.map(day => (
-                <span key={day}>{day}</span>
-              ))}
+              {weekDays.map((day) => <span key={day}>{day}</span>)}
             </WeekDays>
 
             <Days>
               {days.map((day, index) => (
                 day ? (
                   <Day
-                    key={index}
+                    key={day.date.toISOString()}
                     status={day.status}
                     className={day.date.toDateString() === new Date().toDateString() ? 'today' : ''}
                   >
                     {day.date.getDate()}
                   </Day>
                 ) : (
-                  <Day key={index} />
+                  <Day key={`empty-${index}`} />
                 )
               ))}
             </Days>
 
             <Legend>
-              <LegendItem type="present">
+              <LegendItem>
                 <FaCheckCircle />
-                Present
+                Remote work session
               </LegendItem>
-              <LegendItem type="late">
+              <LegendItem>
                 <FaExclamationCircle />
-                Late
+                Manual attendance not configured
               </LegendItem>
-              <LegendItem type="absent">
+              <LegendItem>
                 <FaTimesCircle />
-                Absent
+                No local session
               </LegendItem>
             </Legend>
           </Calendar>
@@ -288,7 +309,19 @@ const AttendanceOverview = () => {
             Recent Activity
           </Title>
 
-          {/* Add recent activity list here */}
+          {monthSessions.length === 0 ? (
+            <EmptyState>No remote work sessions found for this month.</EmptyState>
+          ) : (
+            <ActivityList>
+              {monthSessions.slice(0, 8).map((session) => (
+                <ActivityItem key={session.id}>
+                  <strong>{session.date}</strong>
+                  <div>{session.startTime || '--'} - {session.endTime || 'Active'}</div>
+                  <div>{formatDuration(session.durationMinutes)} tracked</div>
+                </ActivityItem>
+              ))}
+            </ActivityList>
+          )}
         </Card>
       </Grid>
     </Container>

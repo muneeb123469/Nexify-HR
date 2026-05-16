@@ -1,9 +1,51 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { FaThLarge, FaUsers, FaClock, FaLeaf, FaMoneyBill, FaCog, FaChartBar, FaSignOutAlt, FaSearch, FaMicrophone, FaBell, FaChevronRight, FaDownload, FaMoneyBillWave, FaPercent, FaTrophy, FaBullseye, FaHistory, FaPlus, FaCheckCircle, FaSpinner, FaCalendarAlt, FaFileUpload, FaFileAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaComments, FaPaperPlane, FaHeadset, FaBolt, FaHeartbeat, FaUserEdit } from 'react-icons/fa';
+
+const EMPLOYEE_STORAGE_KEY = 'nexify_hr_employee_records';
+const OFFER_STORAGE_KEY = 'nexify_hr_offer_letters';
+const REMOTE_HOURS_STORAGE_KEY = 'nexify_hr_remote_work_hours';
+const WELLNESS_STORAGE_KEY = 'nexify_hr_wellness_sessions';
+const LEAVE_STORAGE_KEY = 'nexify_hr_leave_requests';
+const DOCUMENT_STORAGE_KEY = 'nexify_hr_employee_documents';
+const GOALS_STORAGE_KEY = 'nexify_hr_employee_goals';
+
+const readStorageArray = (key) => {
+  try {
+    const value = localStorage.getItem(key);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error(`Failed to read ${key}:`, error);
+    return [];
+  }
+};
+
+const parseSalaryValue = (salary) => {
+  if (typeof salary === 'number') return Number.isFinite(salary) ? salary : 0;
+  const match = String(salary || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+};
+
+const formatMoney = (value) =>
+  Number(value || 0) ? `$${Number(value || 0).toLocaleString()}` : 'Not Set';
+
+const formatDuration = (minutes = 0) => {
+  const safeMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+  return `${hours}h ${remainingMinutes.toString().padStart(2, '0')}m`;
+};
+
+const findOfferForEmployee = (employee, offers) =>
+  offers.find((offer) =>
+    (employee?.sourceApplicationId && offer.applicationId === employee.sourceApplicationId) ||
+    (employee?.email && offer.email === employee.email) ||
+    (employee?.sourceOfferId && offer.id === employee.sourceOfferId)
+  );
 
 const DashboardContainer = styled.div`
   display: flex;
@@ -270,12 +312,23 @@ const UserRole = styled.p`
   font-size: 0.75rem;
 `;
 
-const UserAvatar = styled.img`
+const UserAvatarCircle = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  object-fit: cover;
   border: 2px solid #FFFFFF;
+  background: #4C9F9F;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+`;
+
+const EmptyText = styled.p`
+  color: #666666;
+  font-size: 0.875rem;
+  line-height: 1.5;
 `;
 
 const TodayBanner = styled(motion.section)`
@@ -1422,7 +1475,78 @@ const MobileMenuButton = styled.button`
 const EmployeeDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  const dashboardData = useMemo(() => {
+    const employees = readStorageArray(EMPLOYEE_STORAGE_KEY);
+    const offers = readStorageArray(OFFER_STORAGE_KEY);
+    const remoteSessions = readStorageArray(REMOTE_HOURS_STORAGE_KEY);
+    const wellnessSessions = readStorageArray(WELLNESS_STORAGE_KEY);
+    const leaveRequests = readStorageArray(LEAVE_STORAGE_KEY);
+    const documents = readStorageArray(DOCUMENT_STORAGE_KEY);
+    const goals = readStorageArray(GOALS_STORAGE_KEY);
+    const userEmail = user?.email?.toLowerCase();
+    const currentEmployee = employees.find(
+      (employee) => employee.email?.toLowerCase() === userEmail
+    ) || employees[0];
+    const offer = findOfferForEmployee(currentEmployee, offers);
+    const salarySource = offer?.offerDetails?.salary || currentEmployee?.salary || currentEmployee?.basicSalary || '';
+    const basicSalary = parseSalaryValue(salarySource);
+    const tax = basicSalary ? Math.round(basicSalary * 0.12) : 0;
+    const insurance = basicSalary ? Math.round(basicSalary * 0.02) : 0;
+    const employeeRemoteSessions = remoteSessions.filter(
+      (session) => session.employeeId === currentEmployee?.id
+    );
+    const employeeLeaveRequests = leaveRequests.filter(
+      (request) =>
+        request.employeeId === currentEmployee?.id ||
+        (request.employeeEmail && request.employeeEmail === currentEmployee?.email)
+    );
+    const employeeWellnessSessions = wellnessSessions.filter(
+      (session) => session.employeeId === currentEmployee?.id
+    );
+    const employeeDocuments = documents.filter(
+      (document) =>
+        document.employeeId === currentEmployee?.id ||
+        (document.employeeEmail && document.employeeEmail === currentEmployee?.email)
+    );
+    const employeeGoals = goals.filter(
+      (goal) =>
+        String(goal.entityId) === String(currentEmployee?.id) ||
+        (goal.employeeId && String(goal.employeeId) === String(currentEmployee?.id))
+    );
+
+    return {
+      currentEmployee,
+      basicSalary,
+      salaryDisplay: salarySource ? String(salarySource) : 'Not Set',
+      tax,
+      insurance,
+      deductions: tax + insurance,
+      netSalary: Math.max(0, basicSalary - tax - insurance),
+      remoteSessions: employeeRemoteSessions,
+      remoteMinutes: employeeRemoteSessions.reduce(
+        (total, session) => total + (Number(session.durationMinutes) || 0),
+        0
+      ),
+      latestRemoteSession: employeeRemoteSessions[employeeRemoteSessions.length - 1],
+      leaveRequests: employeeLeaveRequests,
+      pendingLeaveCount: employeeLeaveRequests.filter((request) => request.status === 'pending').length,
+      wellnessSessions: employeeWellnessSessions,
+      documents: employeeDocuments,
+      goals: employeeGoals,
+      completedGoalCount: employeeGoals.filter((goal) => goal.status === 'completed').length,
+      inProgressGoalCount: employeeGoals.filter((goal) => goal.status === 'in-progress').length,
+    };
+  }, [user]);
+
+  const initials = (dashboardData.currentEmployee?.name || user?.username || 'Employee')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -1488,20 +1612,25 @@ const EmployeeDashboard = () => {
               whileTap={{ scale: 0.95 }}
             >
               <FaBell />
-              <NotificationBadge>3</NotificationBadge>
+              {dashboardData.pendingLeaveCount > 0 && (
+                <NotificationBadge>{dashboardData.pendingLeaveCount}</NotificationBadge>
+              )}
             </NotificationButton>
             <UserInfo>
               <UserDetails>
-                <UserName>Bonte</UserName>
-                <UserRole>Ux Designer</UserRole>
+                <UserName>{dashboardData.currentEmployee?.name || user?.username || 'Employee'}</UserName>
+                <UserRole>{dashboardData.currentEmployee?.role || 'Employee'}</UserRole>
               </UserDetails>
-              <UserAvatar
-                src="https://storage.googleapis.com/a1aa/image/207c93ec-6e47-4c91-ac7d-c1cf4b255944.jpg"
-                alt="User avatar"
-              />
+              <UserAvatarCircle>{initials}</UserAvatarCircle>
             </UserInfo>
           </div>
         </Header>
+
+        {!dashboardData.currentEmployee && (
+          <ApprovalTable>
+            <EmptyText>No employee record found. Ask HR to sync your employee record first.</EmptyText>
+          </ApprovalTable>
+        )}
 
         <TodayBanner
           initial={{ opacity: 0, y: 20 }}
@@ -1514,14 +1643,14 @@ const EmployeeDashboard = () => {
               alt="Cartoon man sitting on a chair with laptop"
             />
             <BannerText>
-              <p>21 September 2022</p>
-              <h3>Today</h3>
+              <p>{new Date().toLocaleDateString()}</p>
+              <h3>{dashboardData.currentEmployee?.department || 'Employee Workspace'}</h3>
             </BannerText>
           </BannerInfo>
           <StatusBox>
-            <StatusLabel>Present-On-time</StatusLabel>
-            <StatusValue>10:11 AM</StatusValue>
-            <StatusSubtext>Entry Time</StatusSubtext>
+            <StatusLabel>Remote Work</StatusLabel>
+            <StatusValue>{formatDuration(dashboardData.remoteMinutes)}</StatusValue>
+            <StatusSubtext>Total tracked locally</StatusSubtext>
           </StatusBox>
         </TodayBanner>
 
@@ -1541,14 +1670,20 @@ const EmployeeDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              <TableRow>
-                <TableCell>03/07/2021</TableCell>
-                <TableCell>Casual leave</TableCell>
-                <TableCell>02 (05-06 Jul)</TableCell>
-                <TableCell>
-                  <StatusBadge status="pending">Pending</StatusBadge>
-                </TableCell>
-              </TableRow>
+              {dashboardData.leaveRequests.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan="4">No leave requests submitted yet.</TableCell>
+                </TableRow>
+              ) : dashboardData.leaveRequests.slice(0, 5).map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell>{request.submittedAt ? new Date(request.submittedAt).toLocaleDateString() : 'Not Set'}</TableCell>
+                  <TableCell>{request.leaveType || 'Leave Request'}</TableCell>
+                  <TableCell>{request.startDate} to {request.endDate}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={request.status || 'pending'}>{request.status || 'pending'}</StatusBadge>
+                  </TableCell>
+                </TableRow>
+              ))}
             </tbody>
           </Table>
           <Legend>
@@ -1576,61 +1711,39 @@ const EmployeeDashboard = () => {
             <ChartLegend>
               <LegendItem>
                 <LegendColor color="#3498db" />
-                <span>Present-on time</span>
+                <span>Remote session</span>
               </LegendItem>
               <LegendItem>
                 <LegendColor color="#f1c40f" />
-                <span>Present-late entry</span>
+                <span>Manual attendance not configured</span>
               </LegendItem>
               <LegendItem>
                 <LegendColor color="#9b59b6" />
-                <span>Govt Holiday</span>
+                <span>Local demo only</span>
               </LegendItem>
               <LegendItem>
                 <LegendColor color="#95a5a6" />
-                <span>Absent</span>
+                <span>No session</span>
               </LegendItem>
             </ChartLegend>
             <MonthSelector>
-              <span>Sep 2022</span>
+              <span>{new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
               <FaChevronRight />
             </MonthSelector>
           </ChartHeader>
           <ChartGrid>
-            {[{
-              time: '11:00',
-              heights: ['h-full', 'h-2/3', 'h-full', 'h-1/2', 'h-3/4']
-            }, {
-              time: '10:15',
-              heights: ['h-1/2', 'h-1/3', 'h-full', 'h-3/4', 'h-1/2']
-            }, {
-              time: '09:45',
-              heights: ['h-1/3', 'h-1/2', 'h-1/3', 'h-1/2', 'h-1/3']
-            }, {
-              time: '10:00',
-              heights: ['h-1/2', 'h-1/3', 'h-1/2', 'h-1/3', 'h-1/2']
-            }, {
-              time: '09:30',
-              heights: ['h-1/3', 'h-1/2', 'h-1/3', 'h-1/2', 'h-1/3']
-            }, {
-              time: '09:00',
-              heights: ['h-1/2', 'h-1/3', 'h-1/2', 'h-1/3', 'h-1/2']
-            }, {
-              time: '09:15',
-              heights: ['h-1/3', 'h-1/2', 'h-1/3', 'h-1/2', 'h-1/3']
-            }].map((item, index) => (
-              <TimeColumn key={index}>
-                <TimeLabel>{item.time}</TimeLabel>
+            {dashboardData.remoteSessions.length === 0 ? (
+              <EmptyText>No remote work sessions found yet.</EmptyText>
+            ) : dashboardData.remoteSessions.slice(-7).map((session) => (
+              <TimeColumn key={session.id}>
+                <TimeLabel>{session.date?.slice(5) || '--'}</TimeLabel>
                 <BarContainer>
                   <BarBackground />
                   <BarContent>
-                    {item.heights.map((height, heightIndex) => (
-                      <Bar
-                        key={heightIndex}
-                        height={height}
-                        type={heightIndex < 2 ? 'present-on-time' : 'present-late'}
-                      />
-                    ))}
+                    <Bar
+                      height={`${Math.min(100, Math.max(12, ((Number(session.durationMinutes) || 0) / 480) * 100))}%`}
+                      type="present-on-time"
+                    />
                   </BarContent>
                 </BarContainer>
               </TimeColumn>
@@ -1648,9 +1761,9 @@ const EmployeeDashboard = () => {
               <FaMoneyBillWave />
               Payroll Overview
             </PayrollTitle>
-            <DownloadButton>
+            <DownloadButton onClick={() => navigate('/payroll/payslip-generation')}>
               <FaDownload />
-              Download Payslip
+              View Payslip
             </DownloadButton>
           </PayrollHeader>
 
@@ -1660,17 +1773,17 @@ const EmployeeDashboard = () => {
                 <FaMoneyBillWave />
                 Basic Salary
               </CardTitle>
-              <CardValue>$4,500.00</CardValue>
+              <CardValue>{dashboardData.salaryDisplay}</CardValue>
               <CardSubtext>Monthly</CardSubtext>
             </PayrollCard>
 
             <PayrollCard>
               <CardTitle>
                 <FaMoneyBillWave />
-                Bonuses
+                Net Salary
               </CardTitle>
-              <CardValue>$500.00</CardValue>
-              <CardSubtext>Performance Bonus</CardSubtext>
+              <CardValue>{formatMoney(dashboardData.netSalary)}</CardValue>
+              <CardSubtext>Calculated from local offer salary</CardSubtext>
             </PayrollCard>
 
             <PayrollCard>
@@ -1678,7 +1791,7 @@ const EmployeeDashboard = () => {
                 <FaMoneyBillWave />
                 Deductions
               </CardTitle>
-              <CardValue>$750.00</CardValue>
+              <CardValue>{formatMoney(dashboardData.deductions)}</CardValue>
               <CardSubtext>Tax & Benefits</CardSubtext>
             </PayrollCard>
           </PayrollGrid>
@@ -1691,19 +1804,19 @@ const EmployeeDashboard = () => {
             <TaxList>
               <TaxItem>
                 <TaxLabel>Income Tax</TaxLabel>
-                <TaxValue>$450.00</TaxValue>
+                <TaxValue>{formatMoney(dashboardData.tax)}</TaxValue>
               </TaxItem>
               <TaxItem>
-                <TaxLabel>Social Security</TaxLabel>
-                <TaxValue>$200.00</TaxValue>
-              </TaxItem>
-              <TaxItem>
-                <TaxLabel>Health Insurance</TaxLabel>
-                <TaxValue>$75.00</TaxValue>
+                <TaxLabel>Insurance Estimate</TaxLabel>
+                <TaxValue>{formatMoney(dashboardData.insurance)}</TaxValue>
               </TaxItem>
               <TaxItem>
                 <TaxLabel>Other Deductions</TaxLabel>
-                <TaxValue>$25.00</TaxValue>
+                <TaxValue>{formatMoney(0)}</TaxValue>
+              </TaxItem>
+              <TaxItem>
+                <TaxLabel>Salary Source</TaxLabel>
+                <TaxValue>{dashboardData.basicSalary ? 'Prepared Offer' : 'Not Set'}</TaxValue>
               </TaxItem>
             </TaxList>
           </TaxDeductions>
@@ -1719,7 +1832,7 @@ const EmployeeDashboard = () => {
               <FaTrophy />
               Performance & Goals
             </SectionTitle>
-            <AddButton>
+            <AddButton onClick={() => navigate('/performance/goal-setting')}>
               <FaPlus />
               Set New Goal
             </AddButton>
@@ -1731,8 +1844,8 @@ const EmployeeDashboard = () => {
                 <FaTrophy />
                 Overall Performance
               </KpiTitle>
-              <KpiValue>85%</KpiValue>
-              <KpiSubtext>Above Average</KpiSubtext>
+              <KpiValue>{dashboardData.goals.length}</KpiValue>
+              <KpiSubtext>Total local goals</KpiSubtext>
             </KpiCard>
 
             <KpiCard>
@@ -1740,8 +1853,8 @@ const EmployeeDashboard = () => {
                 <FaChartBar />
                 Project Completion
               </KpiTitle>
-              <KpiValue>92%</KpiValue>
-              <KpiSubtext>Last Quarter</KpiSubtext>
+              <KpiValue>{dashboardData.completedGoalCount}</KpiValue>
+              <KpiSubtext>Completed goals</KpiSubtext>
             </KpiCard>
 
             <KpiCard>
@@ -1749,8 +1862,8 @@ const EmployeeDashboard = () => {
                 <FaUsers />
                 Team Collaboration
               </KpiTitle>
-              <KpiValue>88%</KpiValue>
-              <KpiSubtext>Peer Review Score</KpiSubtext>
+              <KpiValue>{dashboardData.inProgressGoalCount}</KpiValue>
+              <KpiSubtext>In progress goals</KpiSubtext>
             </KpiCard>
           </PerformanceGrid>
 
@@ -1762,36 +1875,25 @@ const EmployeeDashboard = () => {
               </SectionTitle>
             </GoalsHeader>
             <GoalsList>
-              <GoalItem>
-                <GoalInfo>
-                  <GoalTitle>Complete Advanced Training</GoalTitle>
-                  <GoalProgress>
-                    <ProgressBar>
-                      <ProgressFill progress={75} />
-                    </ProgressBar>
-                    75%
-                  </GoalProgress>
-                </GoalInfo>
-                <GoalStatus status="in-progress">
-                  <FaSpinner />
-                  In Progress
-                </GoalStatus>
-              </GoalItem>
-              <GoalItem>
-                <GoalInfo>
-                  <GoalTitle>Lead Team Project</GoalTitle>
-                  <GoalProgress>
-                    <ProgressBar>
-                      <ProgressFill progress={100} />
-                    </ProgressBar>
-                    100%
-                  </GoalProgress>
-                </GoalInfo>
-                <GoalStatus status="completed">
-                  <FaCheckCircle />
-                  Completed
-                </GoalStatus>
-              </GoalItem>
+              {dashboardData.goals.length === 0 ? (
+                <EmptyText>No goals saved locally yet.</EmptyText>
+              ) : dashboardData.goals.slice(0, 3).map((goal) => (
+                <GoalItem key={goal.id}>
+                  <GoalInfo>
+                    <GoalTitle>{goal.title}</GoalTitle>
+                    <GoalProgress>
+                      <ProgressBar>
+                        <ProgressFill progress={Number(goal.progress) || 0} />
+                      </ProgressBar>
+                      {Number(goal.progress) || 0}%
+                    </GoalProgress>
+                  </GoalInfo>
+                  <GoalStatus status={goal.status}>
+                    {goal.status === 'completed' ? <FaCheckCircle /> : <FaSpinner />}
+                    {goal.status || 'pending'}
+                  </GoalStatus>
+                </GoalItem>
+              ))}
             </GoalsList>
           </GoalsSection>
 
@@ -1803,26 +1905,14 @@ const EmployeeDashboard = () => {
             <AppraisalList>
               <AppraisalItem>
                 <AppraisalHeader>
-                  <AppraisalDate>Q2 2023</AppraisalDate>
+                  <AppraisalDate>Local demo</AppraisalDate>
                   <AppraisalScore>
                     <FaTrophy />
-                    4.5/5
+                    Not Set
                   </AppraisalScore>
                 </AppraisalHeader>
                 <AppraisalFeedback>
-                  Excellent performance in team leadership and project delivery. Strong communication skills and technical expertise demonstrated throughout the quarter.
-                </AppraisalFeedback>
-              </AppraisalItem>
-              <AppraisalItem>
-                <AppraisalHeader>
-                  <AppraisalDate>Q1 2023</AppraisalDate>
-                  <AppraisalScore>
-                    <FaTrophy />
-                    4.2/5
-                  </AppraisalScore>
-                </AppraisalHeader>
-                <AppraisalFeedback>
-                  Consistent performance with notable improvements in time management. Good collaboration with team members.
+                  No appraisal history has been added to local demo data yet.
                 </AppraisalFeedback>
               </AppraisalItem>
             </AppraisalList>
@@ -1848,7 +1938,7 @@ const EmployeeDashboard = () => {
               </ServiceIcon>
               <ServiceTitle>Request Leave</ServiceTitle>
               <ServiceDescription>
-                Submit and track your time-off requests
+                {dashboardData.leaveRequests.length} local leave request(s) submitted
               </ServiceDescription>
             </ServiceCard>
 
@@ -1858,7 +1948,9 @@ const EmployeeDashboard = () => {
               </ServiceIcon>
               <ServiceTitle>Upload Documents</ServiceTitle>
               <ServiceDescription>
-                Submit required documents and certificates
+                {dashboardData.documents.length > 0
+                  ? `${dashboardData.documents.length} document(s) tracked locally`
+                  : 'No documents found in local demo records'}
               </ServiceDescription>
             </ServiceCard>
 
@@ -1879,36 +1971,27 @@ const EmployeeDashboard = () => {
               Required Documents
             </SectionTitle>
             <DocumentList>
-              <DocumentItem>
-                <DocumentInfo>
-                  <DocumentIcon>
-                    <FaFileAlt />
-                  </DocumentIcon>
-                  <DocumentDetails>
-                    <DocumentName>Medical Certificate</DocumentName>
-                    <DocumentStatus>Last updated: 2 months ago</DocumentStatus>
-                  </DocumentDetails>
-                </DocumentInfo>
-                <UploadButton>
-                  <FaFileUpload />
-                  Update
-                </UploadButton>
-              </DocumentItem>
-              <DocumentItem>
-                <DocumentInfo>
-                  <DocumentIcon>
-                    <FaFileAlt />
-                  </DocumentIcon>
-                  <DocumentDetails>
-                    <DocumentName>ID Card</DocumentName>
-                    <DocumentStatus>Last updated: 1 year ago</DocumentStatus>
-                  </DocumentDetails>
-                </DocumentInfo>
-                <UploadButton>
-                  <FaFileUpload />
-                  Update
-                </UploadButton>
-              </DocumentItem>
+              {dashboardData.documents.length === 0 ? (
+                <EmptyText>No employee documents found. Upload storage is local-demo only.</EmptyText>
+              ) : dashboardData.documents.map((document) => (
+                <DocumentItem key={document.id || document.name}>
+                  <DocumentInfo>
+                    <DocumentIcon>
+                      <FaFileAlt />
+                    </DocumentIcon>
+                    <DocumentDetails>
+                      <DocumentName>{document.name || document.type || 'Employee Document'}</DocumentName>
+                      <DocumentStatus>
+                        Last updated: {document.updatedAt ? new Date(document.updatedAt).toLocaleDateString() : 'Not Set'}
+                      </DocumentStatus>
+                    </DocumentDetails>
+                  </DocumentInfo>
+                  <UploadButton>
+                    <FaFileUpload />
+                    Local
+                  </UploadButton>
+                </DocumentItem>
+              ))}
             </DocumentList>
           </DocumentSection>
 
@@ -1924,7 +2007,7 @@ const EmployeeDashboard = () => {
                 </ProfileIcon>
                 <ProfileInfo>
                   <ProfileLabel>Phone Number</ProfileLabel>
-                  <ProfileValue>+1 (555) 123-4567</ProfileValue>
+                  <ProfileValue>{dashboardData.currentEmployee?.phone || 'Not Set'}</ProfileValue>
                 </ProfileInfo>
               </ProfileItem>
               <ProfileItem>
@@ -1933,7 +2016,7 @@ const EmployeeDashboard = () => {
                 </ProfileIcon>
                 <ProfileInfo>
                   <ProfileLabel>Email Address</ProfileLabel>
-                  <ProfileValue>employee@company.com</ProfileValue>
+                  <ProfileValue>{dashboardData.currentEmployee?.email || 'Not Set'}</ProfileValue>
                 </ProfileInfo>
               </ProfileItem>
               <ProfileItem>
@@ -1941,8 +2024,8 @@ const EmployeeDashboard = () => {
                   <FaMapMarkerAlt />
                 </ProfileIcon>
                 <ProfileInfo>
-                  <ProfileLabel>Address</ProfileLabel>
-                  <ProfileValue>123 Business St, City</ProfileValue>
+                  <ProfileLabel>Department</ProfileLabel>
+                  <ProfileValue>{dashboardData.currentEmployee?.department || 'Pending Assignment'}</ProfileValue>
                 </ProfileInfo>
               </ProfileItem>
               <ProfileItem>
@@ -1950,8 +2033,8 @@ const EmployeeDashboard = () => {
                   <FaPhone />
                 </ProfileIcon>
                 <ProfileInfo>
-                  <ProfileLabel>Emergency Contact</ProfileLabel>
-                  <ProfileValue>+1 (555) 987-6543</ProfileValue>
+                  <ProfileLabel>Role</ProfileLabel>
+                  <ProfileValue>{dashboardData.currentEmployee?.role || 'Unassigned Role'}</ProfileValue>
                 </ProfileInfo>
               </ProfileItem>
             </ProfileGrid>
@@ -1977,9 +2060,9 @@ const EmployeeDashboard = () => {
               </ActionIcon>
               <ActionTitle className="action-title">Quick Leave Application</ActionTitle>
               <ActionDescription className="action-description">
-                Apply for time off with just a few clicks. Fast and easy leave request process.
+                Submit a local demo leave request and track its pending status.
               </ActionDescription>
-              <ActionButton className="action-button">
+              <ActionButton className="action-button" onClick={() => navigate('/employee/leave-request')}>
                 <FaPlus />
                 Apply Now
               </ActionButton>
@@ -1992,9 +2075,11 @@ const EmployeeDashboard = () => {
               </ActionIcon>
               <ActionTitle className="action-title">Payroll Information</ActionTitle>
               <ActionDescription className="action-description">
-                View your latest payslip, salary details, and tax information in one place.
+                {dashboardData.basicSalary
+                  ? `Current salary source: ${dashboardData.salaryDisplay}`
+                  : 'Salary not set. Ask HR to prepare your offer details.'}
               </ActionDescription>
-              <ActionButton className="action-button">
+              <ActionButton className="action-button" onClick={() => navigate('/payroll/payslip-generation')}>
                 <FaDownload />
                 View Details
               </ActionButton>
@@ -2007,9 +2092,11 @@ const EmployeeDashboard = () => {
               </ActionIcon>
               <ActionTitle className="action-title">Wellness Programs</ActionTitle>
               <ActionDescription className="action-description">
-                Join wellness activities, track your progress, and earn rewards.
+                {dashboardData.wellnessSessions.length > 0
+                  ? `${dashboardData.wellnessSessions.length} wellness session(s) scheduled locally.`
+                  : 'No wellness sessions scheduled yet.'}
               </ActionDescription>
-              <ActionButton className="action-button">
+              <ActionButton className="action-button" onClick={() => navigate('/remote-work/wellness-fitness')}>
                 <FaPlus />
                 Join Program
               </ActionButton>
