@@ -1,12 +1,27 @@
 const nodemailer = require('nodemailer');
 
+const getEmailFromAddress = () => {
+  const address = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER;
+  return address && address.trim() ? address.trim() : 'no-reply@example.com';
+};
+
+const getEmailFromName = (defaultName) => {
+  const name = process.env.EMAIL_FROM_NAME;
+  return name && name.trim() ? name.trim() : defaultName;
+};
+
+const buildEmailFrom = (defaultName) => ({
+  name: getEmailFromName(defaultName),
+  address: getEmailFromAddress()
+});
+
 // Create transporter with Gmail SMTP
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'hamad1919ahmad@gmail.com',
-      pass: process.env.EMAIL_PASSWORD || 'your-app-password-here' // You'll need to set this
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
     }
   });
 };
@@ -33,6 +48,7 @@ const formatTime = (timeString) => {
 // Generate interview email HTML template
 const generateInterviewEmailHTML = (interviewDetails) => {
   const { candidateName, candidateEmail, position, department, date, time, type, location, instructions } = interviewDetails;
+  const senderAddress = getEmailFromAddress();
 
   return `
     <!DOCTYPE html>
@@ -115,7 +131,7 @@ const generateInterviewEmailHTML = (interviewDetails) => {
             <p>Best regards,<br>
             <strong>HR Department</strong><br>
             Company Name<br>
-            📧 hamad1919ahmad@gmail.com</p>
+            📧 ${senderAddress}</p>
             
             <p><em>This is an automated message. Please do not reply directly to this email for scheduling changes.</em></p>
           </div>
@@ -132,10 +148,7 @@ const sendInterviewEmail = async (interviewDetails) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: {
-        name: 'HR Department',
-        address: 'hamad1919ahmad@gmail.com'
-      },
+      from: buildEmailFrom('HR Department'),
       to: interviewDetails.candidateEmail,
       subject: `Interview Invitation - ${interviewDetails.position} Position`,
       html: generateInterviewEmailHTML(interviewDetails),
@@ -164,7 +177,7 @@ Please confirm your attendance by replying to this email.
 
 Best regards,
 HR Department
-hamad1919ahmad@gmail.com
+${getEmailFromAddress()}
       `
     };
 
@@ -250,7 +263,7 @@ module.exports = {
         </html>`;
 
       const mail = await transporter.sendMail({
-        from: { name: 'HR Department', address: 'hamad1919ahmad@gmail.com' },
+        from: buildEmailFrom('HR Department'),
         to: offer.candidateEmail,
         subject,
         html,
@@ -275,10 +288,7 @@ module.exports = {
       const html = generatePayslipEmail(payslipData);
 
       const mailOptions = {
-        from: {
-          name: 'HR Department - Payroll',
-          address: 'hamad1919ahmad@gmail.com'
-        },
+        from: buildEmailFrom('HR Department - Payroll'),
         to: payslipData.employeeEmail,
         subject: subject,
         html: html,
@@ -334,10 +344,7 @@ HR Department
       const text = generatePasswordResetEmailText(code, 15);
 
       const mailOptions = {
-        from: {
-          name: 'Security Team',
-          address: 'hamad1919ahmad@gmail.com'
-        },
+        from: buildEmailFrom('Security Team'),
         to: email,
         subject: subject,
         html: html,
@@ -378,10 +385,7 @@ HR Department
       const text = generateRegistrationVerificationEmailText(code, 15);
 
       const mailOptions = {
-        from: {
-          name: 'HR Management System',
-          address: 'hamad1919ahmad@gmail.com'
-        },
+        from: buildEmailFrom('HR Management System'),
         to: email,
         subject: subject,
         html: html,
