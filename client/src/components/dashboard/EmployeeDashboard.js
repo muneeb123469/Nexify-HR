@@ -1499,16 +1499,16 @@ const EmployeeDashboard = () => {
               <FaBell />
               <NotificationBadge>3</NotificationBadge>
             </NotificationButton>
-            <UserInfo>
-              <UserDetails>
+            {/* <UserInfo> */}
+              {/* <UserDetails>
                 <UserName>Bonte</UserName>
                 <UserRole>Ux Designer</UserRole>
-              </UserDetails>
-              <UserAvatar
+              </UserDetails> */}
+              {/* <UserAvatar
                 src="https://storage.googleapis.com/a1aa/image/207c93ec-6e47-4c91-ac7d-c1cf4b255944.jpg"
                 alt="User avatar"
-              />
-            </UserInfo>
+              /> */}
+            {/* </UserInfo> */}
           </div>
         </Header>
 

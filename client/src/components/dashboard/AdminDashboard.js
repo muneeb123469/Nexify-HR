@@ -1026,7 +1026,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <button
+              {/* <button
                 className="relative text-white hover:text-white/80 transition-colors duration-200"
                 aria-label="Notifications"
               >
@@ -1038,7 +1038,7 @@ const AdminDashboard = () => {
                 aria-label="Settings"
               >
                 <Settings size={20} />
-              </button>
+              </button> */}
             </div>
           </div>
         </header>

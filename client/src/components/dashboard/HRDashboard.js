@@ -445,7 +445,7 @@ const HeaderComponent = () => (
       <input type="text" placeholder="Search..." />
       <i className="fas fa-search"></i>
     </SearchContainer>
-    <UserInfo>
+    {/* <UserInfo>
       <Notifications>
         <i className="far fa-bell"></i>
       </Notifications>
@@ -454,7 +454,7 @@ const HeaderComponent = () => (
         <span className="role">CEO</span>
         <Avatar src="/api/placeholder/32/32" alt="User Profile" />
       </User>
-    </UserInfo>
+    </UserInfo> */}
   </Header>
 );
 

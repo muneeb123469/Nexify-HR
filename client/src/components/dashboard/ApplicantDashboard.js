@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Briefcase, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  LogOut, 
+import {
+  Briefcase,
+  Calendar,
+  Clock,
+  FileText,
+  LogOut,
   User,
   CheckCircle2,
   XCircle,
@@ -137,7 +137,7 @@ function InterviewSchedule({ interviews }) {
           <CalendarIcon size={20} />
         </button>
       </div>
-      
+
       <div className="space-y-4">
         {interviews.map((interview) => (
           <div key={interview.id} className="border border-gray-200 rounded-lg p-4">
@@ -150,7 +150,7 @@ function InterviewSchedule({ interviews }) {
                 {interview.mode}
               </span>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center text-sm text-gray-600">
                 <Calendar className="w-4 h-4 mr-2 text-[#4C9F9F]" />
@@ -243,7 +243,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
             <span className="text-sm font-medium text-[#4C9F9F]">{profile.completeness}% Complete</span>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => setIsEditing(!isEditing)}
           className="text-[#4C9F9F] hover:text-[#2A6F6F]"
         >
@@ -285,7 +285,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
                   <input
                     type="text"
                     value={editedProfile.name}
-                    onChange={(e) => setEditedProfile({...editedProfile, name: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#4C9F9F]"
                   />
                 </div>
@@ -294,7 +294,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
                   <input
                     type="email"
                     value={editedProfile.email}
-                    onChange={(e) => setEditedProfile({...editedProfile, email: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#4C9F9F]"
                   />
                 </div>
@@ -303,7 +303,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
                   <input
                     type="tel"
                     value={editedProfile.phone}
-                    onChange={(e) => setEditedProfile({...editedProfile, phone: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#4C9F9F]"
                   />
                 </div>
@@ -312,7 +312,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
                   <input
                     type="text"
                     value={editedProfile.location}
-                    onChange={(e) => setEditedProfile({...editedProfile, location: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, location: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#4C9F9F]"
                   />
                 </div>
@@ -352,17 +352,17 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
           </div>
           <div className="flex flex-wrap gap-2">
             {profile.skills.map((skill, index) => (
-              <span 
+              <span
                 key={index}
                 className="px-2 py-1 bg-[#E3F2FD] text-[#4C9F9F] rounded-full text-sm"
               >
                 {skill}
                 {isEditing && (
-                  <button 
+                  <button
                     onClick={() => {
                       const newSkills = [...profile.skills];
                       newSkills.splice(index, 1);
-                      setEditedProfile({...editedProfile, skills: newSkills});
+                      setEditedProfile({ ...editedProfile, skills: newSkills });
                     }}
                     className="ml-1 text-[#4C9F9F] hover:text-[#2A6F6F]"
                   >
@@ -376,7 +376,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
 
         {isEditing && (
           <div className="flex justify-end space-x-3">
-            <button 
+            <button
               onClick={() => {
                 setEditedProfile(profile);
                 setIsEditing(false);
@@ -385,7 +385,7 @@ function ProfileManagement({ profile, onUpdate, isLoading }) {
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={handleSave}
               className="px-4 py-2 text-sm font-medium text-white bg-[#4C9F9F] hover:bg-[#2A6F6F] rounded-md"
             >
@@ -409,7 +409,7 @@ function ApplicationCard({ application, onViewDetails, onWithdraw, onUpdate, onR
         </div>
         <StatusBadge status={application.status} />
       </div>
-      
+
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="w-4 h-4 mr-2 text-[#4C9F9F]" />
@@ -435,7 +435,7 @@ function ApplicationCard({ application, onViewDetails, onWithdraw, onUpdate, onR
             <Eye className="w-4 h-4 mr-1" />
             View
           </button>
-          
+
           {application.status !== 'Rejected' && application.status !== 'Offer Extended' && (
             <button
               onClick={() => onWithdraw(application)}
@@ -445,7 +445,7 @@ function ApplicationCard({ application, onViewDetails, onWithdraw, onUpdate, onR
               Withdraw
             </button>
           )}
-          
+
           {application.status === 'Offer Extended' && (
             <div className="flex items-center gap-2">
               <button
@@ -566,10 +566,10 @@ function ApplicationDetailsModal({ application, onClose }) {
 function NotificationsCenter({ notifications, onNotificationClick }) {
   const [isOpen, setIsOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
-  
+
   return (
     <div className="relative">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative text-white hover:text-white/80"
       >
@@ -599,9 +599,8 @@ function NotificationsCenter({ notifications, onNotificationClick }) {
                     onNotificationClick(notification);
                     setIsOpen(false);
                   }}
-                  className={`w-full p-4 text-left border-b border-gray-200 hover:bg-gray-50 ${
-                    !notification.read ? 'bg-[#E3F2FD]' : ''
-                  }`}
+                  className={`w-full p-4 text-left border-b border-gray-200 hover:bg-gray-50 ${!notification.read ? 'bg-[#E3F2FD]' : ''
+                    }`}
                 >
                   <div className="flex items-start">
                     <div className="flex-shrink-0">
@@ -677,14 +676,13 @@ function CompanyMessages({ applicantName }) {
 }
 
 // Add SidebarItem component for better organization
- function SidebarItem({ icon, text, active = false, onClick }) {
+function SidebarItem({ icon, text, active = false, onClick }) {
   return (
-    <button 
-      className={`w-full flex items-center p-3 rounded-md transition-all duration-200 ${
-        active 
-          ? 'bg-[#4C9F9F] text-white' 
+    <button
+      className={`w-full flex items-center p-3 rounded-md transition-all duration-200 ${active
+          ? 'bg-[#4C9F9F] text-white'
           : 'text-gray-300 hover:bg-[#4C9F9F]/50 hover:text-white'
-      }`}
+        }`}
       onClick={onClick}
     >
       <div className="w-6 h-6 flex items-center justify-center">{icon}</div>
@@ -699,12 +697,12 @@ function MobileSidebar({ isOpen, onClose, children }) {
     <>
       {/* Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
       <div className={`
         fixed top-0 left-0 h-full w-64 bg-[#2C3E50] z-50 transform transition-transform duration-300 ease-in-out
@@ -716,65 +714,65 @@ function MobileSidebar({ isOpen, onClose, children }) {
     </>
   );
 }
-export const ApplicantSideBar=()=>{
-    const { user, logout } = useAuth();
-      const navigate = useNavigate();
+export const ApplicantSideBar = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const handleLogout = () => {
     logout();
     navigate('/');
   };
   return (
-         <div className="sidebar">
-        <div className="logo">
-          <h1>Nexify<span>HR</span></h1>
-        </div>
-        
-        <SidebarMenu>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard" end>
-              <i className="fas fa-home"></i>
-              Dashboard
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/jobs">
-              <i className="fas fa-briefcase"></i>
-              Browse Jobs
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard/applications">
-              <i className="fas fa-file-alt"></i>
-              My Applications
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/applicant-dashboard/interviews">
-              <i className="fas fa-calendar-alt"></i>
-              Interview History
-            </NavLink>
-          </MenuItem>
-          <MenuItem>
-            <NavLink to="/applicant/profile">
-              <i className="fas fa-user"></i>
-              My Profile
-            </NavLink>
-          </MenuItem>
-          {/* <MenuItem>
+    <div className="sidebar">
+      <div className="logo">
+        <h1>Nexify<span>HR</span></h1>
+      </div>
+
+      <SidebarMenu>
+        <MenuItem>
+          <NavLink to="/applicant-dashboard" end>
+            <i className="fas fa-home"></i>
+            Dashboard
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/jobs">
+            <i className="fas fa-briefcase"></i>
+            Browse Jobs
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/applicant-dashboard/applications">
+            <i className="fas fa-file-alt"></i>
+            My Applications
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/applicant-dashboard/interviews">
+            <i className="fas fa-calendar-alt"></i>
+            Interview History
+          </NavLink>
+        </MenuItem>
+        <MenuItem>
+          <NavLink to="/applicant/profile">
+            <i className="fas fa-user"></i>
+            My Profile
+          </NavLink>
+        </MenuItem>
+        {/* <MenuItem>
             <NavLink to="/applicant-dashboard/resume-parsing">
               <i className="fas fa-file-upload"></i>
               Resume Parsing
             </NavLink>
           </MenuItem> */}
-        </SidebarMenu>
+      </SidebarMenu>
 
-        <div className="logout">
-          <button onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i>
-            Logout
-          </button>
-        </div>
+      <div className="logout">
+        <button onClick={handleLogout}>
+          <i className="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
       </div>
+    </div>
   )
 }
 const ApplicantDashboard = () => {
@@ -889,14 +887,14 @@ const ApplicantDashboard = () => {
   };
 
   const handleNotificationClick = (notification) => {
-    setNotifications(notifications.map(n => 
+    setNotifications(notifications.map(n =>
       n.id === notification.id ? { ...n, read: true } : n
     ));
     // Handle notification click (e.g., navigate to relevant page)
   };
 
 
-  const filteredApplications = applications.filter(app => 
+  const filteredApplications = applications.filter(app =>
     app.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.jobId.toLowerCase().includes(searchQuery.toLowerCase())
@@ -904,7 +902,7 @@ const ApplicantDashboard = () => {
   return (
     <div className="applicant-dashboard">
       {/* Sidebar */}
-      <ApplicantSideBar/>
+      <ApplicantSideBar />
       {/* Main Content */}
       <div className="main-content">
         <div className="header">
@@ -913,14 +911,14 @@ const ApplicantDashboard = () => {
             <i className="fas fa-search"></i>
           </div>
           <div className="user-info">
-            <div className="notifications">
+            {/* <div className="notifications">
               <i className="fas fa-bell"></i>
               <span className="badge">3</span>
-            </div>
-            <div className="user">
+            </div> */}
+            {/* <div className="user">
               <img src={user?.profileImage || 'https://via.placeholder.com/32'} alt="Profile" />
               <span>{user?.name || 'User'}</span>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -965,7 +963,7 @@ const DashboardOverview = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch applications and interviews in parallel
       const [applicationsResponse, interviewsResponse] = await Promise.all([
         axios.get('http://localhost:5000/api/applications/user'),
@@ -976,15 +974,15 @@ const DashboardOverview = () => {
       const interviews = interviewsResponse.data;
 
       // Calculate stats
-      const activeApplications = applications.filter(app => 
+      const activeApplications = applications.filter(app =>
         ['pending', 'reviewed', 'shortlisted'].includes(app.status.toLowerCase())
       ).length;
 
-      const upcomingInterviews = interviews.filter(interview => 
+      const upcomingInterviews = interviews.filter(interview =>
         interview.status === 'Upcoming'
       ).length;
 
-      const completedInterviews = interviews.filter(interview => 
+      const completedInterviews = interviews.filter(interview =>
         interview.status === 'Completed'
       ).length;
 
