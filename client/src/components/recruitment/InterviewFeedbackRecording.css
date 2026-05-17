@@ -237,7 +237,7 @@
   text-align: center;
 }
 
-* Loading and Error States */ .loading-state,
+/* Loading and Error States */ .loading-state,
 .error-state {
   display: flex;
   align-items: center;
@@ -714,8 +714,8 @@
   }
 }
 
-/* Addi
-tional styles for new features */
+/* Additional styles for new features */
+
 .no-interviews {
   display: flex;
   align-items: center;
