@@ -59,7 +59,6 @@
   align-items: center;
 }
 
-.download-resume-btn,
 .schedule-interview-btn {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -70,23 +69,6 @@
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-}
-
-.download-resume-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-}
-
-.download-resume-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.download-resume-btn:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-  box-shadow: none;
 }
 
 .schedule-interview-btn {
@@ -487,7 +469,6 @@
     width: 100%;
   }
 
-  .download-resume-btn,
   .schedule-interview-btn {
     flex: 1;
     min-width: 0;
@@ -516,7 +497,6 @@
     gap: 0.75rem;
   }
 
-  .download-resume-btn,
   .schedule-interview-btn {
     width: 100%;
   }

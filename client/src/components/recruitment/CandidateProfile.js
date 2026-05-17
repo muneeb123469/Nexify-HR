@@ -78,55 +78,6 @@ const CandidateProfile = () => {
     }
   };
 
-  const handleDownloadResume = async () => {
-    try {
-      if (!application.resume) {
-        showToast('No resume file available for this candidate.', 'error');
-        return;
-      }
-
-      // Use the dedicated download route
-      const response = await fetch(`http://localhost:5000/api/applications/download-resume/${application._id}`, {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to download resume: ${response.status}`);
-      }
-
-      // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let fileName = `${application.name}_resume`;
-
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (fileNameMatch && fileNameMatch[1]) {
-          fileName = fileNameMatch[1].replace(/['"]/g, '');
-        }
-      }
-
-      // Create blob from response
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-    } catch (error) {
-      console.error('Error downloading resume:', error);
-      showToast(`Failed to download resume: ${error.message}`, 'error');
-    }
-  };
-
   const formatExperience = (experience) => {
     if (!experience || experience.length === 0) return 'No experience data available';
 
@@ -271,13 +222,6 @@ const CandidateProfile = () => {
           </button> */}
           <h1>Candidate Profile</h1>
           <div className="header-actions">
-            <button
-              className="download-resume-btn"
-              onClick={handleDownloadResume}
-              disabled={!application.resume}
-            >
-              Download Resume
-            </button>
             <button
               className="schedule-interview-btn"
               onClick={handleShortlistCandidate}
