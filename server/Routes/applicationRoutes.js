@@ -27,6 +27,25 @@ async function writeParseJson(file, payload, requestId = 'no_reqid') {
   }
 }
 
+function getSafeParseErrorMessage(error) {
+  const message = error?.message || '';
+
+  if (/timed out/i.test(message)) {
+    return 'Resume parsing timed out';
+  }
+  if (/empty/i.test(message)) {
+    return 'Resume file is empty';
+  }
+  if (/dependencies|pymupdf|python-docx/i.test(message)) {
+    return 'Resume parser dependencies are not available';
+  }
+  if (/invalid json|parser process|failed to start/i.test(message)) {
+    return 'Resume parser could not process the uploaded file';
+  }
+
+  return 'Resume parsing failed';
+}
+
 // -----------------------
 // NEW: Fetch user's applications (for applicant dashboard)
 // -----------------------
@@ -179,13 +198,10 @@ router.post('/', auth, upload, async (req, res) => {
     }
     console.log(`[${requestId}] Job found: ${job.title}`);
 
-    // 3. Validate resume file
+    // 3. Track resume file if one was uploaded
+    const resumePath = req.file ? req.file.path.replace(/\\/g, '/') : null;
     if (!req.file) {
       console.log(`[${requestId}] No resume file uploaded`);
-      return res.status(400).json({
-        message: 'Resume file is required',
-        requestId
-      });
     }
 
     // 4. Check for duplicate application
@@ -198,13 +214,15 @@ router.post('/', auth, upload, async (req, res) => {
       console.log(`[${requestId}] Duplicate application found for email: ${email}`);
 
       // NEW: store an error JSON next to this upload indicating duplicate
-      writeParseJson(req.file, {
-        applicationId: existingApplication._id?.toString?.() || null,
-        originalName: req.file.originalname,
-        storedFile: path.basename(req.file.path),
-        error: 'Duplicate application for this job and email',
-        _metadata: { requestId, createdAt: new Date().toISOString() }
-      }, requestId);
+      if (req.file) {
+        writeParseJson(req.file, {
+          applicationId: existingApplication._id?.toString?.() || null,
+          originalName: req.file.originalname,
+          storedFile: path.basename(req.file.path),
+          error: 'Duplicate application for this job and email',
+          _metadata: { requestId, createdAt: new Date().toISOString() }
+        }, requestId);
+      }
 
       return res.status(400).json({
         message: 'You have already applied for this job',
@@ -220,7 +238,9 @@ router.post('/', auth, upload, async (req, res) => {
       email,
       phone,
       coverLetter,
-      resume: req.file.path.replace(/\\/g, '/'),
+      resume: resumePath,
+      resumeParsingStatus: 'not_uploaded',
+      parsedResumeError: null,
       status: 'pending'
     });
     console.log(`[${requestId}] Application created with ID: ${app._id}`);
@@ -229,56 +249,64 @@ router.post('/', auth, upload, async (req, res) => {
     let parseSuccess = false;
     let parseError = null;
 
-    console.log(`[${requestId}] Starting resume parsing for file: ${req.file.path}`);
+    if (req.file) {
+      console.log(`[${requestId}] Starting resume parsing for file: ${req.file.path}`);
 
-    try {
-      const parseStartTime = Date.now();
-      const parsed = await parseResume(req.file.path);
-      const parseEndTime = Date.now();
+      try {
+        const parseStartTime = Date.now();
+        const parsed = await parseResume(req.file.path);
+        const parseEndTime = Date.now();
 
-      console.log(`[${requestId}] Resume parsing completed in ${parseEndTime - parseStartTime}ms`);
-      console.log(`[${requestId}] Parsed data summary:`, {
-        name: parsed.name,
-        email: parsed.email,
-        phone: parsed.phone,
-        skillsCount: parsed.skills?.length || 0,
-        educationCount: parsed.education?.length || 0,
-        experienceCount: parsed.experience?.length || 0,
-        confidence: parsed.confidence
-      });
+        console.log(`[${requestId}] Resume parsing completed in ${parseEndTime - parseStartTime}ms`);
+        console.log(`[${requestId}] Parsed data summary:`, {
+          name: parsed.name,
+          email: parsed.email,
+          phone: parsed.phone,
+          skillsCount: parsed.skills?.length || 0,
+          educationCount: parsed.education?.length || 0,
+          experienceCount: parsed.experience?.length || 0,
+          projectsCount: parsed.projects?.length || 0,
+          confidence: parsed.confidence
+        });
 
-      // Update application with parsed data
-      app.parsedResume = {
-        ...parsed,
-        parsedAt: new Date()
-      };
-      await app.save();
+        // Update application with parsed data
+        app.parsedResume = {
+          ...parsed,
+          parsedAt: new Date(parsed.parsedAt || Date.now())
+        };
+        app.resumeParsingStatus = 'completed';
+        app.parsedResumeError = null;
+        await app.save();
 
-      // Write success JSON sidecar
-      writeParseJson(req.file, {
-        applicationId: app._id?.toString?.() || null,
-        originalName: req.file.originalname,
-        storedFile: path.basename(req.file.path),
-        parsed: parsed,
-        confidence: parsed.confidence,
-        _metadata: { requestId, createdAt: new Date().toISOString() }
-      }, requestId);
+        // Write success JSON sidecar
+        writeParseJson(req.file, {
+          applicationId: app._id?.toString?.() || null,
+          originalName: req.file.originalname,
+          storedFile: path.basename(req.file.path),
+          parsed: parsed,
+          confidence: parsed.confidence,
+          _metadata: { requestId, createdAt: new Date().toISOString() }
+        }, requestId);
 
-      parseSuccess = true;
-    } catch (parseErr) {
-      console.error(`[${requestId}] Resume parsing failed:`, parseErr);
-      parseError = parseErr.message;
+        parseSuccess = true;
+      } catch (parseErr) {
+        console.error(`[${requestId}] Resume parsing failed:`, parseErr);
+        parseError = getSafeParseErrorMessage(parseErr);
+        app.resumeParsingStatus = 'failed';
+        app.parsedResumeError = parseError;
+        await app.save();
 
-      // Write error JSON sidecar even on parse failure
-      writeParseJson(req.file, {
-        applicationId: app._id?.toString?.() || null,
-        originalName: req.file.originalname,
-        storedFile: path.basename(req.file.path),
-        error: 'Resume parsing failed',
-        parseError: parseErr.message,
-        confidence: 0,
-        _metadata: { requestId, createdAt: new Date().toISOString() }
-      }, requestId);
+        // Write error JSON sidecar even on parse failure
+        writeParseJson(req.file, {
+          applicationId: app._id?.toString?.() || null,
+          originalName: req.file.originalname,
+          storedFile: path.basename(req.file.path),
+          error: 'Resume parsing failed',
+          parseError,
+          confidence: 0,
+          _metadata: { requestId, createdAt: new Date().toISOString() }
+        }, requestId);
+      }
     }
 
     const endTime = Date.now();
@@ -510,6 +538,8 @@ router.post('/:id/reparse', async (req, res) => {
       ...parsed,
       parsedAt: new Date(parsed.parsedAt || Date.now()),
     };
+    app.resumeParsingStatus = 'completed';
+    app.parsedResumeError = null;
     await app.save();
 
     // NEW: drop a fresh sidecar json for the reparse result
@@ -548,12 +578,23 @@ router.post('/:id/reparse', async (req, res) => {
     const endTime = Date.now();
     const totalTime = endTime - startTime;
 
+    const parseError = getSafeParseErrorMessage(err);
+
+    try {
+      await Application.findByIdAndUpdate(req.params.id, {
+        resumeParsingStatus: 'failed',
+        parsedResumeError: parseError
+      });
+    } catch (updateErr) {
+      console.error(`[${requestId}] Failed to store reparse error:`, updateErr.message);
+    }
+
     console.error(`[${requestId}] Reparse error after ${totalTime}ms:`, err.message);
     console.error(`[${requestId}] Error stack:`, err.stack);
 
     res.status(500).json({
       message: 'Error reparsing resume',
-      error: err.message,
+      error: parseError,
       requestId,
       processingTime: totalTime
     });

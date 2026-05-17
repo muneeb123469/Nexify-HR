@@ -247,6 +247,7 @@ const CandidateProfile = () => {
     certifications: application.parsedResume?.certifications || [],
     languages: application.parsedResume?.languages || []
   };
+  const resumeParsingFailed = application.resumeParsingStatus === 'failed';
 
   return (
     <div className="candidate-profile-container">
@@ -270,13 +271,13 @@ const CandidateProfile = () => {
           </button> */}
           <h1>Candidate Profile</h1>
           <div className="header-actions">
-            {/* <button 
+            <button
               className="download-resume-btn"
               onClick={handleDownloadResume}
               disabled={!application.resume}
             >
               Download Resume
-            </button> */}
+            </button>
             <button
               className="schedule-interview-btn"
               onClick={handleShortlistCandidate}
@@ -287,6 +288,12 @@ const CandidateProfile = () => {
           </div>
         </div>
       </div>
+
+      {resumeParsingFailed && (
+        <div className="resume-parsing-note">
+          Resume parsing failed, but the uploaded resume is still available for download.
+        </div>
+      )}
 
       {/* Profile Content */}
       <div className="profile-content">

@@ -129,6 +129,7 @@ function validateParsedData(data) {
     summary: sanitizeString(data.summary),
     education: validateAndSanitizeEducation(data.education),
     experience: validateAndSanitizeExperience(data.experience),
+    projects: validateAndSanitizeExperience(data.projects),
     certifications: validateAndSanitizeStringArray(data.certifications),
     languages: validateAndSanitizeStringArray(data.languages),
     rawText: sanitizeString(data.rawText, 200000), // Cap at 200KB
@@ -245,6 +246,8 @@ function validateAndSanitizeEducation(education) {
       institution: sanitizeString(edu.institution, 200),
       degree: sanitizeString(edu.degree, 200),
       field: sanitizeString(edu.field, 200),
+      startDate: sanitizeString(edu.startDate, 50),
+      endDate: sanitizeString(edu.endDate, 50),
       grade: sanitizeString(edu.grade, 50)
     }))
     .slice(0, 10); // Limit to 10 education entries
@@ -265,6 +268,8 @@ function validateAndSanitizeExperience(experience) {
     .map(exp => ({
       company: sanitizeString(exp.company, 200),
       title: sanitizeString(exp.title, 200),
+      startDate: sanitizeString(exp.startDate, 50),
+      endDate: sanitizeString(exp.endDate, 50),
       location: sanitizeString(exp.location, 200),
       description: sanitizeString(exp.description, 2000)
     }))

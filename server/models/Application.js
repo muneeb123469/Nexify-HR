@@ -20,6 +20,16 @@ const ExperienceSchema = new mongoose.Schema({
   description: String,
 });
 
+// Project schema for parsed resume data
+const ProjectSchema = new mongoose.Schema({
+  company: String,
+  title: String,
+  startDate: String,
+  endDate: String,
+  location: String,
+  description: String,
+});
+
 // Parsed resume data schema (from Python CV parser)
 const ParsedResumeSchema = new mongoose.Schema({
   name: String,
@@ -31,6 +41,7 @@ const ParsedResumeSchema = new mongoose.Schema({
   summary: String,
   education: [EducationSchema],
   experience: [ExperienceSchema],
+  projects: [ProjectSchema],
   certifications: [String],
   languages: [String],
   rawText: String,          // optional, for search/debug
@@ -64,7 +75,16 @@ const applicationSchema = new mongoose.Schema({
   },
   resume: {
     type: String,
-    required: true
+    default: null
+  },
+  resumeParsingStatus: {
+    type: String,
+    enum: ['not_uploaded', 'completed', 'failed'],
+    default: 'not_uploaded'
+  },
+  parsedResumeError: {
+    type: String,
+    default: null
   },
   status: {
     type: String,
@@ -97,4 +117,4 @@ const applicationSchema = new mongoose.Schema({
 applicationSchema.index({ job: 1, email: 1 }, { unique: true });
 
 // Export the model with safety check to prevent overwrite errors
-module.exports = mongoose.models.Application || mongoose.model('Application', applicationSchema); 
+module.exports = mongoose.models.Application || mongoose.model('Application', applicationSchema);
