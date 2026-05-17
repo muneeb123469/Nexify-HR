@@ -305,7 +305,6 @@ const TimeTracker = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
 
@@ -351,7 +350,7 @@ const TimeTracker = () => {
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported by this browser'));
+        reject(new Error('Geolocation is not supported by this browser.'));
         return;
       }
 
@@ -367,29 +366,55 @@ const TimeTracker = () => {
         },
         {
           enableHighAccuracy: true,
-          timeout: 30000,
+          timeout: 15000,
           maximumAge: 0
         }
       );
     });
   };
 
+  const getLocationErrorMessage = (locationError) => {
+    if (locationError?.code === 1) {
+      return 'Location permission is blocked. Please allow location access for this site and try again.';
+    }
 
-  const handleCheckIn = async () => {
+    if (locationError?.code === 3) {
+      return 'Location request timed out. Please try again.';
+    }
+
+    return 'Unable to get your location. Please enable location services and try again.';
+  };
+
+  const formatAttendanceError = (data, fallbackMessage) => {
+    let errorMsg = data?.message || fallbackMessage;
+
+    if (data?.nearestLocation) {
+      errorMsg += `. Nearest location: ${data.nearestLocation.name} (${data.nearestLocation.distance}m away, ${data.nearestLocation.requiredRadius}m radius required)`;
+    }
+
+    return errorMsg;
+  };
+
+  const submitAttendanceAction = async ({ action, successMessage, fallbackMessage }) => {
     setLoading(true);
     setError('');
     setSuccess('');
     setLocationError('');
 
     try {
-      // Get user's current location
       setLocationLoading(true);
-      const location = await getCurrentLocation();
-      setUserLocation(location);
-      setLocationLoading(false);
+      let location;
+      try {
+        location = await getCurrentLocation();
+      } catch (locationError) {
+        setLocationError(getLocationErrorMessage(locationError));
+        return;
+      } finally {
+        setLocationLoading(false);
+      }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/attendance/checkin`, {
+      const response = await fetch(`${API_BASE_URL}/attendance/${action}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -404,99 +429,48 @@ const TimeTracker = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Successfully checked in!');
+        setSuccess(successMessage);
+        setAttendanceStatus(data.data);
         fetchTodayStatus();
+        return;
+      }
+
+      if (response.status === 401) {
+        setError('Your session has expired. Please login again.');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+        return;
+      }
+
+      const errorMsg = formatAttendanceError(data, fallbackMessage);
+      if (response.status === 403 || data.nearestLocation) {
+        setLocationError(errorMsg);
       } else {
-        if (response.status === 401) {
-          // Token expired or invalid
-          setError('Your session has expired. Please login again.');
-          // Optionally redirect to login
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 2000);
-        } else if (response.status === 403) {
-          // Location validation failed
-          let errorMsg = data.message || 'You are not within any approved location for attendance';
-          if (data.nearestLocation) {
-            errorMsg += `. Nearest location: ${data.nearestLocation.name} (${data.nearestLocation.distance}m away, ${data.nearestLocation.requiredRadius}m radius required)`;
-          }
-          setLocationError(errorMsg);
-        } else {
-          setError(data.message || 'Failed to check in');
-        }
+        setError(errorMsg);
       }
     } catch (error) {
-      if (error.message.includes('Geolocation')) {
-        setLocationError('Unable to get your location. Please enable location services and try again.');
-      } else {
-        setError('Network error. Please try again.');
-      }
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
       setLocationLoading(false);
     }
   };
 
+  const handleCheckIn = async () => {
+    await submitAttendanceAction({
+      action: 'checkin',
+      successMessage: 'Successfully checked in!',
+      fallbackMessage: 'Failed to check in'
+    });
+  };
+
   const handleCheckOut = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    setLocationError('');
-
-    try {
-      // Get user's current location
-      setLocationLoading(true);
-      const location = await getCurrentLocation();
-      setUserLocation(location);
-      setLocationLoading(false);
-
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/attendance/checkout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Successfully checked out!');
-        fetchTodayStatus();
-      } else {
-        if (response.status === 401) {
-          // Token expired or invalid
-          setError('Your session has expired. Please login again.');
-          // Optionally redirect to login
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 2000);
-        } else if (response.status === 403) {
-          // Location validation failed
-          let errorMsg = data.message || 'You are not within any approved location for attendance';
-          if (data.nearestLocation) {
-            errorMsg += `. Nearest location: ${data.nearestLocation.name} (${data.nearestLocation.distance}m away, ${data.nearestLocation.requiredRadius}m radius required)`;
-          }
-          setLocationError(errorMsg);
-        } else {
-          setError(data.message || 'Failed to check out');
-        }
-      }
-    } catch (error) {
-      if (error.message.includes('Geolocation')) {
-        setLocationError('Unable to get your location. Please enable location services and try again.');
-      } else {
-        setError('Network error. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-      setLocationLoading(false);
-    }
+    await submitAttendanceAction({
+      action: 'checkout',
+      successMessage: 'Successfully checked out!',
+      fallbackMessage: 'Failed to check out'
+    });
   };
 
   const formatCurrentTime = (date) => {
