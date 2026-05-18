@@ -15,14 +15,19 @@ const buildEmailFrom = (defaultName) => ({
   address: getEmailFromAddress()
 });
 
-// Create transporter with Gmail SMTP
+// Create transporter with explicit SMTP config
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD
-    }
+    },
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000
   });
 };
 
