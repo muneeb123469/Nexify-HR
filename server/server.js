@@ -29,6 +29,19 @@ app.use('/uploads', (req, res, next) => {
   next();
 });
 
+const healthResponse = {
+  message: 'Nexify HR API is running',
+  status: 'OK'
+};
+
+app.get('/', (req, res) => {
+  res.json(healthResponse);
+});
+
+app.get('/health', (req, res) => {
+  res.json(healthResponse);
+});
+
 // Routes
 app.use('/api/auth', require('./Routes/authRoutes'));
 app.use('/api/jobs', require('./Routes/jobRoutes'));
