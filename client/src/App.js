@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { JobProvider } from './context/JobContext';
 import { ApplicationProvider } from './context/ApplicationContext';
 import Login from './components/auth/Login';
@@ -67,6 +67,35 @@ import LocationSettings from './components/admin/LocationSettings';
 // Performance & Task Evaluation Components
 import PerformanceTaskEvaluation from './components/performance/PerformanceTaskEvaluation';
 
+const getDashboardPathForRole = (role) => {
+  switch (role) {
+    case 'admin':
+      return '/admin-dashboard';
+    case 'hr':
+      return '/dashboard';
+    case 'employee':
+      return '/employee-dashboard';
+    case 'applicant':
+      return '/applicant-dashboard';
+    default:
+      return '/login';
+  }
+};
+
+const AdminRoute = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.role !== 'admin') {
+    return <Navigate to={getDashboardPathForRole(user?.role)} replace />;
+  }
+
+  return children;
+};
+
 const App = () => {
   return (
     <Router>
@@ -89,10 +118,10 @@ const App = () => {
               <Route path="/applications/new/:id" element={<ApplicationForm />} />
               <Route path="/dashboard" element={<HRDashboard />} />
               <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/applicant-dashboard" element={<ApplicantDashboard />} />
-              <Route path='/user-roles' element={<UserRoles />} />
-              <Route path='/two-factor-authentication' element={<TwoFactorAuthentication />} />
+              <Route path="/user-roles" element={<AdminRoute><UserRoles /></AdminRoute>} />
+              <Route path="/two-factor-authentication" element={<AdminRoute><TwoFactorAuthentication /></AdminRoute>} />
               <Route path="/applicant-dashboard/interviews" element={<InterviewHistory />} />
               <Route path="/applicant-dashboard/resume-parsing" element={<ResumeParsingInterface />} />
               <Route path="/meetings/:receiverId" element={<Meeting />} />
@@ -140,8 +169,8 @@ const App = () => {
               <Route path="/hr/performance-evaluation" element={<PerformanceTaskEvaluation />} />
 
               {/* Admin Routes */}
-              <Route path="/admin/hr-approvals" element={<HRApprovalList />} />
-              <Route path="/admin/settings" element={<LocationSettings />} />
+              <Route path="/admin/hr-approvals" element={<AdminRoute><HRApprovalList /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><LocationSettings /></AdminRoute>} />
             </Routes>
           </ApplicationProvider>
         </JobProvider>

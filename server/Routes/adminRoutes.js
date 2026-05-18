@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { auth, authorize } = require('../middleware/auth');
+
+router.use(auth, authorize('admin'));
 
 // Get all HR users
 router.get('/hr-list', async (req, res) => {
@@ -193,4 +196,4 @@ router.post('/hr-approval', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
