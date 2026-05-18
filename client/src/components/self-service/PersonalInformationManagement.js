@@ -6,10 +6,11 @@ import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { ApplicantSideBar } from '../dashboard/ApplicantDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
 import './PersonalInformationManagement.css';
+import { API_BASE_URL } from '../../config/api';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api'
+  baseURL: API_BASE_URL
 });
 
 // Add request interceptor to include token
@@ -730,4 +731,4 @@ const PersonalInformationManagement = () => {
   );
 };
 
-export default PersonalInformationManagement; 
+export default PersonalInformationManagement;

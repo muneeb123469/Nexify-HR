@@ -50,6 +50,7 @@ import axios from 'axios';
 import JobList from '../jobs/JobList';
 import ApplicationList from '../applications/ApplicationList';
 import InterviewHistory from '../interviews/InterviewHistory';
+import { API_BASE_URL } from '../../config/api';
 // import ResumeParsingInterface from '../recruitment/ResumeParsingInterface';
 import './HRDashboard.css';
 import './ApplicantDashboard.css';
@@ -966,8 +967,8 @@ const DashboardOverview = () => {
 
       // Fetch applications and interviews in parallel
       const [applicationsResponse, interviewsResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/applications/user'),
-        axios.get('http://localhost:5000/api/meetings/applicant/interviews')
+        axios.get(`${API_BASE_URL}/applications/user`),
+        axios.get(`${API_BASE_URL}/meetings/applicant/interviews`)
       ]);
 
       const applications = applicationsResponse.data;

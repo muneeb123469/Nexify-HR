@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { employeeApi } from '../../utils/employeeApi';
 import './EmployeePerformanceOverview.css';
+import { API_BASE_URL } from '../../config/api';
 
 // Task API functions
 const taskApi = {
   getEmployeeStats: async (employeeId) => {
     try {
-      const response = await fetch(`/api/tasks/stats/employee/${employeeId}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/stats/employee/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'

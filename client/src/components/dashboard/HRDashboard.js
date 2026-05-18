@@ -3,6 +3,7 @@ import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import styled from 'styled-components';
 import './HRDashboard.css';
+import { API_BASE_URL } from '../../config/api';
 
 // Import HR Management Components
 import JobPostingsDashboard from '../recruitment/JobPostingsDashboard';
@@ -1541,7 +1542,7 @@ const Dashboard = () => {
   useEffect(() => {
     const loadApprovals = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/applications');
+        const res = await fetch(`${API_BASE_URL}/applications`);
         const data = await res.json();
         const formatDate = (d) => {
           const dt = new Date(d);

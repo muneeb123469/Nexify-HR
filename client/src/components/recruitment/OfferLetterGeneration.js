@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './OfferLetterGeneration.css';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 const OfferLetterGeneration = () => {
   const [shortlistedCandidates, setShortlistedCandidates] = useState([]);
@@ -26,7 +27,7 @@ const OfferLetterGeneration = () => {
   const fetchShortlistedCandidates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/applications?status=shortlisted');
+      const response = await fetch(`${API_BASE_URL}/applications?status=shortlisted`);
       if (!response.ok) {
         throw new Error('Failed to fetch shortlisted candidates');
       }
@@ -89,7 +90,7 @@ const OfferLetterGeneration = () => {
     try {
       setSending(true);
       setError(null);
-      const response = await fetch(`http://localhost:5000/api/applications/${selectedCandidate.applicationId}/offer`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${selectedCandidate.applicationId}/offer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(offerDetails)

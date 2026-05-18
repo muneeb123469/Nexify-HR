@@ -5,6 +5,7 @@ import './HRWellnessManagement.css';
 import { Sidebar } from '../dashboard/HRDashboard';
 import { AdminSidebar } from '../dashboard/AdminDashboard';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config/api';
 
 const HRWellnessManagement = () => {
     const { user } = useAuth();
@@ -72,7 +73,7 @@ const HRWellnessManagement = () => {
     const fetchTips = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/wellness/tips', {
+            const response = await axios.get(`${API_BASE_URL}/wellness/tips`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const tipsObj = {};
@@ -89,7 +90,7 @@ const HRWellnessManagement = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.put(
-                `http://localhost:5000/api/wellness/tips/${day}`,
+                `${API_BASE_URL}/wellness/tips/${day}`,
                 { tip: tipText },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -106,7 +107,7 @@ const HRWellnessManagement = () => {
     const fetchResources = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/wellness/mental-health-resources/all', {
+            const response = await axios.get(`${API_BASE_URL}/wellness/mental-health-resources/all`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResources(response.data);
@@ -120,14 +121,14 @@ const HRWellnessManagement = () => {
             const token = localStorage.getItem('token');
             if (editingResource) {
                 await axios.put(
-                    `http://localhost:5000/api/wellness/mental-health-resources/${editingResource._id}`,
+                    `${API_BASE_URL}/wellness/mental-health-resources/${editingResource._id}`,
                     resourceForm,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 showNotification('success', 'Resource updated successfully!');
             } else {
                 await axios.post(
-                    'http://localhost:5000/api/wellness/mental-health-resources',
+                    `${API_BASE_URL}/wellness/mental-health-resources`,
                     resourceForm,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -147,7 +148,7 @@ const HRWellnessManagement = () => {
         if (!window.confirm('Are you sure you want to delete this resource?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/wellness/mental-health-resources/${id}`, {
+            await axios.delete(`${API_BASE_URL}/wellness/mental-health-resources/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             showNotification('success', 'Resource deleted successfully!');
@@ -168,7 +169,7 @@ const HRWellnessManagement = () => {
     const fetchFeedback = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/wellness/feedback', {
+            const response = await axios.get(`${API_BASE_URL}/wellness/feedback`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFeedbackList(response.data);
@@ -181,7 +182,7 @@ const HRWellnessManagement = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.put(
-                `http://localhost:5000/api/wellness/feedback/${id}`,
+                `${API_BASE_URL}/wellness/feedback/${id}`,
                 { status, reviewNotes: notes },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -197,7 +198,7 @@ const HRWellnessManagement = () => {
     const fetchGuidelines = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/wellness/compliance-guidelines/all', {
+            const response = await axios.get(`${API_BASE_URL}/wellness/compliance-guidelines/all`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setGuidelines(response.data);
@@ -211,14 +212,14 @@ const HRWellnessManagement = () => {
             const token = localStorage.getItem('token');
             if (editingGuideline) {
                 await axios.put(
-                    `http://localhost:5000/api/wellness/compliance-guidelines/${editingGuideline._id}`,
+                    `${API_BASE_URL}/wellness/compliance-guidelines/${editingGuideline._id}`,
                     guidelineForm,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 showNotification('success', 'Guideline updated successfully!');
             } else {
                 await axios.post(
-                    'http://localhost:5000/api/wellness/compliance-guidelines',
+                    `${API_BASE_URL}/wellness/compliance-guidelines`,
                     guidelineForm,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -238,7 +239,7 @@ const HRWellnessManagement = () => {
         if (!window.confirm('Are you sure you want to delete this guideline?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/wellness/compliance-guidelines/${id}`, {
+            await axios.delete(`${API_BASE_URL}/wellness/compliance-guidelines/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             showNotification('success', 'Guideline deleted successfully!');

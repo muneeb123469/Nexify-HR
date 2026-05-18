@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const JobContext = createContext();
 
@@ -10,8 +11,6 @@ export const JobProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = 'http://localhost:5000/api';
-
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -19,7 +18,7 @@ export const JobProvider = ({ children }) => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/jobs`);
+      const response = await axios.get(`${API_BASE_URL}/jobs`);
       setJobs(response.data);
       setError(null);
     } catch (err) {
@@ -32,7 +31,7 @@ export const JobProvider = ({ children }) => {
 
   const createJob = async (jobData) => {
     try {
-      const response = await axios.post(`${API_URL}/jobs`, jobData);
+      const response = await axios.post(`${API_BASE_URL}/jobs`, jobData);
       setJobs(prev => [...prev, response.data]);
       return response.data;
     } catch (err) {
@@ -42,7 +41,7 @@ export const JobProvider = ({ children }) => {
 
   const updateJob = async (id, jobData) => {
     try {
-      const response = await axios.put(`${API_URL}/jobs/${id}`, jobData);
+      const response = await axios.put(`${API_BASE_URL}/jobs/${id}`, jobData);
       setJobs(prev => prev.map(job => job._id === id ? response.data : job));
       return response.data;
     } catch (err) {
@@ -52,7 +51,7 @@ export const JobProvider = ({ children }) => {
 
   const deleteJob = async (id) => {
     try {
-      await axios.delete(`${API_URL}/jobs/${id}`);
+      await axios.delete(`${API_BASE_URL}/jobs/${id}`);
       setJobs(prev => prev.filter(job => job._id !== id));
     } catch (err) {
       throw new Error(err.response?.data?.message || 'Failed to delete job');
@@ -74,4 +73,4 @@ export const JobProvider = ({ children }) => {
       {children}
     </JobContext.Provider>
   );
-}; 
+};

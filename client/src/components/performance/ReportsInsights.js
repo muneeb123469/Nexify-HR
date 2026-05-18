@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ReportsInsights.css';
+import { API_BASE_URL } from '../../config/api';
 
 const ReportsInsights = () => {
   const [reportData, setReportData] = useState({});
@@ -25,16 +26,16 @@ const ReportsInsights = () => {
 
         // Fetch data based on selected report
         if (selectedReport === 'overview') {
-          const response = await axios.get('http://localhost:5000/api/reports/executive-summary', config);
+          const response = await axios.get(`${API_BASE_URL}/reports/executive-summary`, config);
           data.overview = response.data;
         } else if (selectedReport === 'productivity') {
-          const response = await axios.get('http://localhost:5000/api/reports/productivity-analysis', config);
+          const response = await axios.get(`${API_BASE_URL}/reports/productivity-analysis`, config);
           data.productivity = response.data;
         } else if (selectedReport === 'efficiency') {
-          const response = await axios.get('http://localhost:5000/api/reports/efficiency-report', config);
+          const response = await axios.get(`${API_BASE_URL}/reports/efficiency-report`, config);
           data.efficiency = response.data;
         } else if (selectedReport === 'compliance') {
-          const response = await axios.get('http://localhost:5000/api/reports/compliance-report', config);
+          const response = await axios.get(`${API_BASE_URL}/reports/compliance-report`, config);
           data.compliance = response.data;
         }
 
@@ -89,7 +90,7 @@ const ReportsInsights = () => {
       }
 
       // Fetch the PDF
-      const response = await fetch(`http://localhost:5000/api/reports/download/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/reports/download/${endpoint}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

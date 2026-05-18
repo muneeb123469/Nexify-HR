@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {useParams, useNavigate } from 'react-router-dom';
 import './CandidateApplicationManagement.css';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 
 const CandidateApplicationManagement = () => {
@@ -32,7 +33,7 @@ const CandidateApplicationManagement = () => {
       if (filters.status) queryParams.append('status', filters.status);
       if(jobId) queryParams.append('jobId',jobId)
       
-      const response = await fetch(`http://localhost:5000/api/applications?${queryParams}`);
+      const response = await fetch(`${API_BASE_URL}/applications?${queryParams}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -68,7 +69,7 @@ const CandidateApplicationManagement = () => {
 
   const handleStatusChange = async (applicationId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/applications/${applicationId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ const CandidateApplicationManagement = () => {
     try {
       // Update all selected applications
       const updatePromises = selectedApplications.map(applicationId =>
-        fetch(`http://localhost:5000/api/applications/${applicationId}/status`, {
+        fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -146,7 +147,7 @@ const CandidateApplicationManagement = () => {
       }
 
       // Use the dedicated download route
-      const response = await fetch(`http://localhost:5000/api/applications/download-resume/${application._id}`, {
+      const response = await fetch(`${API_BASE_URL}/applications/download-resume/${application._id}`, {
         method: 'GET',
       });
 

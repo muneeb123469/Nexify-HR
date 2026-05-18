@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useJobs } from '../../context/JobContext';
 import axios from 'axios';
 import styled from 'styled-components';
+import { API_BASE_URL } from '../../config/api';
 
 const Container = styled.div`
   padding: 2rem;
@@ -164,7 +165,7 @@ const ApplicationForm = () => {
       fd.append('coverLetter', formData.coverLetter);
       fd.append('resume', formData.resume);   // field name expected by upload middleware
 
-      const res = await axios.post('http://localhost:5000/api/applications', fd, {
+      const res = await axios.post(`${API_BASE_URL}/applications`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

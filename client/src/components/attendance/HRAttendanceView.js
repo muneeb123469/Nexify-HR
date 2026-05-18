@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaClock, FaUsers, FaCalendarAlt, FaSearch, FaFilter, FaDownload, FaCheckCircle, FaTimesCircle, FaSpinner, FaUser, FaArrowLeft, FaHistory } from 'react-icons/fa';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { API_BASE_URL } from '../../config/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Container = styled.div`
   margin-left: 250px;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PerformanceAnalytics.css';
+import { API_BASE_URL } from '../../config/api';
 
 const PerformanceAnalytics = ({ employeeId }) => {
   const [performanceData, setPerformanceData] = useState(null);
@@ -15,7 +16,7 @@ const PerformanceAnalytics = ({ employeeId }) => {
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/employees/performance/${employeeId}`);
+      const response = await fetch(`${API_BASE_URL}/employees/performance/${employeeId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch performance data');
@@ -43,7 +44,7 @@ const PerformanceAnalytics = ({ employeeId }) => {
   const handleSave = async () => {
     try {
       // Update work mode
-      await fetch(`/api/employees/${employeeId}/work-mode`, {
+      await fetch(`${API_BASE_URL}/employees/${employeeId}/work-mode`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ const PerformanceAnalytics = ({ employeeId }) => {
       const metricsData = { ...editData };
       delete metricsData.workMode; // Remove workMode as it's handled separately
       
-      await fetch(`/api/employees/${employeeId}/performance-metrics`, {
+      await fetch(`${API_BASE_URL}/employees/${employeeId}/performance-metrics`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

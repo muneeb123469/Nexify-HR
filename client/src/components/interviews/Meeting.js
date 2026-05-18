@@ -3,6 +3,7 @@ import { FaVideo, FaClock, FaCopy } from 'react-icons/fa';
 import HRFeedbackModal from './HRFeedbackModal';
 import "./Meeting.css";
 import { Sidebar } from "../dashboard/HRDashboard";
+import { API_BASE_URL } from '../../config/api';
 
 const Meeting = () => {
   const [meetings, setMeetings] = useState([]);
@@ -17,7 +18,7 @@ const Meeting = () => {
 
   const fetchMeetings = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/all`);
+      const response = await fetch(`${API_BASE_URL}/meetings/all`);
       const data = await response.json();
       setMeetings(data);
     } catch (error) {
@@ -36,7 +37,7 @@ const Meeting = () => {
 
   const markAsConducted = async (meetingId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/${meetingId}/conducted`, {
+      const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/conducted`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -60,7 +61,7 @@ const Meeting = () => {
 
   const submitHRFeedback = async (feedback) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting._id}/hr-feedback`, {
+      const response = await fetch(`${API_BASE_URL}/meetings/${selectedMeeting._id}/hr-feedback`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback })

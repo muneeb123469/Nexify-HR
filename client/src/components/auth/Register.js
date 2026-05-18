@@ -25,6 +25,7 @@ import {
   pageVariants,
   pageTransition
 } from './styles';
+import { API_BASE_URL } from '../../config/api';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -228,7 +229,7 @@ const Register = () => {
 
     try {
       // Send registration data and get verification code sent to email
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -269,7 +270,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/verify-registration', {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-registration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -319,7 +320,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/resend-registration-code', {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-registration-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })

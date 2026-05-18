@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PerformanceAnalytics from './PerformanceAnalytics';
 import './EmployeeProfileManagement.css';
+import { API_BASE_URL } from '../../config/api';
 
 const EmployeeProfileManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -30,7 +31,7 @@ const EmployeeProfileManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:5000/api/employees', {
+      const response = await axios.get(`${API_BASE_URL}/employees`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')} `
         }
@@ -135,7 +136,7 @@ const EmployeeProfileManagement = () => {
 
       // Call API to change password
       const response = await axios.put(
-        `http://localhost:5000/api/employees/${selectedEmployee.id}/password`,
+        `${API_BASE_URL}/employees/${selectedEmployee.id}/password`,
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword

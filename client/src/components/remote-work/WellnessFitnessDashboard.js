@@ -28,6 +28,7 @@ import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { Sidebar } from '../dashboard/HRDashboard';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 
 const WellnessFitnessDashboard = () => {
   const { user } = useAuth();
@@ -228,15 +229,15 @@ const WellnessFitnessDashboard = () => {
     const fetchWellnessData = async () => {
       try {
         // Fetch daily tip
-        const tipRes = await axios.get('http://localhost:5000/api/wellness/tips/today');
+        const tipRes = await axios.get(`${API_BASE_URL}/wellness/tips/today`);
         setDailyTip(tipRes.data);
 
         // Fetch mental health resources
-        const resourcesRes = await axios.get('http://localhost:5000/api/wellness/mental-health-resources');
+        const resourcesRes = await axios.get(`${API_BASE_URL}/wellness/mental-health-resources`);
         setMentalHealthResources(resourcesRes.data);
 
         // Fetch compliance guidelines
-        const guidelinesRes = await axios.get('http://localhost:5000/api/wellness/compliance-guidelines');
+        const guidelinesRes = await axios.get(`${API_BASE_URL}/wellness/compliance-guidelines`);
         setComplianceGuidelines(guidelinesRes.data);
       } catch (error) {
         console.error('Error fetching wellness data:', error);
@@ -259,7 +260,7 @@ const WellnessFitnessDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/wellness/feedback',
+        `${API_BASE_URL}/wellness/feedback`,
         {
           feedback: wellnessFeedback,
           category: feedbackCategory,

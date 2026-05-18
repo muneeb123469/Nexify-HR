@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaClock, FaCheckCircle, FaTimesCircle, FaEye, FaSpinner } from 'react-icons/fa';
+import { API_BASE_URL } from '../../config/api';
 
 const Container = styled.div`
   background: #FFFFFF;
@@ -185,7 +186,7 @@ const LeaveStatus = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/leave/employee/${userInfo.id}`, {
+      const response = await fetch(`${API_BASE_URL}/leave/employee/${userInfo.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

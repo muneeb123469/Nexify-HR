@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './InterviewHistory.css';
+import { API_BASE_URL } from '../../config/api';
 
 // Feedback Modal Component
 const FeedbackModal = ({ interview, isOpen, onClose, onSubmit }) => {
@@ -113,7 +114,7 @@ const InterviewHistory = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.get('http://localhost:5000/api/meetings/applicant/interviews');
+      const response = await axios.get(`${API_BASE_URL}/meetings/applicant/interviews`);
 
       // Transform the data to match the expected format
       const transformedInterviews = response.data.map(interview => ({
@@ -197,7 +198,7 @@ const InterviewHistory = () => {
       console.log('Request config:', config);
       
       const response = await axios.put(
-        `http://localhost:5000/api/meetings/${interviewId}/feedback`,
+        `${API_BASE_URL}/meetings/${interviewId}/feedback`,
         feedbackData,
         config
       );

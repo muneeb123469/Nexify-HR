@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './InterviewSchedulingInterface.css';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 const InterviewSchedulingInterface = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const InterviewSchedulingInterface = () => {
       setError(null);
 
       // Fetch applications with shortlisted status
-      const response = await fetch('http://localhost:5000/api/applications?status=shortlisted');
+      const response = await fetch(`${API_BASE_URL}/applications?status=shortlisted`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -132,7 +133,7 @@ const InterviewSchedulingInterface = () => {
         };
 
         try {
-          const meetingResponse = await fetch('http://localhost:5000/api/meetings/create', {
+          const meetingResponse = await fetch(`${API_BASE_URL}/meetings/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(meetingData)
@@ -164,7 +165,7 @@ const InterviewSchedulingInterface = () => {
       };
 
       // Call the interview scheduling API (real endpoint with email sending)
-      const response = await fetch('http://localhost:5000/api/interviews/schedule', {
+      const response = await fetch(`${API_BASE_URL}/interviews/schedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

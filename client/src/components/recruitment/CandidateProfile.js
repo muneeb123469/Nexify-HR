@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './CandidateProfile.css';
+import { API_BASE_URL } from '../../config/api';
 
 const CandidateProfile = () => {
   const { applicationId } = useParams();
@@ -28,7 +29,7 @@ const CandidateProfile = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`http://localhost:5000/api/applications/${applicationId}`);
+      const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch application details: ${response.status}`);
@@ -49,7 +50,7 @@ const CandidateProfile = () => {
       setIsShortlisting(true);
 
       // Update application status to shortlisted
-      const response = await fetch(`http://localhost:5000/api/applications/${application._id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${application._id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'shortlisted' })

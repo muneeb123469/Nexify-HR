@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PerformanceAnalytics.css';
+import { API_BASE_URL } from '../../config/api';
 
 const PerformanceAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState({});
@@ -19,7 +20,7 @@ const PerformanceAnalytics = () => {
         const token = localStorage.getItem('token');
         
         // Fetch all employees
-        const empResponse = await fetch('http://localhost:5000/api/employees', {
+        const empResponse = await fetch(`${API_BASE_URL}/employees`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -35,7 +36,7 @@ const PerformanceAnalytics = () => {
 
         // Fetch performance data for all employees
         const performancePromises = allEmployees.map(emp =>
-          fetch(`http://localhost:5000/api/employees/performance/${emp.id}`, {
+          fetch(`${API_BASE_URL}/employees/performance/${emp.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -46,7 +47,7 @@ const PerformanceAnalytics = () => {
 
         // Fetch task stats for all employees
         const taskStatsPromises = allEmployees.map(emp =>
-          fetch(`http://localhost:5000/api/tasks/stats/employee/${emp.id}`, {
+          fetch(`${API_BASE_URL}/tasks/stats/employee/${emp.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

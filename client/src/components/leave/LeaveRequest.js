@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaCalendarAlt, FaFileAlt, FaPaperPlane, FaSpinner, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 const Container = styled.div`
   margin-left: 250px;
@@ -193,7 +194,7 @@ const LeaveRequest = ({ showSidebar = true, onRequestSubmitted }) => {
         reason: formData.reason
       };
 
-      const response = await fetch('http://localhost:5000/api/leave/apply', {
+      const response = await fetch(`${API_BASE_URL}/leave/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

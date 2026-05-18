@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EmployerSideBar } from '../dashboard/EmployeeDashboard';
 import { useAuth } from '../../context/AuthContext';
 import './AssignedTasks.css';
+import { API_BASE_URL } from '../../config/api';
 
 const AssignedTasks = () => {
   const { user } = useAuth();
@@ -159,7 +160,7 @@ const AssignedTasks = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/my-tasks', {
+      const response = await fetch(`${API_BASE_URL}/tasks/my-tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -294,7 +295,7 @@ const AssignedTasks = () => {
   const updateTaskStatus = async (taskId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -349,7 +350,7 @@ const AssignedTasks = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${selectedTask._id || selectedTask.id}/progress`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${selectedTask._id || selectedTask.id}/progress`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +393,7 @@ const AssignedTasks = () => {
   const addComment = async (taskId, comment) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/comment`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/comment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -580,7 +581,7 @@ const AssignedTasks = () => {
   const handleDeleteTask = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${selectedTask._id || selectedTask.id}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${selectedTask._id || selectedTask.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

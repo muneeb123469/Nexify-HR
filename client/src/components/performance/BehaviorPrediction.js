@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './BehaviorPrediction.css';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config/api';
 
 const BehaviorPrediction = () => {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ const BehaviorPrediction = () => {
     const fetchEmployees = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/employees', {
+        const response = await fetch(`${API_BASE_URL}/employees`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -51,7 +52,7 @@ const BehaviorPrediction = () => {
       const token = localStorage.getItem('token');
 
       // Call ML prediction endpoint
-      const mlResponse = await fetch(`http://localhost:5000/api/employees/ml-prediction/${employeeId}`, {
+      const mlResponse = await fetch(`${API_BASE_URL}/employees/ml-prediction/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -65,13 +66,13 @@ const BehaviorPrediction = () => {
       const mlPredictions = mlData.predictions;
 
       // Fetch task stats and performance data for additional UI context
-      const taskResponse = await fetch(`http://localhost:5000/api/tasks/stats/employee/${employeeId}`, {
+      const taskResponse = await fetch(`${API_BASE_URL}/tasks/stats/employee/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      const perfResponse = await fetch(`http://localhost:5000/api/employees/performance/${employeeId}`, {
+      const perfResponse = await fetch(`${API_BASE_URL}/employees/performance/${employeeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './TaskAssignment.css';
+import { API_BASE_URL } from '../../config/api';
 
 const TaskAssignment = () => {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ const TaskAssignment = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/employees/list', {
+      const response = await fetch(`${API_BASE_URL}/tasks/employees/list`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -56,7 +57,7 @@ const TaskAssignment = () => {
   const fetchRecentTasks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/assigned-by-me', {
+      const response = await fetch(`${API_BASE_URL}/tasks/assigned-by-me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -77,7 +78,7 @@ const TaskAssignment = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/all', {
+      const response = await fetch(`${API_BASE_URL}/tasks/all`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -157,7 +158,7 @@ const TaskAssignment = () => {
         notes: ''
       };
 
-      const response = await fetch('http://localhost:5000/api/tasks/assign', {
+      const response = await fetch(`${API_BASE_URL}/tasks/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -15,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const API_URL = 'http://localhost:5000/api';
 
   // Load user from localStorage on initial mount
   // useEffect(() => {
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
         hasPassword: !!password
       });
 
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email: trimmedEmail,
         password
       });
@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Please provide a valid email address');
       }
 
-      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, userData);
 
       if (response.data.token && response.data.user) {
         const newUser = response.data.user;
@@ -228,4 +228,4 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
-}; 
+};

@@ -12,6 +12,7 @@ import {
   FaFilter,
   FaUser
 } from 'react-icons/fa';
+import { API_BASE_URL } from '../../config/api';
 
 const Container = styled.div`
   padding: 24px;
@@ -321,8 +322,8 @@ const HRLeaveRequests = () => {
       }
 
       const url = statusFilter === 'all' 
-        ? 'http://localhost:5000/api/leave/all'
-        : `http://localhost:5000/api/leave/all?status=${statusFilter}`;
+        ? `${API_BASE_URL}/leave/all`
+        : `${API_BASE_URL}/leave/all?status=${statusFilter}`;
 
       const response = await fetch(url, {
         headers: {
@@ -350,7 +351,7 @@ const HRLeaveRequests = () => {
       setProcessingIds(prev => new Set([...prev, requestId]));
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/leave/${requestId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/leave/${requestId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

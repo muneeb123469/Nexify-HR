@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 import { FaCheck, FaTimes, FaUserCircle, FaSpinner, FaCalendarAlt, FaEnvelope, FaIdCard, FaSearch, FaFilter, FaSortAmountDown, FaSortAmountUp, FaEdit, FaTrash, FaPlus, FaUser, FaPhone, FaBriefcase, FaUserPlus } from 'react-icons/fa';
+import { API_BASE_URL } from '../../config/api';
 
 const Container = styled.div`
   padding: 2rem;
@@ -619,7 +620,7 @@ const HRApprovalList = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:5000/api/admin/hr-list');
+      const response = await axios.get(`${API_BASE_URL}/admin/hr-list`);
       setHRList(response.data);
 
       // Calculate stats
@@ -700,7 +701,7 @@ const HRApprovalList = () => {
     try {
       setProcessingId(hrId);
       await axios.post(
-        'http://localhost:5000/api/admin/hr-approval',
+        `${API_BASE_URL}/admin/hr-approval`,
         { hrId, action }
       );
       await fetchHRList();
@@ -781,7 +782,7 @@ const HRApprovalList = () => {
 
     try {
       setSubmitting(true);
-      await axios.post('http://localhost:5000/api/admin/hr-create', formData);
+      await axios.post(`${API_BASE_URL}/admin/hr-create`, formData);
       setFormSuccess('HR user created successfully!');
       setTimeout(() => {
         handleCloseModals();
@@ -808,7 +809,7 @@ const HRApprovalList = () => {
 
     try {
       setSubmitting(true);
-      await axios.put(`http://localhost:5000/api/admin/hr-update/${selectedHR._id}`, formData);
+      await axios.put(`${API_BASE_URL}/admin/hr-update/${selectedHR._id}`, formData);
       setFormSuccess('HR user updated successfully!');
       setTimeout(() => {
         handleCloseModals();
@@ -825,7 +826,7 @@ const HRApprovalList = () => {
   const handleDeleteHR = async () => {
     try {
       setSubmitting(true);
-      await axios.delete(`http://localhost:5000/api/admin/hr-delete/${selectedHR._id}`);
+      await axios.delete(`${API_BASE_URL}/admin/hr-delete/${selectedHR._id}`);
       handleCloseModals();
       fetchHRList();
     } catch (err) {

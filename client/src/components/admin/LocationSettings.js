@@ -13,6 +13,7 @@ import {
   Target
 } from 'lucide-react';
 import { AdminSideBar } from '../dashboard/AdminDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 // LocationModal component - defined outside to prevent re-creation on each render
 const LocationModal = ({
@@ -222,7 +223,7 @@ const LocationSettings = () => {
   const fetchLocations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/locations', {
+      const response = await fetch(`${API_BASE_URL}/locations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -294,7 +295,7 @@ const LocationSettings = () => {
       const { latitude, longitude } = position.coords;
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/locations/${location._id}`, {
+      const response = await fetch(`${API_BASE_URL}/locations/${location._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -331,7 +332,7 @@ const LocationSettings = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/locations/${locationId}`, {
+      const response = await fetch(`${API_BASE_URL}/locations/${locationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -447,7 +448,7 @@ const LocationSettings = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const url = showEditModal ? `/api/locations/${selectedLocation._id}` : '/api/locations';
+      const url = showEditModal ? `${API_BASE_URL}/locations/${selectedLocation._id}` : `${API_BASE_URL}/locations`;
       const method = showEditModal ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

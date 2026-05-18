@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './InterviewFeedbackRecording.css';
 import { Sidebar } from '../dashboard/HRDashboard';
+import { API_BASE_URL } from '../../config/api';
 
 const InterviewFeedbackRecording = () => {
   const [interviews, setInterviews] = useState([]);
@@ -23,7 +24,7 @@ const InterviewFeedbackRecording = () => {
 
   const fetchInterviews = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/meetings/all');
+      const response = await fetch(`${API_BASE_URL}/meetings/all`);
       const data = await response.json();
       
       // Transform the data to match the expected format
@@ -96,7 +97,7 @@ const InterviewFeedbackRecording = () => {
 
   const handleSubmitFeedback = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/${selectedInterview.id}/hr-feedback`, {
+      const response = await fetch(`${API_BASE_URL}/meetings/${selectedInterview.id}/hr-feedback`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback })
