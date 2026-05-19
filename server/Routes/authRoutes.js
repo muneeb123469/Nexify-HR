@@ -125,11 +125,13 @@ router.post('/verify-registration', async (req, res) => {
       return res.status(400).json({ message: 'User already exists. Please log in.' });
     }
 
+    const hashedPassword = await User.hashPassword(password);
+
     // Create new user
     const user = new User({
       username: username,
       email: email,
-      password: password,
+      password: hashedPassword,
       role: 'applicant',
       isPending: false
     });
@@ -274,12 +276,23 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    const shouldUpgradePassword = user.needsPasswordUpgrade();
+
     // Validate password
     try {
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
         console.log('Invalid password for user:', email);
         return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      if (shouldUpgradePassword) {
+        const hashedPassword = await User.hashPassword(password);
+        await User.updateOne(
+          { _id: user._id, password: user.password },
+          { $set: { password: hashedPassword, updatedAt: new Date() } }
+        );
+        user.password = hashedPassword;
       }
     } catch (error) {
       console.error('Password comparison error:', error);
@@ -475,7 +488,7 @@ router.post('/reset-password', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update password (plain text as per user requirement)
+    // Update password; User model hashes it before save
     user.password = newPassword;
     await user.save();
 

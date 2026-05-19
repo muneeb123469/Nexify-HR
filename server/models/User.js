@@ -1,4 +1,14 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const BCRYPT_SALT_ROUNDS = 10;
+const BCRYPT_HASH_PREFIX = /^\$2[aby]\$/;
+
+const isBcryptHash = (password) => (
+  typeof password === 'string' && BCRYPT_HASH_PREFIX.test(password)
+);
+
+const hashPassword = (password) => bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -211,6 +221,19 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+// Hash new or changed passwords unless they are already bcrypt hashes
+userSchema.pre('save', async function (next) {
+  try {
+    if (this.isModified('password') && this.password && !isBcryptHash(this.password)) {
+      this.password = await hashPassword(this.password);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Pre-save middleware to update updatedAt and job history
 userSchema.pre('save', function (next) {
   this.updatedAt = new Date();
@@ -292,13 +315,25 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to compare passwords (direct string comparison for testing)
+userSchema.statics.isBcryptHash = isBcryptHash;
+userSchema.statics.hashPassword = hashPassword;
+
+userSchema.methods.hasBcryptPassword = function () {
+  return isBcryptHash(this.password);
+};
+
+userSchema.methods.needsPasswordUpgrade = function () {
+  return Boolean(this.password && !this.hasBcryptPassword());
+};
+
+// Method to compare passwords with bcrypt and legacy plain-text fallback
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
-    console.log('Comparing passwords...');
-    const isMatch = candidatePassword === this.password;
-    console.log('Password comparison result:', isMatch);
-    return isMatch;
+    if (this.hasBcryptPassword()) {
+      return bcrypt.compare(candidatePassword, this.password);
+    }
+
+    return candidatePassword === this.password;
   } catch (error) {
     console.error('Error comparing passwords:', error);
     throw error;
